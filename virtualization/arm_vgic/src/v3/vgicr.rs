@@ -37,6 +37,8 @@ pub const DEFAULT_SIZE_PER_GICR: usize = 0x20000; // 128K: 64K for SGI/PPI, then
 pub struct VGicRRegs {
     /// LPI configuration table base address.
     pub propbaser: usize,
+    /// Guest-visible redistributor wake state.
+    pub waker: usize,
 }
 
 /// Virtual GICv3 Redistributor.
@@ -50,6 +52,8 @@ pub struct VGicR {
 
     /// CPU ID associated with this redistributor.
     pub cpu_id: usize,
+    /// Whether this is the last redistributor exposed by the virtual machine.
+    is_last: bool,
     /// Host physical base address of GICR for this CPU.
     pub host_gicr_base_this_cpu: HostPhysAddr,
 
@@ -69,7 +73,7 @@ impl VGicR {
     }
 
     /// Creates a new VGicR instance.
-    pub fn new(addr: GuestPhysAddr, size: Option<usize>, cpu_id: usize) -> Self {
+    pub fn new(addr: GuestPhysAddr, size: Option<usize>, cpu_id: usize, is_last: bool) -> Self {
         let size = size.unwrap_or(DEFAULT_SIZE_PER_GICR);
         let host_gicr_base_this_cpu = crate::api_reexp::get_host_gicr_base() + cpu_id * size;
 
@@ -81,9 +85,31 @@ impl VGicR {
                 size: size as u64,
             }],
             cpu_id,
+            is_last,
             host_gicr_base_this_cpu,
-            regs: SpinNoIrq::new(VGicRRegs { propbaser: 0 }),
+            regs: SpinNoIrq::new(VGicRRegs {
+                propbaser: 0,
+                waker: GICR_WAKER_PROCESSOR_SLEEP | GICR_WAKER_CHILDREN_ASLEEP,
+            }),
         }
+    }
+
+    fn guest_typer_value(host_value: usize, is_last: bool) -> usize {
+        if is_last {
+            host_value | GICR_TYPER_LAST
+        } else {
+            host_value & !GICR_TYPER_LAST
+        }
+    }
+
+    fn next_waker_value(value: usize) -> usize {
+        let processor_sleep = value & GICR_WAKER_PROCESSOR_SLEEP;
+        processor_sleep
+            | if processor_sleep != 0 {
+                GICR_WAKER_CHILDREN_ASLEEP
+            } else {
+                0
+            }
     }
 }
 
@@ -117,12 +143,7 @@ impl VGicR {
             }
             GICR_TYPER => {
                 let mut value = perform_mmio_read(gicr_base + reg, width)?;
-
-                // TODO: set GICR_TYPER_LAST if it is the last redistributor of a VM.
-                if true {
-                    value |= GICR_TYPER_LAST;
-                }
-
+                value = Self::guest_typer_value(value, self.is_last);
                 Ok(value)
             }
             GICR_IIDR | GICR_IMPL_DEF_IDENT_REGS_START..=GICR_IMPL_DEF_IDENT_REGS_END => {
@@ -139,13 +160,13 @@ impl VGicR {
 
                 Ok(self.with_regs(|r| r.propbaser))
             }
+            GICR_WAKER => Ok(self.with_regs(|r| r.waker)),
             GICR_SYNCR => {
                 // always return 0 for synchronization register
                 Ok(0)
             }
             GICR_SETLPIR | GICR_CLRLPIR | GICR_INVALLR => perform_mmio_read(gicr_base + reg, width),
             reg if reg == GICR_STATUSR
-                || reg == GICR_WAKER
                 || reg == GICR_IGROUPR
                 || reg == GICR_ISENABLER
                 || reg == GICR_ICENABLER
@@ -200,6 +221,11 @@ impl VGicR {
                 self.with_regs_mut(|r| r.propbaser = value);
                 Ok(())
             }
+            GICR_WAKER => {
+                let next = Self::next_waker_value(value);
+                self.with_regs_mut(|r| r.waker = next);
+                Ok(())
+            }
             GICR_SETLPIR | GICR_CLRLPIR | GICR_INVALLR => {
                 perform_mmio_write(gicr_base + reg, width, value)
             }
@@ -210,7 +236,6 @@ impl VGicR {
                 Ok(())
             }
             reg if reg == GICR_STATUSR
-                || reg == GICR_WAKER
                 || reg == GICR_IGROUPR
                 || reg == GICR_ISENABLER
                 || reg == GICR_ICENABLER
@@ -237,6 +262,9 @@ impl VGicR {
         Ok(result?)
     }
 }
+
+const GICR_WAKER_PROCESSOR_SLEEP: usize = 1 << 1;
+const GICR_WAKER_CHILDREN_ASLEEP: usize = 1 << 2;
 
 impl Device for VGicR {
     fn name(&self) -> &str {
@@ -362,4 +390,25 @@ pub fn enable_one_lpi(lpi: usize) {
     );
     let lpt = lpt.lock();
     lpt.enable_one_lpi(lpi);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn only_last_redistributor_reports_typer_last() {
+        let host_value = 0x1000_0000 | GICR_TYPER_LAST;
+        assert_eq!(VGicR::guest_typer_value(host_value, false), 0x1000_0000);
+        assert_eq!(VGicR::guest_typer_value(host_value, true), host_value);
+    }
+
+    #[test]
+    fn waker_children_follow_processor_sleep() {
+        assert_eq!(
+            VGicR::next_waker_value(GICR_WAKER_PROCESSOR_SLEEP),
+            GICR_WAKER_PROCESSOR_SLEEP | GICR_WAKER_CHILDREN_ASLEEP
+        );
+        assert_eq!(VGicR::next_waker_value(0), 0);
+    }
 }
