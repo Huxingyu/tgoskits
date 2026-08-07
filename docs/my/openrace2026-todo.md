@@ -8,6 +8,7 @@
 > v8（2026-08-08）：冻结 `passthrough` 为当前 QEMU 主线；`emulated` 的 PPI27 失败保留为已知限制；物理板卡仍需独立验证。
 > v9（2026-08-08）：冻结 AArch64 lower-EL IRQ 的最小改造为“单次 host IRQ 事务”；`passthrough` 仍是当前 QEMU 主线，emulated PPI27 仍保留为已知限制。
 > v10（2026-08-08）：根据任务一严格验收审计，撤销“已完成实时改造”的含义；当前只认定为“启动/基线前置证据完成，改造和验收证据未完成”。
+> v11（2026-08-08）：冻结提交 `dbd711396` 作为下一阶段 A 基线；先测量 Axvisor 软件中断/唤醒链路，再选择一项实质实时机制改造；`emulated` 不再以 PPI27 修复作为主线 Gate。
 
 ---
 
@@ -304,6 +305,58 @@ Day3–Day4 尚未解决，并且是 Day5–Day7 的前置条件：
 3. 两个版本都补齐 300/300 样本，并报告周期 jitter、调度延迟、中断响应延迟、p99.9、max 和清晰定义的 overrun/deadline miss。
 4. 至少完成一次 30 分钟（最终内部 Gate 为 1 小时）稳定性运行，保存原始日志并检查 panic、Guest 卡死、IRQ 重入、DMA quarantine 和串口丢失。
 5. 再整理任务一设计说明、替代方案/非目标、复现命令和评分点证据表；在此之前只报告“部分完成”。
+
+#### 下一阶段：A 基线测量与 B 改造
+
+当前提交 `dbd711396460373d9b54db9e0dfefcbd8a86bad3` 已保存启动证据、Guest FDT `bootargs` 修复、AArch64 lower-EL host-IRQ 事务修复和 Day5/Day6 原始材料。它不是任务一完成提交，而是下一项实时机制改造的冻结起点。
+
+A/B 口径必须区分两层：
+
+- `A_old`：父提交 `32cfe910333d0ceacd0856c91e7819df3a41276b`，用于单独评估当前 lower-EL 重复 dispatch 修复；该小 A/B 不能替代任务一的实时化 A/B。
+- `A`：当前提交 `dbd711396`，作为下一项实质实时机制改造前的未改造基线。
+- `B`：在 `A` 上只增加一项由测量结果选出的调度、抢占、vIRQ、定时器、IRQ affinity 或锁临界区改造。
+
+##### A 阶段先测量，不先猜改造点
+
+正式 workload 必须覆盖 Axvisor 软件路径，并记录以下链路的低扰动时间点：
+
+```text
+事件产生 → Axvisor 入队 → 队列锁/入队完成 → notify/IPI
+→ vCPU 唤醒 → vIRQ 注入 → Guest 观察到中断 → 周期任务执行
+```
+
+测量实现不得逐样本打印串口；优先使用固定容量 per-CPU trace buffer 或计数器，避免观测本身改变尾延迟。A 阶段至少报告：
+
+- enqueue、锁等待、IPI、vCPU 唤醒、Guest 注入和端到端中断响应延迟；
+- 周期 jitter、p99、p99.9、max；
+- 明确定义的 period overrun/deadline miss；
+- CPU 负载、队列深度、丢弃/重复中断和异常路径计数。
+
+初始 A 基线固定 QEMU、Host CPU、Rust/QEMU 版本、Guest 镜像、pCPU affinity、内存、设备、IRQ、workload 和随机种子，先运行 30 秒并重复 3–5 次；正式结论再补 30 分钟至 1 小时长稳。
+
+场景矩阵：
+
+| 场景 | 作用 |
+|---|---|
+| Native Zephyr | 原生 RTOS 参考 |
+| Axvisor A + Linux idle | 未改造空载基线 |
+| Axvisor A + Linux stress | 未改造压力基线 |
+| Axvisor A + 软件 vIRQ/timer workload | 覆盖 Axvisor 实时关键路径 |
+| Axvisor `passthrough` | 启动/隔离控制组，不作为软件 vIRQ 改造收益证据 |
+
+##### `emulated` 路径边界
+
+`passthrough` 适合验证 Linux 2-vCPU、双 Guest 隔离和启动稳定性，但 Zephyr 直通 `/timer` 不能覆盖 Axvisor 软件 vIRQ queue 或 VM timer wheel。`emulated` 方向本身不是错误，任务一需要它或等价的 synthetic vIRQ workload 来覆盖软件路径；错误的是把当前 PPI27 level/EOI 失败当成主线必须修复的问题。
+
+因此：
+
+1. 保留 `passthrough` 作为启动和隔离基线；
+2. `emulated` 只用于软件中断/定时器路径覆盖；
+3. 优先使用已有正确语义的 CNTP/PPI30 路径，或使用可控的 synthetic vIRQ 注入 workload；
+4. PPI27 修复不再是任务一 Gate；
+5. 若 emulated timer 仍不稳定，直接使用软件 vIRQ 注入路径完成 A 阶段测量，不为 PPI27 继续扩张临时 workaround。
+
+只有 A 阶段确定瓶颈后，才进入 B 阶段代码改造和同口径 A/B 测试。
 
 ---
 
