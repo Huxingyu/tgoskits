@@ -4,7 +4,10 @@
 > 对应仓库：`/Users/huxingyu/project/tgoskits`
 > 基线提交：`759e69c`
 > 攻关截止：2026-08-20；成果提交：2026-08-21 至 2026-08-24
-> v6：在官网评分主线之上增加 2026-07-31 至 2026-08-09 的五阶段冲刺计划和本地 Git 检查手册。
+> v7：增加 Day1–Day7 实际进度校准；Day5 优先补齐干净 Linux 启动和 stress 证据，再进入实时改造与 A/B。
+> v8（2026-08-08）：冻结 `passthrough` 为当前 QEMU 主线；`emulated` 的 PPI27 失败保留为已知限制；物理板卡仍需独立验证。
+> v9（2026-08-08）：冻结 AArch64 lower-EL IRQ 的最小改造为“单次 host IRQ 事务”；`passthrough` 仍是当前 QEMU 主线，emulated PPI27 仍保留为已知限制。
+> v10（2026-08-08）：根据任务一严格验收审计，撤销“已完成实时改造”的含义；当前只认定为“启动/基线前置证据完成，改造和验收证据未完成”。
 
 ---
 
@@ -33,6 +36,15 @@
 3. 每项实验至少保存命令、commit、平台/镜像信息、原始数据和摘要；不建设独立的通用验证框架。
 4. 性能阈值在第一次正式基线后冻结，不能看完优化结果再放宽。
 5. 每个里程碑只以本节列出的完成门槛为准，不再维护重复的逐项验证矩阵。
+
+### 当前模式决策与术语边界（2026-08-08）
+
+- 在本项目语境中，**Host** 指运行在 QEMU/物理板卡上的 Axvisor 及其 ArceOS/platform 运行环境；Linux 和 Zephyr 是 Guest，pCPU 属于 Host，vCPU 属于 Guest。
+- 同一个 VM 的 `interrupt_mode` 是三选一枚举（`no_irq`、`emulated`、`passthrough`），其中 `emulated` 与 `passthrough` 不能同时启用；不同 VM 可以分别选择不同模式。
+- `interrupt_mode` 与 `passthrough_devices`/`emu_devices` 不是同一个开关：前者选择中断后端，后两者选择具体设备资源。当前 AArch64 旧实现中，`passthrough` 同时打开 vCPU 的 interrupt/timer passthrough 设置，但不表示 IRQ 完全绕过 Axvisor。
+- 当前主线固定为 `interrupt_mode = "passthrough"`：QEMU 上已有 Linux 2-vCPU、Zephyr 周期任务、双 Guest 和 0 DMA quarantine 证据。`emulated` 仅作为探针，不作为任务一改造或最终演示的前置条件。
+- 任务二和任务三不要求 `emulated`：网络链路可使用 virtio/tap、桥接或合适的网卡直通，AI 控制闭环运行在 Guest 用户空间；但板卡上的网卡 DMA、IRQ 所有权和双 Guest 拓扑必须单独验证。
+- 物理板卡沿用该路线在架构上可行，但 QEMU 证据不能替代板测；上板前必须核对 GIC/timer FDT、pCPU 绑定、MMIO/IRQ/DMA 所有权和网卡拓扑。
 
 ---
 
@@ -192,6 +204,106 @@ RTOS ◄─ CONTROL/STATUS ─── Linux AI
 
 **完成门槛：** 新环境可按文档复现，三个任务均有代码、原始数据和演示证据。  
 **累计完成度：100%。**
+
+### 4.2 Day1–Day7 当前进度与重新安排（2026-08-07）
+
+当前有效成果：
+
+- [x] Day1：完成 Rust、QEMU 10.2.1 和 AArch64 环境；验证 Axvisor → ArceOS、Axvisor → Linux shell、QEMU → StarryOS。
+- [x] Day2：选定 Zephyr；验证 Linux 2-vCPU、Zephyr 单 Guest 和带 DMA quarantine 告警的双 Guest；建立第一版统计脚本。
+- [x] Day3：将设备直通缩小到 UART、GIC 和 timer，实验日志中的 DMA quarantine 降为 0。
+- [x] Day4：完成 Zephyr 10 ms、300 样本周期采样器；取得 Native QEMU 和 Axvisor 单 Guest 两组有效基线。
+
+Day3–Day4 尚未解决，并且是 Day5–Day7 的前置条件：
+
+- [x] `MAP_ALLOC` 干净配置下取得 Linux 内核真实启动证据，不能只使用 `VM[1] boot success`；根因是生成 FDT 未注入 `kernel.cmdline`，已补 `/chosen/bootargs`。
+- [x] Linux 自身确认两个 CPU，并输出 `SMP: Total of 2 processors activated`；缩小直通设备时补回 `/psci` 节点后通过。
+- [x] Linux stress init 输出 `LINUX STRESS START workers=2`，证明两个 worker 实际运行。
+- [x] 同一次双 Guest 实验中 Zephyr 输出 `PERIODIC LATENCY COMPLETE samples=300`，且日志无 DMA quarantine 告警。
+- [x] 获得可用于结论的 Linux idle/stress CSV，并依据尾延迟排除明显的共享调度竞争；具体改造点仍待覆盖对应路径的实验。
+
+#### Day5：补齐基础证据并冻结改造点
+
+- [x] 修复或解释 `MAP_ALLOC` 下 Linux 没有可观察内核启动的问题。
+- [x] 取得 Linux 2-vCPU、stress worker、Zephyr 周期任务和 0 DMA quarantine 的同场日志。
+- [x] 采集同配置的 Linux idle 与 stress 短基线，统计 mean、p99、p99.9、max 和 deadline miss。
+- [x] 冻结实验模式：任务一主线使用 `passthrough`；不修复 PPI27 也不阻塞任务一，`emulated` 只记录为非主线已知限制。
+- [x] 根据数据冻结一个可被当前 workload 覆盖的最小改造点：当前 Zephyr 直通 `/timer` 且独占 pCPU 3，先改造 AArch64 vCPU entry/host-IRQ 边界；不得把结果直接归因于软件 vIRQ 队列或 timer wheel。
+- [x] 用本地 emulated-timer 探针覆盖 Guest virtual-timer PPI 27：VM/vCPU 可启动，但 IRQ 27 未匹配宿主 action 并持续重入；直接排队 workaround 复测后因 level/EOI 语义错误回退。该结果冻结了后续改造边界，但不计作已完成改造。
+- [x] 检索上游相关记录：PR #1770 和 #1717 已公开处理 AArch64 timer ownership、physical timer 和 EOI 生命周期等同类问题；未找到明确记录 `PPI27`/`hwirq 27` 重复未处理 IRQ 的条目，因此该具体复现标记为当前分支的已知限制。
+- [x] 先添加旧实现必然失败的确定性回归测试，并完成第一版最小改造：lower-EL IRQ 在 `gic::fetch_irq` 已完成 claim/dispatch/EOI 后，deferred 阶段只检查 timer，不再重复 dispatch。
+
+**Day5 完成门槛：** Linux 和 stress 有 Guest 内部证据，双 Guest 数据有效，Axvisor 改造对象和回归测试已冻结。未达到门槛时不得把观察 CSV 写成 Linux stress 结论。
+
+**预计累计完成度：65%–75%。**
+
+#### Day6：完成实时改造、A/B 和稳定性测试
+
+- [ ] 完成一个有数据依据的 Axvisor 实时关键路径实质改造。
+- [ ] 运行修改 crate 的 `cargo fmt`、目标 clippy 和确定性回归测试。
+- [x] 用修改后二进制重跑同一双 Guest `passthrough` stress 配置：Linux 2-vCPU、`LINUX STRESS START workers=2`、Zephyr 300 周期和无 DMA quarantine 均出现；原始日志见 `results/day6/axvisor-dual-stress.log`。
+- [ ] 修复双 Guest 交织输出造成的 6 个缺失 CSV 行，补齐 300 样本后再把结果纳入正式 A/B。
+- [ ] 使用相同镜像、CPU 绑定、设备配置和 workload 运行改造前后 idle/stress A/B。
+- [ ] 对比 Native、改造前和改造后的 p99、p99.9、max 与 deadline miss，不只比较平均值。
+- [ ] 最终版本运行 30 分钟，检查 panic、Guest 卡死、DMA quarantine 和周期任务中断。
+
+**Day6 完成门槛：** 代码 diff 能解释改善机制，回归测试通过，至少一个压力场景有可信 A/B 结论，30 分钟运行无阻塞故障。
+
+**原冲刺计划估算：85%–90%；这不是评分完成度。按本次严格审计，任务一仍未通过验收。**
+
+#### Day7：形成任务一交付包
+
+- [ ] 写清实时目标、问题定位、改造机制、替代方案和非目标。
+- [ ] 固化 Linux 2-vCPU、CPU 绑定、内存、设备、IRQ、镜像哈希和启动参数。
+- [ ] 汇总 Native、改造前后、idle/stress 的原始 CSV、日志、命令和统计表。
+- [ ] 记录 QEMU 与真实板卡差异、Zephyr 选择原因、未完成项和结果限制；若声称完成板卡演示，还需补充板卡 GIC/timer FDT、pCPU、MMIO/IRQ/DMA 和网卡验证证据。
+- [ ] 对照任务一评分项完成最终检查，运行格式化、clippy、回归测试和工作区检查后提交。
+
+**Day7 完成门槛：** 任务一每个评分点都有代码、命令、原始数据或明确限制说明，新环境可以按文档复现。
+
+### 4.3 任务一严格验收审计（2026-08-08）
+
+#### 审计结论
+
+**没有严格完成任务一。** 当前完成的是 Linux/Zephyr 双 Guest 的启动和短时周期采样前置证据，以及一项带确定性单元回归的 AArch64 host-IRQ 边界修复；尚未完成“AxVisor 实时关键路径实质改造并证明收益”的核心闭环。因此不能按 30 分任务一已交付，也不能把当前结果写成实时性改善结论。
+
+官网页面本轮无法通过网络稳定抓取，下面按仓库保存的赛题整理 [`openrace2026-axvisor-topics.md`](openrace2026-axvisor-topics.md) 和会议纪要 [`meet1.md`](../meeting/meet1.md) 审计；不把未重新核验的网页内容冒充最新官方原文。
+
+#### 逐条对照
+
+| 任务一硬要求 | 当前证据 | 状态 | 尚缺什么 |
+|---|---|---|---|
+| 分析并优化调度、抢占、定时器、中断、亲和性或锁等关键路径 | 有候选路径分析；完成 lower-EL host IRQ 避免重复 dispatch 的局部修复 | **部分满足** | 没有证明该路径被正式 workload 稳定覆盖，也没有证明最坏延迟改善；`passthrough` 主线可能绕开软件 vIRQ/timer wheel |
+| 改造后启动不少于 2-vCPU Linux，并说明 CPU 绑定、内存、设备、IRQ、启动参数 | Day5/Day6 日志出现 Linux 启动、`SMP: ... 2 processors`、stress worker；VM 配置记录 pCPU `[1,2]`、内存、直通设备和 cmdline | **基本满足（短时）** | 没有 10/30 分钟稳定性证据；QEMU 证据不能替代物理板卡证据 |
+| 测量周期抖动、调度延迟、中断响应延迟、最大延迟和长稳 | 有 10 ms/300 样本 jitter CSV、mean/p99/p99.9/max | **部分满足** | 尚无调度延迟和中断响应延迟指标；无 30 分钟/1 小时长稳数据；改造后二进制 CSV 只有 294 行 |
+| 记录命令、运行时长、CPU 负载分布和结果数据 | README 有启动命令、配置和原始日志；有 idle/stress 场景 | **部分满足** | 当前只是约 300 个周期的短探针，不是正式长时测试；改造前后尚无同口径完整矩阵和可复算汇总 |
+| 以原生 Zephyr/其他原生 RTOS 作等价周期任务和压力基线，并解释差异 | 有 Native QEMU Zephyr 与 AxVisor 单 Guest 基线；README 解释了直通 timer/pCPU 限制 | **部分满足** | 尚无 Native、未改造 Axvisor、改造后 Axvisor 三方在相同 workload 下的正式对照 |
+| 提供代码、镜像、配置、构建/启动命令、脚本、RTOS 配置和可复现实验 | 已有局部代码、VM 配置、脚本、日志、CSV 和哈希 | **部分满足** | 任务一最终设计/测试报告、完整复现包、PR 和演示材料尚未收口 |
+
+#### 六个评分点的当前判定
+
+| 评分点 | 当前判定 |
+|---|---|
+| 实时化目标和关键路径分析清楚（4） | 有初步分析和非目标，但仍需把“实际覆盖路径”和成功指标写实 |
+| 调度/抢占/定时器/中断/锁的实质改造（8） | 有代码变化和回归测试，**尚不能按已满足计分**；需证明它是实际实时关键路径且不只是重复 dispatch 修复 |
+| 多核 Linux 稳定启动（4） | 启动和 2-vCPU 证据基本具备；稳定性尚未完成 |
+| 改造前后最坏延迟/抖动改善（5） | **未满足**：没有完整 A/B，改造后缺 6 个样本，不能下改善结论 |
+| 空载与 stress 对比（4） | 改造前有；改造后不完整，**未满足完整评分证据** |
+| 原生 RTOS 基线对比（5） | 有初始 Native 基线；尚未完成三方统一口径对比 |
+
+#### 必须纠正的指标口径
+
+`deadline_misses=300` 并不等于 300 次实时失败。当前采样器把 `actual_ns` 与绝对 release deadline 比较，而每个样本的 `jitter_ns` 本身按正 lateness 记录，所以该字段在现有数据中必然为全量超期。它可以保留作原始字段，但在正式报告中必须改名或明确解释，并新增真正的 deadline/period overrun 定义，不能把它当作改造收益指标。
+
+#### 重新开放的任务一 Gate
+
+在以下证据完成前，不得把任务一标记为完成或宣称实时性改善：
+
+1. 先确认正式 workload 是否覆盖 Axvisor 软件 vIRQ/timer/host-IRQ 路径；若 `passthrough` 不覆盖，必须补等价的 `emulated` 或明确可观测的路径实验，不能用旁路路径证明改造收益。
+2. 重新构建未改造版和改造版，固定镜像、QEMU、pCPU、内存、设备、IRQ 和 workload，完成 Native / 未改造 / 改造后三方的 idle + stress A/B。
+3. 两个版本都补齐 300/300 样本，并报告周期 jitter、调度延迟、中断响应延迟、p99.9、max 和清晰定义的 overrun/deadline miss。
+4. 至少完成一次 30 分钟（最终内部 Gate 为 1 小时）稳定性运行，保存原始日志并检查 panic、Guest 卡死、IRQ 重入、DMA quarantine 和串口丢失。
+5. 再整理任务一设计说明、替代方案/非目标、复现命令和评分点证据表；在此之前只报告“部分完成”。
 
 ---
 

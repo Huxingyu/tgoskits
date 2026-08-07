@@ -211,10 +211,11 @@ pub fn patch_guest_fdt_for_runtime(
     let memory_specs = guest_memory_specs(memory_regions, crate_config);
     tree.rebuild_memory_nodes(&memory_specs)?;
     if create_chosen
+        || crate_config.kernel.cmdline.is_some()
         || initrd_start_size.is_some()
         || tree.inner().get_by_path_id("/chosen").is_some()
     {
-        tree.patch_chosen(initrd_start_size)?;
+        tree.patch_chosen(initrd_start_size, crate_config.kernel.cmdline.as_deref())?;
     }
     Ok(tree.finish())
 }
@@ -364,6 +365,23 @@ mod tests {
         let reparsed = Fdt::from_bytes(&patched).unwrap();
 
         assert!(reparsed.get_by_path_id("/chosen").is_some());
+    }
+
+    #[test]
+    fn runtime_patch_copies_configured_kernel_cmdline_into_chosen() {
+        let fdt = Fdt::new();
+        let dtb = fdt.encode().as_ref().to_vec();
+        let mut cfg = AxVMCrateConfig::default();
+        cfg.kernel.cmdline = Some("earlycon=pl011,mmio32,0x09000000 rdinit=/bin/sh".into());
+
+        let patched = super::patch_guest_fdt_for_runtime(&dtb, &[], &cfg, None, false).unwrap();
+        let reparsed = Fdt::from_bytes(&patched).unwrap();
+        let chosen = reparsed.get_by_path("/chosen").unwrap();
+
+        assert_eq!(
+            chosen.as_node().get_property("bootargs").unwrap().as_str(),
+            Some("earlycon=pl011,mmio32,0x09000000 rdinit=/bin/sh")
+        );
     }
 
     #[test]

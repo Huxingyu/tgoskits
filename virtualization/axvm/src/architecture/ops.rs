@@ -9,6 +9,29 @@ use axvm_types::{VmArchPerCpuOps, VmArchVcpuOps, VmVcpuState};
 use super::{BoundVcpuExit, VcpuRunAction};
 use crate::{AxVmResult, ax_err, irq::model::PendingVcpuInterrupt};
 
+#[cfg(any(target_arch = "aarch64", test))]
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum HostIrqDispatch {
+    /// The VM-exit path has not claimed the physical IRQ yet.
+    Deferred,
+    /// The architecture adapter claimed, dispatched, and completed the IRQ already.
+    AlreadyHandled,
+}
+
+#[cfg(any(target_arch = "aarch64", test))]
+/// Runs the post-exit steps without violating host IRQ transaction ownership.
+pub(crate) fn finish_external_interrupt(
+    dispatch: HostIrqDispatch,
+    vector: usize,
+    dispatch_host_irq: impl FnOnce(usize),
+    check_timer_events: impl FnOnce(),
+) {
+    if dispatch == HostIrqDispatch::Deferred {
+        dispatch_host_irq(vector);
+    }
+    check_timer_events();
+}
+
 pub(crate) trait ArchOps {
     type VCpu: VmArchVcpuOps;
     type PerCpu: VmArchPerCpuOps;
@@ -412,6 +435,22 @@ mod tests {
             injections.lock().attempts,
             vec![(0x31, InterruptTriggerMode::LevelTriggered)]
         );
+    }
+
+    #[test]
+    fn already_handled_host_irq_is_not_dispatched_again() {
+        let dispatch_count = core::cell::Cell::new(0);
+        let timer_check_count = core::cell::Cell::new(0);
+
+        finish_external_interrupt(
+            HostIrqDispatch::AlreadyHandled,
+            27,
+            |_| dispatch_count.set(dispatch_count.get() + 1),
+            || timer_check_count.set(timer_check_count.get() + 1),
+        );
+
+        assert_eq!(dispatch_count.get(), 0);
+        assert_eq!(timer_check_count.get(), 1);
     }
 
     #[test]

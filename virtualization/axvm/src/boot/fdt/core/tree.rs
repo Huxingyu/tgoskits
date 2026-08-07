@@ -1,4 +1,8 @@
-use alloc::{format, string::String, vec::Vec};
+use alloc::{
+    format,
+    string::{String, ToString},
+    vec::Vec,
+};
 
 use fdt_edit::{Fdt, Node, NodeId, Property};
 use fdt_raw::{Header, RegInfo};
@@ -125,18 +129,24 @@ impl FdtTree {
         Ok(())
     }
 
-    pub(crate) fn patch_chosen(&mut self, initrd_start_size: Option<(u64, u64)>) -> AxVmResult {
+    pub(crate) fn patch_chosen(
+        &mut self,
+        initrd_start_size: Option<(u64, u64)>,
+        cmdline: Option<&str>,
+    ) -> AxVmResult {
         let chosen_id = self.ensure_path("/chosen")?;
         let chosen = self
             .fdt
             .node_mut(chosen_id)
             .ok_or_else(|| ax_err_type!(InvalidData, "/chosen node is missing"))?;
 
-        if let Some(bootargs) = chosen
-            .get_property("bootargs")
-            .and_then(|prop| prop.as_str())
-            .map(sanitize_bootargs)
-        {
+        let bootargs = cmdline.map(ToString::to_string).or_else(|| {
+            chosen
+                .get_property("bootargs")
+                .and_then(|prop| prop.as_str())
+                .map(sanitize_bootargs)
+        });
+        if let Some(bootargs) = bootargs {
             chosen.set_property(prop_string("bootargs", &bootargs));
         }
 

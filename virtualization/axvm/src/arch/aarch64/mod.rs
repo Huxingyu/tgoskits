@@ -22,7 +22,9 @@ use axvm_types::{
 
 use super::{ArchOps, BoundVcpuExit, HypercallExit, MmioReadExit, MmioWriteExit, VcpuRunAction};
 use crate::{
-    AxVmResult, ax_err,
+    AxVmResult,
+    architecture::ops::{HostIrqDispatch, finish_external_interrupt},
+    ax_err,
     host::{HostCpu, HostMemory, HostTime, default_host},
 };
 
@@ -201,7 +203,12 @@ impl ArchOps for Aarch64Arch {
     ) -> AxVmResult<VcpuRunAction> {
         match work {
             Aarch64DeferredRunWork::ExternalInterrupt { vector } => {
-                Self::after_external_interrupt(vm, vcpu, vector);
+                finish_external_interrupt(
+                    HostIrqDispatch::AlreadyHandled,
+                    vector,
+                    |vector| Self::after_external_interrupt(vm, vcpu, vector),
+                    crate::check_timer_events,
+                );
             }
         }
         Ok(VcpuRunAction {
