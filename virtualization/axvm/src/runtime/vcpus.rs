@@ -13,6 +13,7 @@
 // limitations under the License.
 
 use alloc::{format, sync::Arc};
+use core::sync::atomic::{AtomicU64, Ordering};
 
 use crate::{
     AsVCpuTask, AxVmResult, GuestPhysAddr, StopReason, VCpuTask, VmStatus, VmVcpuState,
@@ -21,6 +22,25 @@ use crate::{
     runtime::{VCpuRef, VMRef, sub_running_vm_count},
     vm::VmRuntimeHandle,
 };
+
+static TRACE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+/// Emits a machine-readable runtime marker when debug logging is enabled.
+pub(crate) fn trace_runtime_event(event: &'static str, vm_id: usize, vcpu_id: usize, arg: usize) {
+    if !log::log_enabled!(log::Level::Debug) {
+        return;
+    }
+
+    use crate::host::{HostCpu, HostTime, default_host};
+
+    let sequence = TRACE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let timestamp_ns = default_host().monotonic_time().as_nanos() as u64;
+    let host_cpu = default_host().this_cpu_id();
+    debug!(
+        "AXVM_RT_TRACE seq={sequence} event={event} ts_ns={timestamp_ns} host_cpu={host_cpu} \
+         vm={vm_id} vcpu={vcpu_id} arg={arg}"
+    );
+}
 
 const KERNEL_STACK_SIZE: usize = 0x40000; // 256 KiB
 
@@ -84,6 +104,7 @@ pub(crate) fn notify_all_vcpus(vm_id: usize) {
 }
 
 pub(crate) fn queue_interrupt(vm_id: usize, vcpu_id: usize, vector: usize) -> AxVmResult {
+    trace_runtime_event("irq_enqueue_begin", vm_id, vcpu_id, vector);
     let vm = crate::get_vm_by_id(vm_id)
         .ok_or_else(|| ax_err_type!(NotFound, format!("VM[{vm_id}] not found")))?;
     if !matches!(vm.status(), VmStatus::Running | VmStatus::Paused) {
@@ -94,11 +115,14 @@ pub(crate) fn queue_interrupt(vm_id: usize, vcpu_id: usize, vector: usize) -> Ax
     }
 
     let cpu_id = vm.with_runtime(|runtime| runtime.queue_interrupt(vcpu_id, vector))?;
+    trace_runtime_event("irq_enqueue_end", vm_id, vcpu_id, cpu_id);
     vm.with_runtime(|runtime| {
         runtime.notify_all();
         Ok(())
     })?;
+    trace_runtime_event("vcpu_notify", vm_id, vcpu_id, cpu_id);
     crate::host::task::send_ipi(cpu_id);
+    trace_runtime_event("host_ipi_send", vm_id, vcpu_id, cpu_id);
     Ok(())
 }
 
@@ -145,6 +169,10 @@ pub(crate) fn inject_pending_interrupts<A: ArchOps>(
         warn!("VM[{vm_id}] vCPU runtime not found, cannot drain VCpu[{vcpu_id}] interrupts");
         return;
     };
+
+    if !interrupts.is_empty() {
+        trace_runtime_event("pending_irq_drain", vm_id, vcpu_id, interrupts.len());
+    }
 
     for interrupt in interrupts {
         A::inject_pending_interrupt(&vm, vcpu, interrupt);

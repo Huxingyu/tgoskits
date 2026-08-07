@@ -52,6 +52,8 @@ pub(crate) struct Aarch64Arch;
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Aarch64DeferredRunWork {
     ExternalInterrupt { vector: usize },
+    Hypercall(HypercallExit),
+    CpuUp(CpuUpExit),
 }
 
 impl CpuUpOps for Aarch64Arch {}
@@ -80,12 +82,9 @@ impl ArchOps for Aarch64Arch {
         exit: <Self::VCpu as VmArchVcpuOps>::Exit,
     ) -> AxVmResult<BoundVcpuExit<Self::DeferredRunWork>> {
         match exit {
-            ArmVmExit::Hypercall { nr, args } => super::handle_hypercall(
-                vm,
-                vcpu,
-                HypercallExit { nr, args },
-                crate::runtime::hvc::HyperCallAbi::AArch64,
-            ),
+            ArmVmExit::Hypercall { nr, args } => Ok(BoundVcpuExit::Defer(
+                Aarch64DeferredRunWork::Hypercall(HypercallExit { nr, args }),
+            )),
             ArmVmExit::MmioRead {
                 addr,
                 width,
@@ -127,6 +126,12 @@ impl ArchOps for Aarch64Arch {
                 },
             ),
             ArmVmExit::ExternalInterrupt { vector } => {
+                crate::runtime::vcpus::trace_runtime_event(
+                    "guest_external_irq_exit",
+                    vm.id(),
+                    vcpu.id(),
+                    vector as usize,
+                );
                 debug!("VM[{}] run VCpu[{}] get irq {vector}", vm.id(), vcpu.id());
                 Ok(BoundVcpuExit::Defer(
                     Aarch64DeferredRunWork::ExternalInterrupt {
@@ -151,15 +156,13 @@ impl ArchOps for Aarch64Arch {
                 target_cpu,
                 entry_point,
                 arg,
-            } => cpu_up::handle::<Self>(
-                vm,
-                vcpu,
+            } => Ok(BoundVcpuExit::Defer(Aarch64DeferredRunWork::CpuUp(
                 CpuUpExit {
                     target_cpu,
                     entry_point: arm_guest_phys_addr_to_ax(entry_point),
                     arg,
                 },
-            ),
+            ))),
             ArmVmExit::SystemDown => {
                 warn!("VM[{}] run VCpu[{}] SystemDown", vm.id(), vcpu.id());
                 Ok(BoundVcpuExit::Complete(VcpuRunAction {
@@ -203,12 +206,29 @@ impl ArchOps for Aarch64Arch {
     ) -> AxVmResult<VcpuRunAction> {
         match work {
             Aarch64DeferredRunWork::ExternalInterrupt { vector } => {
+                crate::runtime::vcpus::trace_runtime_event(
+                    "host_irq_finish",
+                    vm.id(),
+                    vcpu.id(),
+                    vector,
+                );
                 finish_external_interrupt(
                     HostIrqDispatch::AlreadyHandled,
                     vector,
                     |vector| Self::after_external_interrupt(vm, vcpu, vector),
                     crate::check_timer_events,
                 );
+            }
+            Aarch64DeferredRunWork::Hypercall(exit) => {
+                return complete_deferred_exit(super::handle_hypercall(
+                    vm,
+                    vcpu,
+                    exit,
+                    crate::runtime::hvc::HyperCallAbi::AArch64,
+                )?);
+            }
+            Aarch64DeferredRunWork::CpuUp(exit) => {
+                return complete_deferred_exit(cpu_up::handle::<Self>(vm, vcpu, exit)?);
             }
         }
         Ok(VcpuRunAction {
@@ -217,6 +237,22 @@ impl ArchOps for Aarch64Arch {
             resets_vm: false,
             exits_vcpu: false,
         })
+    }
+}
+
+fn complete_deferred_exit(
+    exit: BoundVcpuExit<Aarch64DeferredRunWork>,
+) -> AxVmResult<VcpuRunAction> {
+    match exit {
+        BoundVcpuExit::Complete(action) => Ok(action),
+        BoundVcpuExit::Continue => ax_err!(
+            BadState,
+            "deferred AArch64 exit unexpectedly requested bound continuation"
+        ),
+        BoundVcpuExit::Defer(_) => ax_err!(
+            BadState,
+            "deferred AArch64 exit attempted to defer recursively"
+        ),
     }
 }
 

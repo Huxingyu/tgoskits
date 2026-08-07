@@ -161,11 +161,13 @@ pub(crate) trait ArchOps {
 
         let run_result = vcpu.with_current_cpu_set(|| -> AxVmResult<_> {
             loop {
+                crate::runtime::vcpus::trace_runtime_event("vcpu_run", vm_id, vcpu_id, 0);
                 crate::runtime::vcpus::inject_pending_interrupts::<Self>(vm.id(), vcpu_id, vcpu);
 
                 drain_and_inject_dispatched_interrupts::<Self>(vm, vcpu_id, vcpu);
 
                 let exit = vcpu.run()?;
+                crate::runtime::vcpus::trace_runtime_event("guest_exit", vm_id, vcpu_id, 0);
                 trace!("{exit:#x?}");
                 match Self::handle_vcpu_exit_bound(vm, vcpu, exit)? {
                     BoundVcpuExit::Continue => continue,
