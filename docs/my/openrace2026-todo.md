@@ -9,6 +9,9 @@
 > v9（2026-08-08）：冻结 AArch64 lower-EL IRQ 的最小改造为“单次 host IRQ 事务”；`passthrough` 仍是当前 QEMU 主线，emulated PPI27 仍保留为已知限制。
 > v10（2026-08-08）：根据任务一严格验收审计，撤销“已完成实时改造”的含义；当前只认定为“启动/基线前置证据完成，改造和验收证据未完成”。
 > v11（2026-08-08）：冻结提交 `dbd711396` 作为下一阶段 A 基线；先测量 Axvisor 软件中断/唤醒链路，再选择一项实质实时机制改造；`emulated` 不再以 PPI27 修复作为主线 Gate。
+> v12（2026-08-08）：记录上一版 next 冻结未完成的具体原因；重新定义实时性目标为尾延迟、抖动和 deadline 行为的可预测性，并将完整执行方法收敛到 [openrace2026-next.md](openrace2026-next.md)。
+> v13（2026-08-08）：纠正路径状态表述：passthrough/lower-EL 仅为控制组，PPI27 已关闭，CNTP/PPI30 与 synthetic vIRQ 仅是未验证候选；任何候选未通过 smoke test 前不得称为 A 或开始 B。
+> v14（2026-08-08）：纠正执行顺序：先对当前可运行 A 做完整分层 trace，记录实际经过和绕过的层；只有 trace 证明目标软件层缺失时，才设计最小激活 workload。
 
 当前 1–2 天行动见 [`openrace2026-next.md`](openrace2026-next.md)；本文件保留完整赛题、历史记录和验收总账。
 
@@ -359,6 +362,20 @@ A/B 口径必须区分两层：
 5. 若 emulated timer 仍不稳定，直接使用软件 vIRQ 注入路径完成 A 阶段测量，不为 PPI27 继续扩张临时 workaround。
 
 只有 A 阶段确定瓶颈后，才进入 B 阶段代码改造和同口径 A/B 测试。
+
+### 4.4 上一版 next 冻结为何没有完成（2026-08-08）
+
+上一版 next 的方向是“先冻结 A、测量软件中断/唤醒链路、再选择一个 B”。这个方向本身没有错，但冻结条件没有真正落地，原因不是“没有任何测试链路”，而是路径、指标和证据没有闭环：
+
+1. **测试路径与目标路径没有完全对齐。** 当前最稳定的 passthrough 主要证明 Linux 2-vCPU、双 Guest 和隔离能运行，不能自动证明 AxVisor 的软件 vIRQ queue 或 VM timer wheel 被覆盖。此前把 PPI27/emulated 探针失败当成主线 Gate，导致精力集中在一个不稳定且不必要的入口，而不是先用 synthetic vIRQ 或正确语义的 CNTP/PPI30 覆盖软件路径。
+2. **只有 Guest 端周期采样，没有分段时间证据。** 已有 jitter CSV 能说明 Guest 观察到的结果，但不能区分 timer callback、enqueue/锁、IPI、vCPU wake、pending drain 和 GIC inject 哪一段造成尾部延迟。因此无法有依据地选择调度、timer、IRQ 或锁改造。
+3. **实时性指标口径有错误。** 现有采样器把 actual time 与绝对 release deadline 比较，使 deadline_misses=300 在当前数据中可能全量出现；这不是 300 次独立的实时失败。overrun、deadline miss、漏采样和 Guest 卡死尚未被分开定义。
+4. **没有完成同口径 A/B。** 改造前后没有在同一 workload、同一配置、同一样本数和同一压力下形成完整三方数据；改造后 CSV 还缺样本。因此既不能证明最坏延迟改善，也不能排除观测或配置差异。
+5. **候选机制铺得太宽。** 调度器、RR、CPU partition、timer、GIC LR、vIRQ queue 和 lower-EL IRQ 都曾被讨论，但没有先用瓶颈区间淘汰候选，出现了“为了改而改”的风险。
+6. **缺少低扰动的 Host 观测工具。** perf、cyclictest 等 Linux 工具不能直接看到 AxVisor no_std 内部；此前没有先建立 per-CPU ring trace，导致只能从端到端结果猜内部原因。
+7. **长稳和复现材料尚未完成。** 当前证据主要是短时启动和约 300 个周期样本，不足以支撑压力下的稳定性、尾部一致性和最终交付。
+
+因此，上一版冻结记录应解释为“冻结了一个未改造 A 的起点”，而不是“冻结了可直接进入 B 的完整实验链路”。本轮 next 已将顺序改为：路径声明 → 低扰动 trace → 短基线 → 单点 B → 同口径 A/B → 长稳；在短基线和路径证据完成前，不再扩展第二个实时机制改造。
 
 ---
 
