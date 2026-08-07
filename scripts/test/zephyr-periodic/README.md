@@ -2,6 +2,8 @@
 
 This application runs a 10 ms absolute-deadline task for 300 samples and
 prints CSV rows that can be summarized by `scripts/test/rt_latency_stats.py`.
+The CSV `deadline_ns` column is the scheduled release target; pass an explicit
+`--relative-deadline-ns` value when deadline overrun accounting is desired.
 
 ## Build
 

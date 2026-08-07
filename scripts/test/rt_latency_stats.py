@@ -3,6 +3,11 @@
 
 Expected columns:
     sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns
+
+The sampler's ``deadline_ns`` column is the scheduled release target. A
+deadline miss can only be computed when the caller supplies a relative
+deadline with ``--relative-deadline-ns``; otherwise the result is reported as
+unavailable instead of treating every positive jitter sample as a miss.
 """
 
 from __future__ import annotations
@@ -22,7 +27,9 @@ def percentile(values: list[int], fraction: float) -> int:
     return ordered[index]
 
 
-def read_samples(stream) -> tuple[list[int], int]:
+def read_samples(
+    stream, relative_deadline_ns: int | None = None
+) -> tuple[list[int], int | None]:
     reader = csv.DictReader(
         line for line in stream if line.strip() and not line.lstrip().startswith("#")
     )
@@ -31,12 +38,19 @@ def read_samples(stream) -> tuple[list[int], int]:
     if missing:
         raise ValueError(f"missing columns: {', '.join(sorted(missing))}")
 
+    if relative_deadline_ns is not None and relative_deadline_ns < 0:
+        raise ValueError("relative deadline must be non-negative")
+
     jitter: list[int] = []
-    deadline_misses = 0
+    deadline_misses = 0 if relative_deadline_ns is not None else None
     for row in reader:
         jitter_ns = int(row["jitter_ns"])
         jitter.append(jitter_ns)
-        if int(row["actual_ns"]) > int(row["deadline_ns"]):
+        if (
+            relative_deadline_ns is not None
+            and int(row["actual_ns"])
+            > int(row["deadline_ns"]) + relative_deadline_ns
+        ):
             deadline_misses += 1
     return jitter, deadline_misses
 
@@ -44,6 +58,11 @@ def read_samples(stream) -> tuple[list[int], int]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("csv", nargs="?", type=Path, help="CSV file; read stdin when omitted")
+    parser.add_argument(
+        "--relative-deadline-ns",
+        type=int,
+        help="relative deadline added to each release target for overrun accounting",
+    )
     args = parser.parse_args()
 
     try:
@@ -51,7 +70,9 @@ def main() -> int:
             samples, misses = read_samples(sys.stdin)
         else:
             with args.csv.open(newline="") as stream:
-                samples, misses = read_samples(stream)
+                samples, misses = read_samples(
+                    stream, relative_deadline_ns=args.relative_deadline_ns
+                )
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -65,7 +86,10 @@ def main() -> int:
     print(f"p99_jitter_ns={percentile(samples, 0.99)}")
     print(f"p99_9_jitter_ns={percentile(samples, 0.999)}")
     print(f"max_jitter_ns={max(samples)}")
-    print(f"deadline_misses={misses}")
+    if misses is None:
+        print("deadline_misses=unavailable")
+    else:
+        print(f"deadline_misses={misses}")
     return 0
 
 

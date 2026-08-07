@@ -151,7 +151,7 @@ synthetic vIRQ 至少覆盖 queue_interrupt → notify/IPI → wake → drain �
     overrun_i       = max(0, finish_i - (release_i + relative_deadline))
     deadline_miss_i = (overrun_i > 0)
 
-漏采样、Guest 卡死、trace 丢失单独统计，不能伪装成普通 deadline miss。当前 scripts/test/rt_latency_stats.py 的 deadline 字段在修正前不能作为最终结论。
+漏采样、Guest 卡死、trace 丢失单独统计，不能伪装成普通 deadline miss。统计脚本默认输出 `deadline_misses=unavailable`；只有使用 `--relative-deadline-ns <N>` 明确给出相对 deadline 时，才计算 overrun 和 deadline miss。
 
 中断/唤醒至少报告：
 

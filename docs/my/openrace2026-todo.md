@@ -12,6 +12,7 @@
 > v12（2026-08-08）：记录上一版 next 冻结未完成的具体原因；重新定义实时性目标为尾延迟、抖动和 deadline 行为的可预测性，并将完整执行方法收敛到 [openrace2026-next.md](openrace2026-next.md)。
 > v13（2026-08-08）：纠正路径状态表述：passthrough/lower-EL 仅为控制组，PPI27 已关闭，CNTP/PPI30 与 synthetic vIRQ 仅是未验证候选；任何候选未通过 smoke test 前不得称为 A 或开始 B。
 > v14（2026-08-08）：纠正执行顺序：先对当前可运行 A 做完整分层 trace，记录实际经过和绕过的层；只有 trace 证明目标软件层缺失时，才设计最小激活 workload。
+> v15（2026-08-08）：修正 scripts/test/rt_latency_stats.py 的 deadline 统计：默认不计算 miss，只有显式 relative deadline 才统计 overrun；新增回归测试。
 
 当前 1–2 天行动见 [`openrace2026-next.md`](openrace2026-next.md)；本文件保留完整赛题、历史记录和验收总账。
 
