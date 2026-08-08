@@ -191,6 +191,9 @@ pub(crate) struct VmRuntimeHandle {
     cpu_off_exit_reservations: Mutex<BTreeSet<usize>>,
     pending_interrupts: Mutex<BTreeMap<usize, Vec<PendingInterrupt>>>,
     irq_dispatcher: crate::runtime::VcpuIrqDispatcher,
+    #[cfg(feature = "realtime-trace")]
+    virq_trace: crate::runtime::VirqTraceRing,
+    trace_vm_id: AtomicUsize,
     running_halting_vcpu_count: AtomicUsize,
     deferred_reset_requested: AtomicBool,
 }
@@ -222,6 +225,9 @@ impl VmRuntimeHandle {
             cpu_off_exit_reservations: Mutex::new(BTreeSet::new()),
             pending_interrupts: Mutex::new(BTreeMap::new()),
             irq_dispatcher: crate::runtime::VcpuIrqDispatcher::new(),
+            #[cfg(feature = "realtime-trace")]
+            virq_trace: crate::runtime::VirqTraceRing::new(),
+            trace_vm_id: AtomicUsize::new(0),
             running_halting_vcpu_count: AtomicUsize::new(0),
             deferred_reset_requested: AtomicBool::new(false),
         }
@@ -353,6 +359,48 @@ impl VmRuntimeHandle {
     /// entering the guest.
     pub(crate) fn irq_dispatcher(&self) -> &VcpuIrqDispatcher {
         &self.irq_dispatcher
+    }
+
+    pub(crate) fn trace_virq_event(
+        &self,
+        vm_id: usize,
+        kind: crate::runtime::VirqTraceKind,
+        vcpu_id: usize,
+        vector: u32,
+    ) {
+        #[cfg(feature = "realtime-trace")]
+        self.virq_trace.record(
+            kind,
+            if vm_id == 0 {
+                self.trace_vm_id.load(Ordering::Relaxed)
+            } else {
+                vm_id
+            },
+            vcpu_id,
+            vector,
+        );
+        #[cfg(not(feature = "realtime-trace"))]
+        let _ = (vm_id, kind, vcpu_id, vector);
+    }
+
+    pub(crate) fn set_trace_vm_id(&self, vm_id: usize) {
+        self.trace_vm_id.store(vm_id, Ordering::Relaxed);
+    }
+
+    #[cfg(feature = "realtime-trace")]
+    pub(crate) fn log_virq_trace(&self) {
+        for event in self.virq_trace.snapshot() {
+            info!(
+                "VIRQ_TRACE seq={} ts_ns={} cpu={} vm={} vcpu={} event={} vector={}",
+                event.sequence,
+                event.timestamp_ns,
+                event.cpu_id,
+                event.vm_id,
+                event.vcpu_id,
+                event.kind.as_str(),
+                event.vector,
+            );
+        }
     }
 
     pub(crate) fn drain_pending_interrupts(&self, vcpu_id: usize) -> Vec<PendingInterrupt> {
@@ -967,6 +1015,7 @@ impl AxVM {
             .ok_or_else(|| ax_err_type!(BadState, "VM primary vCPU is not prepared"))?;
         let primary_task = crate::runtime::vcpus::build_vcpu_task(self, primary_vcpu);
         let runtime = Arc::new(VmRuntimeHandle::new());
+        runtime.set_trace_vm_id(self.id());
 
         self.machine.lock().start_with(|resources| {
             resources
@@ -1338,6 +1387,19 @@ impl AxVM {
             }
         }
         Ok(())
+    }
+
+    /// Emit the bounded software-vIRQ trace collected by the active runtime.
+    ///
+    /// This is an experiment-only observability hook. It does not alter
+    /// interrupt delivery and is available only when `realtime-trace` is
+    /// enabled in the AxVM crate.
+    #[cfg(feature = "realtime-trace")]
+    pub fn dump_realtime_trace(&self) -> AxVmResult {
+        self.with_runtime(|runtime| {
+            runtime.log_virq_trace();
+            Ok(())
+        })
     }
 
     /// Returns vCpu id list and its corresponding pCpu affinity list, as well as its physical id.
