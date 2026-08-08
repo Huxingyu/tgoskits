@@ -160,19 +160,24 @@ pub(crate) trait ArchOps {
         }
 
         let run_result = vcpu.with_current_cpu_set(|| -> AxVmResult<_> {
-            loop {
-                crate::runtime::vcpus::trace_runtime_event("vcpu_run", vm_id, vcpu_id, 0);
-                crate::runtime::vcpus::inject_pending_interrupts::<Self>(vm.id(), vcpu_id, vcpu);
+            crate::runtime::vcpus::trace_runtime_event("vcpu_run", vm_id, vcpu_id, 0);
+            crate::runtime::vcpus::inject_pending_interrupts::<Self>(vm.id(), vcpu_id, vcpu);
 
-                drain_and_inject_dispatched_interrupts::<Self>(vm, vcpu_id, vcpu);
+            drain_and_inject_dispatched_interrupts::<Self>(vm, vcpu_id, vcpu);
 
-                let exit = vcpu.run()?;
-                crate::runtime::vcpus::trace_runtime_event("guest_exit", vm_id, vcpu_id, 0);
-                trace!("{exit:#x?}");
-                match Self::handle_vcpu_exit_bound(vm, vcpu, exit)? {
-                    BoundVcpuExit::Continue => continue,
-                    action => break Ok(action),
+            let exit = vcpu.run()?;
+            crate::runtime::vcpus::trace_runtime_event("guest_exit", vm_id, vcpu_id, 0);
+            trace!("{exit:#x?}");
+            match Self::handle_vcpu_exit_bound(vm, vcpu, exit)? {
+                BoundVcpuExit::Continue => {
+                    // Returning after a handled exit closes the NoPreempt and
+                    // CPU-local publication scopes in `with_current_cpu_set`.
+                    // This gives the host scheduler a safe boundary between
+                    // guest entries without changing guest state semantics.
+                    crate::runtime::vcpus::trace_runtime_event("vcpu_slice_end", vm_id, vcpu_id, 0);
+                    Ok(complete_handled_exit())
                 }
+                action => Ok(action),
             }
         });
 
@@ -197,6 +202,20 @@ pub(crate) trait ArchOps {
             }
         }
     }
+}
+
+/// Completes a guest run slice after an exit that was handled in-place.
+///
+/// The caller must unbind the vCPU before starting another slice. Keeping this
+/// transition explicit prevents an in-place exit handler from accidentally
+/// extending the `NoPreempt`/CPU-local ownership window indefinitely.
+fn complete_handled_exit<D>() -> BoundVcpuExit<D> {
+    BoundVcpuExit::Complete(VcpuRunAction {
+        waits_for_event: false,
+        stop_reason: None,
+        resets_vm: false,
+        exits_vcpu: false,
+    })
 }
 
 fn drain_and_inject_dispatched_interrupts<A: ArchOps>(
@@ -436,6 +455,23 @@ mod tests {
         assert_eq!(
             injections.lock().attempts,
             vec![(0x31, InterruptTriggerMode::LevelTriggered)]
+        );
+    }
+
+    #[test]
+    fn handled_exit_ends_the_current_vcpu_run_slice() {
+        let BoundVcpuExit::Complete(action) = complete_handled_exit::<()>() else {
+            panic!("a handled exit must release the vCPU run slice");
+        };
+
+        assert_eq!(
+            action,
+            VcpuRunAction {
+                waits_for_event: false,
+                stop_reason: None,
+                resets_vm: false,
+                exits_vcpu: false,
+            }
         );
     }
 

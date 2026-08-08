@@ -16,7 +16,7 @@ pub(crate) struct VcpuRunAction {
 /// Result of handling one exit while the vCPU is still bound to the host CPU.
 #[derive(Debug)]
 pub(crate) enum BoundVcpuExit<D> {
-    /// The exit was handled completely; re-enter the guest in the current run slice.
+    /// The exit was handled completely; the caller may start another run slice.
     Continue,
     /// The run slice is complete and can return this scheduler action after unbind.
     Complete(VcpuRunAction),
