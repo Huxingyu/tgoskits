@@ -11,6 +11,7 @@
 > v11（2026-08-08）：冻结提交 `dbd711396` 作为下一阶段 A 基线；先测量 Axvisor 软件中断/唤醒链路，再选择一项实质实时机制改造；`emulated` 不再以 PPI27 修复作为主线 Gate。
 > v12（2026-08-08）：记录上一版 next 冻结未完成的具体原因；重新定义实时性目标为尾延迟、抖动和 deadline 行为的可预测性，并将完整执行方法收敛到 [openrace2026-next.md](openrace2026-next.md)。
 > v13（2026-08-08）：纠正路径状态表述：passthrough/lower-EL 仅为控制组，PPI27 已关闭，CNTP/PPI30 与 synthetic vIRQ 仅是未验证候选；任何候选未通过 smoke test 前不得称为 A 或开始 B。
+> v16（2026-08-08）：synthetic vIRQ 双 vCPU Zephyr smoke 仍阻塞：vCPU1 reset 读到 `arm64_cpu_boot_params.mpid=-1`，误走 primary；缓存/架构状态/CPU_ON 调度三类最小修复均未改变现象，暂不进入 vIRQ 延迟 AB。
 > v14（2026-08-08）：纠正执行顺序：先对当前可运行 A 做完整分层 trace，记录实际经过和绕过的层；只有 trace 证明目标软件层缺失时，才设计最小激活 workload。
 > v15（2026-08-08）：修正 scripts/test/rt_latency_stats.py 的 deadline 统计：默认不计算 miss，只有显式 relative deadline 才统计 overrun；新增回归测试。
 
