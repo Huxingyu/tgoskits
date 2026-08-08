@@ -14,6 +14,7 @@
 > v16（2026-08-08）：synthetic vIRQ 双 vCPU Zephyr smoke 仍阻塞：vCPU1 reset 读到 `arm64_cpu_boot_params.mpid=-1`，误走 primary；缓存/架构状态/CPU_ON 调度三类最小修复均未改变现象，暂不进入 vIRQ 延迟 AB。
 > v14（2026-08-08）：纠正执行顺序：先对当前可运行 A 做完整分层 trace，记录实际经过和绕过的层；只有 trace 证明目标软件层缺失时，才设计最小激活 workload。
 > v15（2026-08-08）：修正 scripts/test/rt_latency_stats.py 的 deadline 统计：默认不计算 miss，只有显式 relative deadline 才统计 overrun；新增回归测试。
+> v17（2026-08-08）：冻结三条实时性探索：passthrough runtime trace 未经过软件 vIRQ 链路；共享 pCPU 的 FIFO/RR A/B 被 Guest `run()` 持有 NoPreempt 阻塞；emulated timer 约 30 秒产生 18,493 次未处理 PPI27，均未形成有效实时收益 A/B。
 
 当前 1–2 天行动见 [`openrace2026-next.md`](openrace2026-next.md)；本文件保留完整赛题、历史记录和验收总账。
 
@@ -378,6 +379,16 @@ A/B 口径必须区分两层：
 7. **长稳和复现材料尚未完成。** 当前证据主要是短时启动和约 300 个周期样本，不足以支撑压力下的稳定性、尾部一致性和最终交付。
 
 因此，上一版冻结记录应解释为“冻结了一个未改造 A 的起点”，而不是“冻结了可直接进入 B 的完整实验链路”。本轮 next 已将顺序改为：路径声明 → 低扰动 trace → 短基线 → 单点 B → 同口径 A/B → 长稳；在短基线和路径证据完成前，不再扩展第二个实时机制改造。
+
+### 4.5 三条实时性探索的实际进展（2026-08-08）
+
+| 探索 | 已推进到的证据 | 失败边界 | 结论 |
+|---|---|---|---|
+| `passthrough` + runtime trace | 能运行双 Guest；只观察到少量 `vcpu_run`/`guest_exit` | software vIRQ queue、notify、IPI、pending drain 均未经过 | 当前 workload 绕过目标软件层，不能用于软件 vIRQ 收益 A/B |
+| 共享 pCPU + FIFO/RR 调度 A/B | 已完成 FIFO 与 sched-rr 对照运行 | FIFO 饿死 Zephyr；RR 仍无 Zephyr 样本；Guest `run()` 持有 `NoPreempt`，passthrough 长时间不退出，宿主无法抢占 | 不是调度策略本身的收益失败，而是 passthrough 的不可抢占运行边界先阻塞了实验 |
+| `emulated` timer | 已运行约 30 秒并记录原始 IRQ 计数 | 收到 18,493 次未处理 `PPI27/hwirq 27`，无 `PERIODIC LATENCY COMPLETE` | 判断为 CNTV/PPI27 timer ownership/EOI 语义问题；停止 workaround，不作为任务一 Gate |
+
+这三条都已经完成“可复现的失败定位”，但没有一条完成正式实时性 A/B。现有 passthrough 数据只能作为启动/隔离控制组；synthetic vIRQ 的双 vCPU Zephyr smoke 另有 CPU_ON/boot 参数阻塞，尚未成为可用 workload。
 
 ---
 

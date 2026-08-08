@@ -12,8 +12,9 @@
 
 | 路径 | 当前状态 | 用途 |
 |---|---|---|
-| Day5 passthrough + lower-EL host IRQ | 已运行，但不覆盖软件 vIRQ/timer | 作为当前 A 的可达路径和控制组 |
-| emulated PPI27 | 已失败，关闭 | 不再修、不再作为 Gate |
+| Day5 passthrough + lower-EL host IRQ + runtime trace | 已运行；仅有少量 `vcpu_run`/`guest_exit`，未经过 software vIRQ queue/notify/IPI/drain | 仅作为启动/隔离控制组，不作为软件 vIRQ 收益证据 |
+| 共享 pCPU + FIFO/RR 调度 | FIFO 饿死 Zephyr；RR 仍无 Zephyr 样本 | Guest `run()` 持有 `NoPreempt` 且 passthrough 长时间不退出；冻结为失败方向 |
+| emulated PPI27 | 已失败；约 30 秒产生 18,493 次未处理 `PPI27/hwirq 27` | CNTV/PPI27 ownership/EOI 语义问题；关闭，不再修、不再作为 Gate |
 | CNTP/PPI30 | 代码支持，但当前 workload 尚未重新证明 | 未验证，不是当前 A |
 | synthetic vIRQ | queue/inject API 存在，但缺少已确认的 Guest producer | 未验证，不是当前 A |
 
