@@ -65,6 +65,13 @@ fn should_keep_generated_node(
         return true;
     }
 
+    // Secondary AArch64 guests use PSCI CPU_ON to bring up their vCPUs. Keep
+    // the host firmware contract in the generated DTB even though PSCI is not
+    // a passthrough device.
+    if node_path == "/psci" || node_path.starts_with("/psci/") {
+        return true;
+    }
+
     if node_path.starts_with("/cpus/cpu@") {
         return need_cpu_node(phys_cpu_ids, fdt, node_id, node_path);
     }
@@ -261,6 +268,7 @@ mod tests {
 
     use super::{
         super::tree::sanitize_bootargs, cpu_node_id, initrd_range_from_image_config, need_cpu_node,
+        should_keep_generated_node,
     };
     use crate::{GuestPhysAddr, config::RamdiskInfo};
 
@@ -309,6 +317,22 @@ mod tests {
     #[test]
     fn cpu_node_id_parses_hex_unit_address() {
         assert_eq!(cpu_node_id("/cpus/cpu@100"), Some(0x100));
+    }
+
+    #[test]
+    fn generated_guest_fdt_keeps_psci_node() {
+        let mut fdt = Fdt::new();
+        let psci_id = fdt.add_node(fdt.root_id(), Node::new("psci"));
+        let psci = fdt.node(psci_id).unwrap();
+
+        assert!(should_keep_generated_node(
+            &fdt,
+            psci_id,
+            "/psci",
+            psci,
+            &[],
+            &[],
+        ));
     }
 
     #[test]
