@@ -1,0 +1,617 @@
+ ▐▛███▜▌   Claude Code v2.1.226
+▝▜█████▛▘  Fable 5 · API Usage Billing
+  ▘▘ ▝▝    ~/tgoskits
+
+
+❯ 你来分析一下这个仓库吧，结合文档，对于赛题一，给出你的思路                    
+
+  Thought for 11s (ctrl+o to expand)
+
+● 我来先探索仓库结构，找到赛题相关文档。
+
+  Thought for 10m 20s, searched for 8 patterns, read 10 files, listed 4 directories, ran 1 shell command (ctrl+o to expand)
+
+● 分析完成。我把赛题文档、执行记录（todo/next/realtime-directions）、Day5/Day6
+  原始数据和 axvm/arm_vgic 的关键源码都过了一遍。先说结论，再给完整思路。
+
+  （本仓库语境里"赛题一"= 任务一：AxVisor 实时性改造与验证，30
+  分，下面按此展开。）
+
+  ---
+  一、我对现状的判断
+
+  已经拿稳的（约 12–17 分的证据基础）：Linux 2-vCPU + Zephyr 双 Guest 在 QEMU
+  AArch64 passthrough 模式下可启动、0 DMA quarantine、有 Guest 内部证据（SMP: 2 
+  processors、stress workers、300 样本周期采样）；Native/AxVisor
+  初步基线；统计脚本的 deadline
+  口径已修正并带回归测试；还有几个真实的正确性修复（FDT bootargs/PSCI、lower-EL
+  IRQ 单次事务、vCPU slice 边界、vgicr 状态保留）。
+
+  卡住的（决定剩下 ~13 
+  分的部分）：三条实时性探索全部完成了"可复现的失败定位"但没有一条产出有效 A/B——
+
+  1. passthrough 稳定但绕过了全部软件 vIRQ 链路（trace 只见
+  vcpu_run/guest_exit）；
+  2. 共享 pCPU 的 FIFO/RR 被 Guest run() 持有的 NoPreempt 阻塞（vcpu.rs:303 的
+  with_current_cpu_set，这是架构约束不是 bug）；
+  3. emulated 模式被 CNTV/PPI27 ownership/EOI 语义问题打死（30 秒 18,493
+  次未处理中断）；
+  4. 备选的 synthetic vIRQ smoke 又卡在 Zephyr 第二个 vCPU 的 CPU_ON
+  启动参数（mpid=-1）上。
+
+  核心矛盾一句话：评分要求"实质改造 + 改造前后最坏延迟改善"，但唯一稳定的
+  workload 不经过你要改造的软件路径，而所有能经过软件路径的 workload
+  都没跑起来。当前唯一的关键路径是：先让一个覆盖软件 vIRQ 链路的 workload 
+  活过来，其他一切（trace、A/B、长稳）都排在它后面。文档里 next.md 的"先 trace
+  再选 B"方法论是对的，我完全认同，下面的思路是在它基础上给出具体的解法选择。
+
+  ---
+  二、我的思路
+
+  1. 叙事框架：把矛盾变成"双模式"故事（对应 4 分分析项）
+
+  不要把 passthrough 当成"绕过了改造对象"的尴尬，而是明确写成 hypervisor
+  实时化的两条正统路线：
+
+  - 静态分区路线（Jailhouse 式）：RTOS Guest 独占 pCPU + 中断/timer
+  直通，hypervisor 退出热路径。现有 passthrough
+  数据就是这条路线的验收证据（近原生尾延迟、隔离性、启动稳定性）。
+  - 软件中断/定时器服务路线（KVM-RT 式）：emulated 模式下 queue → notify/IPI → 
+  wake → drain → inject 是生产路径，改造对象和 A/B 都在这里。
+
+  最终报告两条都交：passthrough 作为推荐部署形态（配隔离数据），软件路径改造配
+  emulated workload 的 A/B。这与会议纪要里赵长收说的愿景（"AxVisor 本身就是个
+  RTOS"）也是一致的。共享 pCPU + NoPreempt
+  的失败定位本身就是高质量的关键路径分析材料——结论是"当前架构下 CPU
+  分区是强制约束，宿主强制抢占 Guest 是后续方向"，写进报告而不是这一届去实现。
+
+  2. 关键突破口：换一个更便宜的软件路径 workload（建议 2–3 天内定死）
+
+  两条被阻塞的路线都比必要的复杂。我建议的首选方案：
+
+  方案 A（首推）：宿主侧周期注入 + 单 vCPU Zephyr 消费者。 现在的 zephyr-virq
+  设计是 Guest CPU0 发 SGI 给 CPU1，所以才需要 SMP、才撞上
+  CPU_ON/mpid=-1。其实根本不需要 Guest 侧 producer：在 host 侧加一个
+  feature-gate 的小注入器（约几十行），用 axvm/src/timer.rs 的 register_timer
+  注册 10ms 周期回调，从 pCPU0 调 queue_interrupt(vm, vcpu0, 某个空闲 
+  SPI)；Zephyr 单 vCPU 应用只做消费者（IRQ_CONNECT 该 SPI + IRQ handler 里读
+  CNTVCT 存数组，结束后一次性 dump）。这样：
+
+  - 一个 workload 同时覆盖 timer wheel（register→expire→callback）和 vIRQ 
+  transport 全链（vcpus.rs:106 queue → notify → IPI → guest exit → drain →
+  inject → Guest IRQ），正好是 next.md 里 T3–T11 的全部区间；
+  - 完全绕开 CPU_ON/mpid=-1（那个问题另行归档——现象指向 Guest MMU-off 的 Device
+  访存读不到 primary 的 cached 写，属于独立 bug，别让它挡路）；
+  - Zephyr VM 用 emulated 中断模式（IPI 才能打出 guest
+  exit，这正是要覆盖的模式），但把系统时钟关掉（SYS_CLOCK_EXISTS=n
+  或等价配置，应用改忙等/WFI），从源头消掉 PPI27 风暴——不修 PPI27，是让 Guest
+  根本不碰 CNTV；
+  - host 侧 T0 和 Guest 侧 CNTVCT 同属一个系统计数器域（记录 CNTVOFF
+  即可换算），端到端中断响应延迟可直接计算。
+
+  方案 B（次选/并行探针）：CNTP 直编程 sampler。 arm_vgic/src/vtimer/ 里只有
+  cntp_* 模拟（CNTP/PPI30），没有 CNTV——代码现状恰好支持"应用直接写
+  CNTP_CVAL/CTL + IRQ_CONNECT(30)"的采样器，绕开 Zephyr 内核 timer
+  驱动（它默认用 CNTV）。这条额外覆盖 vtimer sysreg 陷入路径，作为方案 A
+  的补充消融。
+
+  止损线：PPI27/CNTV 的正确语义修复（KVM arch-timer
+  级别的工程量）保持冻结；若方案 A/B
+  三天内都起不来（我认为概率很低，因为不再依赖任何 Guest SMP/timer
+  驱动行为），退回"host 内自注入微基准 + passthrough 演示"并如实写限制。
+
+  3. B 改造点预判：三个有代码依据的候选（测量后只选一个）
+
+  按我读到的代码，A 阶段 trace 大概率会把矛头指向这几处，提前把设计想清楚：
+
+  1. per-vCPU 有界无分配中断队列 + 
+  定向唤醒（我预判的第一候选）。现状是两层几乎同构的 SpinNoIrq<BTreeMap<usize, 
+  Vec<...>>>（vm/mod.rs:192 和 runtime/queue.rs:36）：VM 级全局自旋锁、锁内 Vec
+  push 可能触发分配、drain 每轮再分配一个 Vec；而且 queue_interrupt 之后是
+  notify_all()（vcpus.rs:119-122）——每来一个 Zephyr 中断就把该 VM 所有 vCPU 
+  任务全部惊群唤醒。改成 per-vCPU
+  固定容量环形队列（预分配、有界、溢出显式计数）+ 只 notify 目标 vCPU
+  任务，是教科书级的实时改造：有界内存、有界临界区、O(1)、消除跨 vCPU
+  干扰。确定性回归测试好写（容量/顺序/并发入队/溢出语义），trace 上对应 T3–T4 和
+  T5–T7 区间，收益可直接归因。
+  2. timer wheel 全局锁拆 per-CPU。timer.rs:112 是单个全局
+  SpinNoIrq<TimerWheels>，所有 CPU 的 register/cancel/expire 串行化——pCPU0 上
+  Linux 相关的 timer 操作会直接顶到 pCPU3 的中断响应尾部。拆成真 per-CPU
+  存储后跨核竞争归零，单元测试现成（该文件已有不错的测试基建）。
+  3. （fallback，passthrough 就能测）RTOS pCPU 的宿主干扰隔离。若软件路径
+  workload 最终还是起不来，用 ring trace 数一数采样期间 pCPU3 上的宿主 IRQ/timer
+  到达次数，把宿主 tick/IRQ affinity 从 RTOS 核上挪走（nohz_full/isolcpus
+  思路）——这是现有稳定 workload 能测出 A/B 的改造，Day5 那些 1.3ms 的 max
+  尾巴需要先归因，这一步反正要做。
+
+  注意 8 分"实质改造"其实已部分入账（lower-EL 单次 IRQ 事务修复带回归测试、slice
+  边界），缺的是 5 分"改造前后数据"——所以 B 的选择标准是可被 workload 
+  覆盖且尾部可归因，而不是越大越好。
+
+  4. 测量基建的两个必修小项
+
+  - trace_runtime_event（vcpus.rs:29-43）现在是 debug! 逐条串口打印——正是
+  next.md 自己禁止的观测方式。A 阶段测量前必须换成计划中的 per-CPU 固定容量 ring
+  buffer（批量导出 + off/on 校准），否则观测本身就把尾延迟改了。
+  - 串口交织丢行问题（Day5 手工重建 4 行、Day6 缺 6 行）不可持续：给 CSV
+  行加前缀标记 + 校验和，或采样器全存内存、等 Linux 输出静默后延迟
+  dump。一次小改，省掉每轮人肉重建，也消除"改造后数据不完整"这类审计瑕疵。
+
+  5. 日程与评分算账（今天 8/8，攻关截止 8/20，剩 12 天）
+
+  任务一建议收敛为一条不可再宽的主线：解锁 workload（D1–3）→ ring trace + 
+  短基线（D3–5）→ 单个 B + 回归 + 同口径 A/B（D5–8）→ 30min/1h 长稳 + 三方矩阵 +
+  报告（D8–11）。同时必须指出一个战略风险：任务二（25 分）和任务三（25 分）按 
+  todo 还基本没动，而它们主要是 Guest 用户态工作，风险远低于 hypervisor
+  内核改造，且其前置条件（passthrough 双 Guest + virtio-net
+  直通）今天就已满足。如果人力允许，任务二应立即并行启动，不要等任务一收口——任务
+  一从"部分完成"提到"严格完成"最多再挣 13 分，而任务二三是 50 分从零开始。
+
+  6. 红线（沿用文档已定的，照做即可）
+
+  passthrough 数据不冒充软件路径收益；deadline_misses 只在显式 relative deadline
+  下统计；不宣称硬实时，只报告观测窗口内的经验改善；每次实验带 manifest
+  和哈希。这些 next.md
+  已经写得很严格，是这套材料在评审时最大的加分气质，保持住。
+
+  ---
+  一句话总结思路：用"宿主侧注入 + 单 vCPU emulated Zephyr 消费者"这个最小
+  workload 一次性打通 timer wheel + vIRQ 全链的可测性（绕开 CPU_ON 和 PPI27
+  两个泥潭），trace 定位后在"有界 per-vCPU 中断队列 + 定向唤醒"和"timer wheel
+  锁拆分"里选一个做 B，报告用"静态分区 + 软件路径服务"双模式叙事把 passthrough
+  数据和 emulated A/B 各归其位；同时立刻并行启动任务二，别让 30 分的尾巴吃掉 50
+  分的本金。
+
+✻ Cooked for 18m 21s
+
+❯ @docs/my/openrace2026-realtime-directions.md 你先来分析一下现在的这几条路都是 
+  为什么失败的,卡死在什么地方呢,可以解决吗?给出你的判断                         
+  ⎿  Read docs/my/openrace2026-realtime-directions.md (28 lines)
+
+  Thought for 3m 53s (ctrl+o to expand)
+
+● 好，这次聚焦在 openrace2026-realtime-directions.md
+  的四条路上，逐条做根因分析。文档只记录了现象和边界，我先把对应的代码证据挖出来
+  ，再给"能不能解、值不值得解"的判断。
+
+  Thought for 10m 26s, searched for 5 patterns, read 2 files, listed 1 directory, ran 4 shell commands (ctrl+o to expand)
+
+● 四条路的代码证据都挖完了，可以给出完整判断。有一个此前文档里没有的关键事实先说
+  ：宿主机是 x86_64，QEMU 走 TCG 模拟——TCG 不建模 cache，这直接改写路 4
+  的根因空间（后面细说）。
+
+  ---
+  路 1：passthrough + runtime trace —— 不是失败，是架构必然
+
+  机理（代码级）：arm_vcpu/src/vcpu.rs:258-266——只有 !passthrough_interrupt
+  时才设置 HCR_EL2.IMO/FMO。passthrough 模式下 IMO=0，物理 IRQ 到达 PE 后直接送
+  EL1 Guest，根本不进 EL2；同时 vcpu.rs:241-244 把 CNTHCTL_EL2.EL1PCEN/EL1PCTEN
+  置位，Guest 的 timer 访问也不
+  trap。于是中断和定时器在"GIC→Guest"硬件层闭环，queue_interrupt → notify → IPI 
+  → drain → inject（runtime/vcpus.rs:106-180）一行都不会执行，稳态下 Guest
+  除了偶发 MMIO/sysreg/HVC 几乎不退出。trace 只见少量 vcpu_run/guest_exit
+  是必然结果，不是 workload 选错。
+
+  判断：不可"解决"，因为没有故障——这条路上软件层不存在。它的价值是静态分区路线的
+  验收证据（启动、隔离、近原生尾延迟）。v13/v17 把它定为控制组是对的，维持。
+
+  路 2：共享 pCPU + FIFO/RR —— 两个架构属性叠加，卡点不在调度策略
+
+  机理：两层叠加。第一层，vcpu.rs:303 的 with_current_cpu_set 全程持
+  NoPreempt——这是 per-CPU 状态（CURRENT_VCPU 发布、pCPU
+  pin）正确性的前提，抢占点只存在于 guest exit 之后的 slice
+  边界（architecture/ops.rs:171-180 最近已把 handled exit
+  做成显式边界）。第二层，passthrough 下（路 1 机理）几乎没有 exit → slice
+  无界。而且更狠的是：IMO=0 时宿主在这颗 pCPU 上连自己的 tick 中断都收不到（物理
+  IRQ 全部路由 EL1），所以 RR 依赖的时钟抢占根本无法发生——FIFO 饿死 Zephyr、RR
+  退化成 FIFO 无样本，全部自洽。
+
+  可解吗：可解，但等于设计一个新机制，不是调参数。两个真实方向：
+  1. 给宿主留 FIQ 后门——宿主 tick 放 GIC Group 0/FIQ，保持 FMO=1、IMO=0，Guest
+  中断直通、宿主用 FIQ 强制取回 CPU（分区 hypervisor 的经典做法）；
+  2. 共享核场景改用 emulated 模式（IMO=1），exit 边界天然存在。
+
+  判断：本届不做。主线部署形态就是 RTOS vCPU 独占
+  pCPU，这个失败定位本身是高质量的"关键路径分析"材料——把"为什么当前架构下 vCPU
+  必须静态分区、宿主为何无法抢占"写实，比硬改抢占机制值钱且零风险。
+
+  路 3：emulated timer / PPI27 风暴 —— 真功能缺口，可解，路线成熟
+
+  机理（现在能完整拼出）：emulated 模式 IMO=1（宿主接管全部 IRQ），但
+  CNTHCTL_EL2 只能 trap CNTP（物理 timer）——arm_vgic/src/vtimer/ 目录下也只有
+  cntp_* 系列模拟，CNTV 的模拟和所有权管理根本不存在。而 Zephyr arm64 内核 timer
+  默认用 CNTV：Guest 直接编程真实 CNTV 硬件 → 到期后 PPI27 作为物理中断进 EL2 →
+  宿主 IRQ 表里没有 27 的 action → "unhandled"。CNTV_CTL.ISTATUS
+  是电平语义，Guest 收不到注入就不会重编程/屏蔽，条件持续成立 → EOI
+  完立刻重新触发 → 风暴（18,493 次/30s，约 616 次/秒，量级正好跟每次 warn
+  串口打印的耗时吻合，实际硬件重入率只会更高）。临时"直接排队注入
+  27"失败的原因也清楚：注入了软件 vIRQ 却没接管硬件状态——不 mask CNTV、LR 没带
+  HW bit 链接物理 27、EOI 生命周期断裂。撤销是正确决定。
+
+  可解吗：可解，且是三条里含金量最高的。两条路线：
+  - (a) KVM 式 CNTV 所有权管理（正解）：宿主注册 PPI27 handler；到期时从 EL2 写
+  CNTV_CTL.IMASK 屏蔽源头，用 ICH_LR(HW=1, pINTID=27) 注入 vIRQ27，Guest EOI
+  时硬件自动 deactivate 物理中断；vCPU 切换时保存/恢复 CNTV_CVAL/CTL。估 3–5
+  个专注人日，难点全在电平/EOI/迁移语义（KVM arch_timer
+  踩过的坑要重走），但可以写"单次 fire→单次注入→EOI→不重入"的确定性回归。
+  - (b) FEAT_ECV 的 EL1TVT trap CNTV，复用现有 cntp 模拟框架：QEMU -cpu max
+  可用，但 RK3568/RK3588（A55/A76，ARMv8.2）没有 ECV，上板即死——只能当 QEMU
+  阶段过渡。
+
+  判断：维持 v11 "不作为 Gate"。但把 (a) 列为 stretch 
+  B：它恰好就是任务一想要的"软件 timer 关键路径实质改造"，如果 A 阶段测量指向
+  timer 路径且时间允许，值得做；覆盖链路的最快手段仍然是
+  CNTP/PPI30（模拟已存在）或宿主侧注入。
+
+  路 4：synthetic vIRQ 的 mpid=-1 —— 真 bug，且 cache 假设可以直接划掉
+
+  先说排除掉的：
+
+  - "vCPU1 抢跑在 primary 写入之前"不成立——VM 启动只拉主 vCPU
+  任务（vm/mod.rs:965-985），vCPU1 只能经 PSCI CPU_ON 进来（hvc.rs:288 /
+  cpu_up.rs:55 → vcpu_on），而 Zephyr 是先写 boot_params.mpid 再发 CPU_ON。
+  - MPIDR 数值链没有错位——生成 FDT 只保留 cpu@{phys_id}（boot/fdt/core/create.rs
+  的 need_cpu_node），VMPIDR=phys_cpu_id（arch/aarch64/vm.rs:80、arm_vcpu/vcpu.
+  rs:271-276），CPU_ON 按 phys_id 解析（cpu_up.rs:22-26）。smoke 配置
+  phys_cpu_ids=[0,1]，三处一致。
+  - cache 假设直接出局——宿主 x86_64、QEMU TCG，TCG 不建模 
+  cache，访存天然全局一致。"cache sync 修复无效"不是修复没写对，而是这个环境里
+  cache 根本不可能是根因。realtime-directions 表里"Guest RAM
+  可见性"一栏的缓存方向可以停了。
+
+  于是剩下的根因空间非常窄：primary 的写在 TCG 下立即全局可见，vCPU1
+  却读到静态初始值 -1 ——唯一的解释类是 vCPU1 的访存没落在同一份物理内存上，即
+  first-run 翻译状态问题。按可能性排序：
+
+  1. （首选）vCPU1 首次进入时 stage-2 未生效或 VTTBR/HCR.VM 状态不对，它把 GPA
+  当 HPA 直接读了宿主物理内存。注意 smoke 配置是 map_type=MapAlloc（GPA
+  0x4000_0000 ≠ HPA）且 image_location="memory"——如果宿主物理 0x4000_0000
+  附近恰好躺着一份未被运行过的 Zephyr 镜像 staging 原像，读出来的
+  boot_params.mpid 就恰好是 -1。这个假设能同时解释"为什么是 -1 而不是
+  0/垃圾"和"为什么三类修复全部无效"。
+  2. （次选）vCPU1 的入口 PC/SCTLR 不是干净的冷复位语义，实际走的不是预期 reset
+  序列，观测到的 -1 是探针地址换算（链接 VA vs GPA vs HPA）误读。
+  3. （再次）目标 pCPU 的 per-CPU EL2
+  状态（hardware_enable/VTCR）与主核不一致；vcpus.rs:434-461 的 cpumask fallback
+  会静默换核并只打 warn，smoke 日志值得回查这条 warn。
+
+  决定性探针（半天可裁决）：vCPU1 first-run 时 dump HCR_EL2.VM / VTTBR_EL2 / PC 
+  / SCTLR_EL1；宿主侧经 npt walk 读 boot_params GPA 对应 HPA 的真实字节，与
+  primary 写入值对比；再直接读宿主物理同地址看有没有镜像原像。三个读数一比，假设
+  1/2/3 立刻分开。
+
+  判断：可解，性质是 axvm 的 SMP Guest 启动正确性 bug（Linux CPU_ON
+  能活不代表路径健康——Linux secondary 用 PC 相对寻址、握手结构不同，对翻译错位的
+  暴露窗口本来就不一样），值得修且对项目有普适价值。但它不该继续挡任务一：smoke
+  之所以需要双 vCPU，只是因为把 producer 放在了 Guest 里（zephyr-virq/src/main.c
+  用 arch_sched_directed_ipi 发 SGI）；producer 挪到宿主侧（register_timer
+  回调里 queue_interrupt 注入空闲 SPI，单 vCPU Guest
+  只做消费者），链路覆盖完全一样，CPU_ON 依赖直接消失。
+
+  ---
+  汇总
+
+  路: passthrough + trace
+  根因定性: 非故障；IMO=0 硬件闭环，软件层不存在
+  可解性: 不适用
+  我的处置建议: 保留为控制组/分区路线证据
+  ────────────────────────────────────────
+  路: 共享 pCPU FIFO/RR
+  根因定性: NoPreempt × 无退出 = 无抢占边界；宿主 tick 也进不来
+  可解性: 可解=新机制（FIQ 后门或共享核走 emulated），高风险
+  我的处置建议: 本届不做，写成关键路径分析
+  ────────────────────────────────────────
+  路: emulated PPI27
+  根因定性: CNTV 无 trap 能力 + 无所有权管理，电平风暴
+  可解性: 可解，KVM 式所有权 3–5 人日，路线成熟
+  我的处置建议: 冻结维持，升格为 stretch B 候选
+  ────────────────────────────────────────
+  路: synthetic vIRQ mpid=-1
+  根因定性: 翻译/内存别名类 bug；cache 假设已被 TCG 环境排除
+  可解性: 可解，三探针半天定位
+  我的处置建议: 作为独立 bug 修，但用宿主注入绕开，不挡 workload
+
+  整体结论：四条没有一条是死路，但只有路 4 是真 bug、路 3 是真功能缺口，路 1/2 
+  是架构属性。当前决策（passthrough 当控制组、PPI27 不当
+  Gate）方向正确；需要修正的认知有两点——路 4
+  的排查方向应从"缓存/可见性"收窄到"first-run 翻译状态/内存别名"（TCG
+  事实直接砍掉半个假设空间），以及路 4 根本不必解决就能开工：宿主侧注入的单 vCPU
+  workload 明天就能把 A 阶段测量跑起来，mpid bug 和 CNTV 所有权分别作为独立 bug
+  修复和 stretch B 排队。
+
+✻ Cogitated for 16m 39s
+
+❯ 1.那么路3是修改axvisor系统,然后可以提高实时性这个东西吗?                      
+  2.架构属性是什么意思呢,修改了这个架构可以提高实时性吗?                        
+
+  Thought for 6m 0s (ctrl+o to expand)
+
+● 两个问题都问到点子上了，正好把"什么样的修改才算提高实时性"这件事说透。
+
+  ---
+  1. 路 3 修好了，算不算"改造 AxVisor 提高实时性"？
+
+  准确地说：它修的是"能力缺口"，不是"延迟太高"。 要区分清楚这两种改动的性质：
+
+  现状是"坏"，不是"慢"。 当前 emulated 模式下，用 CNTV 的 Guest（Zephyr/Linux
+  默认都用
+  CNTV）根本收不到定时器中断——周期任务一次都跑不起来。所以不存在"改造前延迟是 X
+  µs"这个数字，你没法做出"改造后从 X 降到 Y"的
+  A/B。一个从不能用变成能用的修复，无法直接构成'实时性改善'的对比数据——如果报告
+  里把它写成"降低了延迟"，评审一眼就能看出口径问题。
+
+  但它和实时性有三层真实的关系：
+
+  1. 它是打开被测路径的钥匙。 任务一要求改造并测量的软件链路（vtimer → timer
+  wheel → queue → notify/IPI → inject）就在 emulated 模式里，而 CNTV 缺口把标准
+  OS 挡在这条路径外面。修好它，软件定时器路径才第一次"存在可测量的实时性"。
+  2. 修复方案本身就是实时设计决策。 同一个缺口有两种修法，延迟特性完全不同：KVM
+  式的 ICH_LR(HW=1) 硬件链接——Guest EOI 直接在硬件上 deactivate
+  物理中断，零额外陷入；纯软件 trap 模拟——每次 timer 操作多一次 VM
+  exit。选哪种、mask/rearm 放在哪个时机，都直接决定这条路径的最坏延迟。所以"怎么
+  修"这件事本身就是实时工程。
+  3. 评分归类上它站得住。 30 分里那个 8
+  分项是"对调度、抢占、定时器、中断路径……有实质改造"——实现 CNTV
+  定时器所有权管理，是不折不扣的 hypervisor 定时器/中断路径实质改造。但 5 分的"
+  改造前后数据体现最坏延迟改善"需要另找证据：在修好的路径上先测量，找到瓶颈（比
+  如 queue_interrupt 的 VM 级锁 + notify_all 惊群，或 timer wheel
+  的全局锁），再做一个针对性优化，那个优化的 A/B 才是"提高实时性"的数据。
+
+  所以我建议的组合是：路 3 修复 = 使能 + 实质改造（8 
+  分材料），路径打通后测出来的瓶颈优化 = 实时性改善（5 
+  分材料）。报告里前者如实写"使 AxVisor
+  具备完整虚拟定时器服务能力，并测得其延迟分布"，后者才写"p99.9/max 从 X 降到
+  Y"。两件事分开写，反而比混在一起更有说服力。
+
+  顺带一提：那个每秒 600+ 次的中断风暴本身就是实时灾难——如果发生在跑着其他 Guest
+  的共享核上，会把所有人的尾延迟打穿。消除这种病态行为可以写进"确定性提升"，但
+  同样属于能力/正确性叙事，不是 A/B 叙事。
+
+  ---
+  2. "架构属性"是什么意思？改了能提高实时性吗？
+
+  架构属性 = 系统按设计意图运行所必然表现出的行为，不是缺陷。 它的反面是 bug（路
+  4：设计意图是 secondary 读到正确的 boot 参数，实际读到
+  -1——行为偏离了意图）。路 1 和路 2
+  的"失败"，是系统精确地做了设计要它做的事，只是这个设计和你的实验目标冲突了。改
+  架构属性不是"修复"，而是换一组权衡——所以要分别回答"改了有没有实时收益"：
+
+  路 1（passthrough 绕过软件层）：改了只会更差，别改。
+  这个属性本身就是一种实时优化——IMO=0 让中断从 GIC 直达 Guest，是物理上可能的最
+  低延迟路径，接近裸机。它付出的代价不是延迟，而是灵活性：hypervisor
+  失去了拦截、排序、优先级仲裁中断的能力，也没法让多个 vCPU
+  共享这颗核。你如果"改掉"它（让中断绕回软件层），延迟只会变高。所以对独占核的
+  RTOS Guest，正确做法是保持原样，把它作为"分区式实时"的证据；它唯一"不能提供"的
+  ，是下面路 2 那种能力。
+
+  路 2（NoPreempt + 宿主收不回 
+  CPU）：改了确实能提高实时性——但只在共享核场景，而且贵。
+  先看这个属性保护什么：NoPreempt 保证 Guest 运行期间 per-CPU 状态（当前 vCPU
+  发布、pCPU 绑定）不被迁移破坏，这是正确性不变量；IMO=0
+  则让宿主在这颗核上交出了全部中断，连自己的 tick
+  都收不到。合起来的必然结果就是"宿主无法抢占正在运行的 Guest"。
+
+  改造它意味着建立一个新能力：宿主用有界延迟收回 CPU 
+  的手段。具体形态大概是——宿主 tick 挂到 GIC Group 0/FIQ（FMO=1、IMO=0，Guest 的
+  IRQ 继续直通，宿主保留 FIQ 后门），或共享核统一用 emulated
+  模式制造天然退出点；再配上带优先级和唤醒抢占的 vCPU
+  调度。做成之后你得到的实时收益是真实且可测的：共享 pCPU 上，RTOS vCPU 
+  抢占非实时 vCPU 的延迟有界——这正是 Xen RTDS、KVM-RT 这类"hypervisor
+  实时调度"的核心内容，也是会议纪要里"AxVisor 本身就是个 RTOS"愿景的必经之路。
+
+  但两个现实约束：其一，收益只在共享核场景可测——你们主线是 Zephyr 独占
+  pCPU3，没有竞争，这个改造在主线上测不出任何差异，要演示它就得专门搭共享核实验
+  ；其二，它动的是正确性不变量本身（要么重新设计 per-CPU
+  状态的迁移安全性，要么在 FIQ 里做受限操作），是四个方向里工程风险最高的。这就
+  是我说"本届不做、写进分析"的原因：不是不能改、改了没用，而是投入产出比在 12 
+  天窗口里排不上。
+
+  ---
+  一句话总结
+
+  实时性改造其实分三类：修偏差（路 4 的
+  bug——恢复设计意图，不产生延迟收益）、补能力（路
+  3——让路径从不可用变可用，是实质改造但不是 A/B 改善）、换权衡（路 2
+  的架构改动——用工程复杂度换共享核有界抢占，有真收益但要对场景）。任务一的 5
+  分"改善数据"哪一类都给不了，它只能来自第四种：在已能工作的路径上，用测量找到瓶
+  颈，做一个小而准的优化。所以顺序才是：绕开路 4 →
+  用最小手段打通软件路径（宿主注入或路 3 修复）→ 测量 → 优化 → A/B。路 2
+  的架构故事写进设计文档当"分析与后续方向"，是免费的 4 分分析项材料。
+
+✻ Crunched for 6m 0s
+
+❯ 1.你来根据当前的项目代码和我留下的trace记录分析一下,除了这个3之外,是否还有其  
+  他的值得修的可以提高系统实时性的东西吗? 2.你来给出一下修复这个路3的详细的todo 
+  吧,我们现在的修复有什么问题,也请一起指出来                                    
+
+  Thought for 4m 10s (ctrl+o to expand)
+
+● 好，两个问题都需要先把证据补齐：一是把你留下的 trace
+  记录翻出来看实际覆盖了什么，二是把路 3 相关的现有代码（gic
+  处理、上下文保存、host IRQ 分发）读细，才能指出现有修复的问题。
+
+  Thought for 14m 9s, searched for 6 patterns, ran 4 shell commands (ctrl+o to expand)
+
+● 两块证据先交代清楚：你们的 trace 原始记录并没有归档——我在 results/ 和 tmp/ 里
+  grep 不到任何 AXVM_RT_TRACE 行，day5/day6 日志里也是 0 条（当时串口按 info
+  级别抓取，trace 挂在 debug 级别下）。"passthrough 只见少量
+  vcpu_run/guest_exit"这个结论目前只存在于文档转述里。所以下面第 1 题是代码审计 
+  + 已归档 CSV/日志的结论，并且把"trace 基建本身"也列为必修项。
+
+  ---
+  一、除路 3 之外，值得修的实时性改造点
+
+  我把整条软件注入链路的锁和分配全部数了一遍，按"离任务一的可测收益有多近"排序。
+
+  A. 中断注入热路径：一次注入 5 次锁 + 惊群唤醒（第一优先，最佳 B 候选）
+
+  queue_interrupt（runtime/vcpus.rs:106-127）每注入一个中断，实际发生的事情是：
+
+  1. get_vm_by_id → 全局 SpinNoIrq<BTreeMap> 注册表锁（manager.rs:27,49）；
+  2. vm.status() → 拿 VM 的 machine 状态机锁（vm/mod.rs:800）；
+  3. with_runtime → 同一把 machine 锁第二次（vm/mod.rs:851-860）→ pending
+  队列锁：SpinNoIrq<BTreeMap<usize, Vec<_>>>（vm/mod.rs:192），锁内 Vec::push 
+  可能触发堆分配；
+  4. with_runtime → machine 锁第三次 → notify_all()（vm/mod.rs:378-380）——唤醒该
+  VM 所有阻塞的 vCPU 任务，不只是目标那个；
+  5. 无条件 send_ipi。
+
+  另外还存在第二套完全同构的平行队列
+  VcpuInterruptQueue（runtime/queue.rs:36，同样是
+  SpinNoIrq<BTreeMap<Vec>>），drain 侧每轮 vCPU 循环都分配一个新
+  Vec（vcpus.rs:167、queue.rs:58）。
+
+  改法：timer 回调/派发方直接持缓存的
+  Arc<VmRuntimeHandle>+VCpuRef（砍掉注册表锁和三次 machine 锁）；两套队列合并为
+  per-vCPU 有界预分配环形队列（无
+  BTreeMap、无锁内分配、溢出显式计数）；notify_all 改定向唤醒目标任务。
+  收益：enqueue 段（T3–T4）和 notify→wake 段的 p99.9/max；消除同 VM 兄弟 vCPU
+  的虚假唤醒（Linux 2 vCPU 场景每次注入都会白唤醒另一个）。
+  回归：容量/顺序/并发入队/溢出语义的确定性单测，非常好写。这是教科书级"有界内存
+  + 有界临界区 + O(1)"实时改造。
+
+  B. timer wheel 全局锁 + 同步跨核 rearm（第二优先）
+
+  - timer.rs:112 是单一全局 SpinNoIrq<TimerWheels>：所有 CPU 的
+  register/cancel/expire 全部串行。CNTP 模拟路径每次 guest 写 CVAL/CTL 都是
+  cancel+register 两次全局锁（cntp_timer.rs:225-289）；而且 check_timer_events
+  挂在每次外部中断退出后面（ops.rs:111-118），等于每次 host IRQ exit
+  都摸一次全局锁——跨核耦合是乘法级的。
+  - 更严重的是 rearm_remote_owner_host_timer（timer.rs:192-202）用
+  run_on_cpu_sync 同步等待远端 CPU 执行完 thunk。如果 owner 核正在 Guest
+  里长时间不退出，取消方就是无界等待——这是链路里一个真正的无界项。
+
+  改法：真 per-CPU wheel（percpu 存储，token 编码 owner CPU）；远端 rearm
+  改"置位 + IPI，owner 入口自查"的异步协议。timer.rs
+  已有成套测试基建，改造可全程带单测。
+
+  C. 空轮 1 秒 park 制造的周期性干扰源（小而实，容易出数据）
+
+  HOST_TIMER_PARK_DELAY = 1s（timer.rs:26,205-215）：wheel 空时把比较器扔到 1
+  秒后——每颗跑 emulated vCPU 的核每秒白挨一次宿主 timer IRQ = 每秒一次强制 guest
+  exit 尖刺。10ms 周期任务下约 1% 样本必然撞上。还要一并审计 ArceOS
+  宿主自身的调度 tick 频率（若非 tickless，干扰更密）。改法：给 host timer API
+  补真正的停表语义，或把 park
+  拉长几个数量级。这是"消除周期性干扰源"的标准改造，在 CNTP workload
+  上直接可测。
+
+  D. 注入路径的 panic（稳健性，可独立 PR）
+
+  gic.rs 的 inject_interrupt_gic_v3：找不到空闲 List Register 直接 panic!。中断
+  密集或多源并发时宿主整机崩溃，这在实时系统里是不可接受的失败模式。改成溢出计数
+  + 排队回退（借 EOI maintenance 中断续注入）。顺带说：它已有的 pending/active
+  去重分支是对的，路 3 修复会依赖它，值得补回归钉住。
+
+  E. 观测与日志基建（不产生分数，但不做则 A/B 全是脏数据）
+
+  - trace_runtime_event 是 debug!
+  逐条串口打印（vcpus.rs:29-43）——观测即扰动，必须换 per-CPU 固定容量 ring +
+  结束批量导出 + off/on 校准；顺带把 trace 结果归档（这次就没留下来）。
+  - unhandled IRQ 的逐条 warn 在风暴场景把每秒 616
+  次中断放大成串口负载——加限速。
+  - UART 交织丢行（day5 手工重建 4 行、day6 缺 6 行）→ CSV 行加标记/校验或延迟
+  dump。
+  - TCG 环境：QEMU vCPU 线程受宿主 x86 调度摆布，µs
+  级尾巴很大一部分来自宿主——跑基线前 taskset 绑核 + 安静宿主，否则 A/B
+  差异会被环境噪声淹没。
+
+  结论：A、B、C 是真正的 5 分"改善数据"候选池（按 next.md 纪律，等 trace
+  分段数据出来后只选一个做 B）；D、E 是应该无条件做的稳健性/基建项，可以独立成
+  PR。
+
+  ---
+  二、路 3 修复的详细 TODO
+
+  先指出现有修复的问题
+
+  1. 撤销掉的 workaround（收到 27 
+  就排队注入）错在三处：没有屏蔽电平源——CNTV_CTL.ISTATUS
+  持续断言，风暴照旧；每次风暴迭代重复入队，无合并；宿主侧 EOI/deactivate 与
+  Guest 侧虚拟 EOI 完全脱钩，物理/虚拟两台中断状态机对不上。回退是正确决定。
+  2. 从头到尾没有给 PPI27 注册宿主 action——每次都掉进 ax_hal::irq::handle_irq 的
+  unhandled 分支再打一条 warn，日志本身成了负载。
+  3. 目标定义错位：把"让 PPI27 别响"当问题，真正的问题是"CNTV
+  定时器服务的所有权模型缺失"。所有权定了，风暴自然消失。
+  4. 探针全靠串口 debug 打印，观测放大扰动（同 E）。
+  5. 两个好消息（地基其实已经有了）：context_frame.rs:163-171,245-247
+  已经保存/恢复 CNTVOFF/CNTV_CVAL/CTL 全套状态；CNTP
+  模拟链给出了完整的参考设计——sysreg trap → bank/generation → timer wheel →
+  host::queue_virtual_interrupt（cntp_timer.rs:370）→ 既有 transport。CNTV 
+  修复就是同一模式的"硬件定时器版"：不 trap 编程，只接管到期中断。
+
+  TODO（按阶段，含验收判据，预算 4–5 人日）
+
+  Phase 0：设计冻结（0.5 天）
+
+  - 写一页所有权设计：emulated 模式下 CNTV 编程权归 Guest（不 
+  trap，直写硬件）；到期中断归宿主接管转发。宿主只做两件事：fire 时置
+  CNTV_CTL.IMASK（EL2 可直接 msr，context_frame 已在这么读写），以及走
+  queue_interrupt 转发 vIRQ27。
+  - 记录两个不选的方案及原因：ICH_LR(HW=1) 物理链接需要宿主 GIC 切 EOImode=1（动
+  ArceOS 驱动，留作 v2 优化）；FEAT_ECV 全 trap 模拟在 RK3568/3588（A55/A76，无
+  ECV）上不可用。
+  - 非目标：VHE/E2H、vCPU 迁移、多 emulated vCPU 共享同一 pCPU。
+
+  Phase 1：宿主接管 PPI27（1 天）
+
+  - vCPU bind（emulated 模式）时经 ax_hal IRQ API 注册 PPI27 handler
+  并使能该核物理 PPI27；unbind 时反向清理。挂接模式参照
+  register_timer_callback（timer.rs:223）。同时建 per-CPU"属主 vCPU"登记表。
+  - handler 严格四步：①读 CNTV_CTL 确认 ISTATUS=1（防伪触发）→ ②置
+  IMASK=1（消电平源，风暴就死在这一步）→ ③queue_interrupt(vm, vcpu, 27) 复用既有
+  transport → ④正常 EOI。无属主时计数丢弃，不打逐条 warn。
+  - 验收：mock 单测"一次 fire = 恰好一次入队 + IMASK 置位"；旧实现（无
+  handler）必然落 unhandled。
+
+  Phase 2：解除屏蔽的时机 + 注入去重（1 天，语义核心）
+
+  - 这是当初 workaround 没想清楚的关键：Zephyr 的 ISR 只重写 CVAL、不重写
+  CTL，宿主置的 IMASK 会永久残留 → 只响一次就死。正确的解除点是 Guest EOI 
+  时刻：注入 vIRQ27 的 LR 置 EOI maintenance 位，注册宿主 maintenance
+  PPI（25）handler，在其中清 IMASK。
+  - 竞态兜底：若 Guest 先 EOI 后 rearm，解除瞬间 ISTATUS 可能仍为 1 → 立即再
+  fire 一次 → handler 再 mask + 入队，gic.rs 的 pending/active
+  去重让它不占第二个 LR——有界的单次多余中断，不是风暴。给这条兜底补确定性回归。
+  - 验收：时序回归"fire→mask→inject→guest EOI→unmask→guest rearm→再
+  fire"，每步恰好一次；重复注入不占第二个 LR。
+
+  Phase 3：物理 GICR 使能位所有权审计（0.5 天）
+
+  - emu 设备是 gppt-gicd/gicr（partial passthrough）：查清 GICR_ISENABLER0 的
+  PPI 位现在是模拟还是转发——风暴能到宿主，说明物理 27 
+  已被某处使能，必须查清是谁。定死规则：物理 PPI27 使能只归宿主（Phase 1 的 bind
+  时机），Guest 的虚拟使能位只影响 vGIC 注入判定。
+  - 验收：一张所有权表（寄存器位 × 谁写物理 × 谁看虚拟）+ 一条 gicr 回归。
+
+  Phase 4：阻塞唤醒与状态确认（0.5 天）
+
+  - 确认 per-VM CNTVOFF 初值策略（0 或 boot epoch）并文档化；"一 pCPU 一
+  emulated vCPU"写成断言。
+  - vCPU 因 WFI 阻塞在 wait() 时硬件 CNTV 保持武装：fire → 宿主 handler → queue
+  → notify/wake 
+  链自然唤醒——注意这恰好就是任务一要测量的唤醒路径，不需要额外机制。
+  - 验收：WFI 中的 vCPU 能被 CNTV 到期唤醒并收到注入。
+
+  Phase 5：确定性回归 + 集成冒烟（1 天）
+
+  - 集成冒烟就用当初失败的那个实验：默认 CNTV 内核 timer 的 Zephyr 在 emulated 
+  模式跑满 300 样本。判据：PERIODIC LATENCY COMPLETE samples=300、0 条 unhandled
+  IRQ 27、宿主 PPI27 计数与样本数同量级（对照当初
+  18,493/30s）。旧代码必然失败、新代码通过——正好满足仓库"先有必失败回归"的规矩。
+  - cargo fmt + cargo xtask clippy --package arm_vgic --package axvm --package 
+  arm_vcpu。
+
+  Phase 6：接回任务一主线（0.5 天）
+
+  - 打通即得到真实 CNTV workload：跑 A 基线，trace 分段（T1=PPI27 handler
+  入口，T3–T11 按 next.md 定义），按分段 p99.9/max 从上面第一部分的 A/B/C
+  里只选一个 B 做改善 A/B。
+  - 文档：所有权不变量、已知限制（TCG 与真 GIC
+  的电平重触发时序差异，板卡需复验）。
+
+  风险与止损：最大不确定在 Phase 2 的 maintenance 中断——若 ArceOS 侧 PPI25
+  接入受阻超过 1 天，退而求其次用"每次 guest entry 时检查 !pending && ISTATUS==0
+  则 unmask"的轮询式解除（对本 workload 正确性够用，因为采样器每周期都有串口
+  MMIO exit），把 maintenance 版留给 v2，并在文档里如实标注边界。
+
+✻ Churned for 29m 10s
