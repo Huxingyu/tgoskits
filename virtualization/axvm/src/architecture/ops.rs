@@ -85,6 +85,14 @@ pub(crate) trait ArchOps {
         vcpu.inject_interrupt_with_trigger(interrupt.id.0 as usize, interrupt.trigger)
     }
 
+    /// Returns true when the backend cannot currently accept another edge for
+    /// `vector` (for example the GIC list register for it is already pending
+    /// or active). Drain loops re-queue such interrupts instead of dropping
+    /// them.
+    fn is_virtual_interrupt_busy(_vector: usize) -> bool {
+        false
+    }
+
     fn after_external_interrupt(
         _vm: &crate::AxVMRef,
         _vcpu: &crate::vm::AxVCpuRef<Self::VCpu>,
@@ -200,9 +208,19 @@ fn inject_drained_interrupts<A: ArchOps>(
     vcpu_id: usize,
     vcpu: &crate::vm::AxVCpuRef<A::VCpu>,
 ) {
+    let mut requeue: alloc::vec::Vec<_> = alloc::vec::Vec::new();
     for interrupt in dispatcher.drain(vcpu_id) {
+        if A::is_virtual_interrupt_busy(interrupt.id.0 as usize) {
+            requeue.push(interrupt);
+            continue;
+        }
         if let Err(err) = A::inject_vcpu_interrupt(vcpu, interrupt) {
             warn!("VM[{vm_id}] VCpu[{vcpu_id}] failed to inject interrupt {interrupt:?}: {err:?}");
+        }
+    }
+    for interrupt in requeue {
+        if let Err(err) = dispatcher.enqueue(vcpu_id, interrupt) {
+            warn!("VM[{vm_id}] VCpu[{vcpu_id}] failed to re-queue busy interrupt: {err:?}");
         }
     }
 }

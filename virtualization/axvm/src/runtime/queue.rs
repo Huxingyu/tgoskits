@@ -62,6 +62,15 @@ impl VcpuInterruptQueue {
             .map(core::mem::take)
             .unwrap_or_default()
     }
+
+    /// Returns whether a vCPU has a queued interrupt that should prevent it
+    /// from sleeping through a notify race.
+    pub fn has_pending(&self, vcpu_id: usize) -> bool {
+        self.pending
+            .lock()
+            .get(&vcpu_id)
+            .is_some_and(|queue| !queue.is_empty())
+    }
 }
 
 #[cfg(all(test, feature = "host-test"))]

@@ -135,4 +135,10 @@ impl VcpuIrqDispatcher {
     pub fn drain(&self, vcpu_id: usize) -> Vec<PendingVcpuInterrupt> {
         self.queue.drain(vcpu_id)
     }
+
+    /// Returns whether a vCPU has a queued interrupt that should prevent it
+    /// from sleeping through a notify race.
+    pub fn has_pending(&self, vcpu_id: usize) -> bool {
+        self.queue.has_pending(vcpu_id)
+    }
 }

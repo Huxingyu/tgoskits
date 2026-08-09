@@ -411,6 +411,13 @@ impl VmRuntimeHandle {
             .unwrap_or_default()
     }
 
+    pub(crate) fn has_pending_interrupts(&self, vcpu_id: usize) -> bool {
+        self.pending_interrupts
+            .lock()
+            .get(&vcpu_id)
+            .is_some_and(|queue| !queue.is_empty())
+    }
+
     pub(crate) fn wait(&self) {
         self.wait_queue.wait();
     }
@@ -424,7 +431,20 @@ impl VmRuntimeHandle {
     }
 
     pub(crate) fn notify_all(&self) {
-        self.wait_queue.notify_all(false);
+        let mut woke = 0usize;
+        while self.wait_queue.notify_one(false) {
+            woke += 1;
+        }
+        crate::runtime::vcpus::notify_woke_count(0)
+            .fetch_add(woke, core::sync::atomic::Ordering::Relaxed);
+    }
+
+    pub(crate) fn requeue_pending_interrupt(&self, vcpu_id: usize, interrupt: PendingInterrupt) {
+        self.pending_interrupts
+            .lock()
+            .entry(vcpu_id)
+            .or_default()
+            .push(interrupt);
     }
 
     pub(crate) fn mark_vcpu_running(&self) {
