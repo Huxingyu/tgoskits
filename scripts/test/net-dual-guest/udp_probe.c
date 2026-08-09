@@ -251,6 +251,10 @@ int main(int argc, char **argv) {
     signal(SIGINT, on_signal);
     signal(SIGTERM, on_signal);
 
+    if (argc == 1) {
+        return run_recv(4242);
+    }
+
     if (argc >= 3 && strcmp(argv[1], "recv") == 0) {
         uint16_t port = 0;
         if (parse_port(argv[2], &port) < 0) {

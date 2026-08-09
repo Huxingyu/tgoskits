@@ -15,6 +15,7 @@ if [[ -z "$BASE_INITRAMFS" ]]; then
   fi
 fi
 PROBE="${PROBE:-$REPO_ROOT/tmp/net-dual-guest/udp_probe}"
+TASK2_INIT="${TASK2_INIT:-$REPO_ROOT/tmp/net-dual-guest/task2-init}"
 OUT="${OUT_INITRAMFS:-$REPO_ROOT/tmp/net-dual-guest/initramfs-aarch64-busybox-net.cpio.gz}"
 
 if [[ ! -f "$BASE_INITRAMFS" ]]; then
@@ -25,6 +26,10 @@ if [[ ! -x "$PROBE" ]]; then
   echo "udp_probe not found; run build-udp-probe.sh first: $PROBE" >&2
   exit 1
 fi
+if [[ ! -x "$TASK2_INIT" ]]; then
+  echo "task2-init not found; run build-udp-probe.sh first: $TASK2_INIT" >&2
+  exit 1
+fi
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/udp-initramfs.XXXXXX")"
 trap 'rm -rf "$WORK"' EXIT
@@ -33,6 +38,8 @@ cd "$WORK"
 gzip -dc "$BASE_INITRAMFS" | cpio -idm --quiet
 cp "$PROBE" bin/udp_probe
 chmod 0755 bin/udp_probe
+cp "$TASK2_INIT" bin/task2-init
+chmod 0755 bin/task2-init
 mkdir -p "$(dirname "$OUT")"
 find . -print0 | cpio -o -0 -H newc --quiet | gzip -9 > "$OUT"
 

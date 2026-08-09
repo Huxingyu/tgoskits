@@ -20,10 +20,12 @@ args = [
   "root=/dev/nvme0n1 rw init=/bin/sh",
   "-m",
   "8g",
+  "-monitor",
+  "none",
 ]
 fail_regex = []
 success_regex = []
-shell_prefix = "PROJECT EXECUTION SUCCESSFUL"
+shell_prefix = "/bin/sh"
 shell_init_cmd = "echo T1_LINUX_OK"
 to_bin = true
 uefi = false

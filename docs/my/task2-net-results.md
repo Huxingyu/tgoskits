@@ -51,7 +51,7 @@ console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日�
 
 ## T3 映射路线验证（2026-08-09）
 
-状态：**未通过，但定位到两个根因并修了一个**
+状态：**部分通过；Linux 侧已打通到 init，RTOS/MAP 路线仍待继续**
 
 实验：
 
@@ -71,12 +71,22 @@ console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日�
 - **aarch64 identity 内存下 ramdisk 不迁移**：补了
   `BootImagePlan` 的 ramdisk 相对偏移迁移，与 kernel 一起搬到动态 HPA，
   `virtualization/axvm/src/vm/boot.rs`。
+- **HVC/SMC 返回后 PC 未前进**：ELR_EL2 指向触发指令，返回前必须 +4；
+  修复 `virtualization/arm_vcpu/src/exception.rs` 后，Linux 从
+  `psci: probing...` 卡死变为继续启动。
+- **initramfs `/dev/console` 是普通文件**：内核把 init 的 fd 0/1/2 指向该
+  文件，脚本输出全部落盘不可见；新增静态 C init（`task2-init.c`）先重建
+  设备节点并把 fd 指向 console，再执行 ifconfig/udp_probe。
 
 修复后验证：Linux 单 Guest（`MAP_ALLOC`，1-vCPU）已能打印
-`Linux version` 与 `earlycon`，但仍在 `psci: probing for conduit method from
-DT.` 后挂起（PSCI_VERSION HVC 有返回日志，Guest 未继续）。
+`Linux version`、`earlycon`、`psci: PSCIv0.2 detected`，并进入
+`/bin/task2-init`：`TASK2_INIT_START`、`TASK2_NO_ETH0`、
+`TASK2_UDP_RECV_STARTED`、`udp_probe: recv on 0.0.0.0:4242` 均出现，
+无 kernel panic。
 
 剩余问题：
 
-- AxVisor 的 PSCI/HVC 返回路径需要继续排查（PSCI_VERSION 之后 Guest 不再前进）。
-- ArceOS `MAP_IDENTICAL` 的 0x48 MMIO fault 需要单独定位。
+- Linux `MAP_RESERVED` / `MAP_IDENTICAL` 的映射路线仍待验证（当前以
+  `MAP_ALLOC` 1-vCPU 跑通，2-vCPU 的 PSCI CPU_ON 尚未实现）。
+- ArceOS `MAP_IDENTICAL` 的 0x48 MMIO fault 需要单独定位；下一步试
+  ArceOS `MAP_RESERVED` 固定恒等（link 地址 `0x8020_0000`）。

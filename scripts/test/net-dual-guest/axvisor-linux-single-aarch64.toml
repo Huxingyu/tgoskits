@@ -14,7 +14,7 @@ kernel_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/qemu-aarch64/linux/lin
 kernel_load_addr = 0x8020_0000
 ramdisk_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/initramfs-aarch64-busybox-net.cpio.gz"
 ramdisk_load_addr = 0x8800_0000
-cmdline = "earlycon=pl011,mmio32,0x09000000 console=ttyAMA0 loglevel=8 rdinit=/bin/sh maxcpus=1"
+cmdline = "earlycon=pl011,mmio32,0x09000000 console=ttyAMA0,115200 loglevel=8 rdinit=/bin/task2-init maxcpus=1 keep_bootcon"
 dtb_load_addr = 0x8f00_0000
 memory_regions = [
   [0x8000_0000, 0x1000_0000, 0x7, 0],
