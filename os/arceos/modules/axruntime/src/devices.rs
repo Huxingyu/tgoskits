@@ -118,7 +118,33 @@ fn register_unix_namespace() {
 
 #[cfg(feature = "net")]
 fn parse_network_config() -> ax_net::NetworkConfig {
-    ax_net::NetworkConfig::default()
+    let mut config = ax_net::NetworkConfig::default();
+
+    // Optional compile-time static IP for point-to-point / offline links such
+    // as the task-2 dual-guest network. When unset the behaviour stays the
+    // default (DHCP).
+    if let Some(ip) = option_env!("AX_NET_IP").and_then(|value| value.parse().ok()) {
+        let prefix_len = option_env!("AX_NET_PREFIX")
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(24);
+        let gateway = option_env!("AX_NET_GATEWAY")
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(core::net::Ipv4Addr::UNSPECIFIED);
+        config.interfaces.push(ax_net::InterfaceConfig {
+            name: alloc::string::String::from("eth0"),
+            match_by: ax_net::InterfaceMatcher::ByOrder(0),
+            static_ip: Some(ax_net::StaticIpConfig {
+                ip,
+                prefix_len,
+                gateway,
+            }),
+            dhcp: false,
+            metric: 100,
+            dns_servers: alloc::vec![],
+        });
+    }
+
+    config
 }
 
 /// A wireless device that registers *after* `init_network`: its already-wrapped

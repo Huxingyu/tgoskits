@@ -1,0 +1,6 @@
+# ArceOS UDP echo build config for the task-2 RTOS-side guest.
+package = "arceos-udpecho"
+target = "aarch64-unknown-none-softfloat"
+features = ["net"]
+log = "Info"
+max_cpu_num = 1

@@ -1,0 +1,46 @@
+# Task-2 dual-guest network QEMU config.
+#
+# Independent from the task-1 A/B qemu-aarch64.toml on purpose: adding NICs
+# must never change task-1 experiment input.
+#
+# Topology (QEMU virt machine, virtio-mmio transport):
+#   slot0 -> MMIO 0x0a000000, GIC INTID 48, Linux
+#   slot1 -> MMIO 0x0a000200, GIC INTID 49, RTOS/ArceOS
+#
+# The two socket netdevs form a point-to-point link inside one QEMU process;
+# filter-dump captures each side separately as pcap evidence.
+args = [
+  "-nographic",
+  "-cpu",
+  "cortex-a72",
+  "-machine",
+  "virt,virtualization=on,gic-version=3",
+  "-smp",
+  "4",
+  "-device",
+  "nvme,drive=disk0,serial=tgoskits,max_ioqpairs=64,msix_qsize=65",
+  "-drive",
+  "id=disk0,if=none,format=raw,file=${workspace}/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img",
+  "-append",
+  "root=/dev/nvme0n1 rw init=/bin/sh",
+  "-m",
+  "8g",
+  "-qmp",
+  "unix:${workspace}/tmp/net-dual-guest/qmp.sock,server,nowait",
+  "-netdev",
+  "socket,id=net-linux,listen=127.0.0.1:12721",
+  "-device",
+  "virtio-net-device,netdev=net-linux,mac=52:54:00:12:34:01",
+  "-object",
+  "filter-dump,id=fd-linux,netdev=net-linux,file=${workspace}/tmp/net-dual-guest/linux.pcap",
+  "-netdev",
+  "socket,id=net-rtos,connect=127.0.0.1:12721",
+  "-device",
+  "virtio-net-device,netdev=net-rtos,mac=52:54:00:12:34:02",
+  "-object",
+  "filter-dump,id=fd-rtos,netdev=net-rtos,file=${workspace}/tmp/net-dual-guest/rtos.pcap",
+]
+fail_regex = []
+success_regex = []
+to_bin = true
+uefi = false

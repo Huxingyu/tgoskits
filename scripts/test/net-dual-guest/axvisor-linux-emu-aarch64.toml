@@ -1,11 +1,9 @@
-# Task-2 dual-guest network baseline: Linux with in-memory initramfs.
-# Derived from the day3 isolated dual-guest config (minimal device set,
-# no PCI/NVMe passthrough) that eliminated DMA quarantine noise.
-# virtio-net passthrough entries are added in a later step; keep this
-# file bootable without network first.
+# Task-2 Linux guest with emulated GIC (INTID 48 virtio-net path).
+# Emulated GIC is the preferred interrupt route: it avoids the shared-physical
+# GICD SPI arbitration problem of dual-guest passthrough.
 [base]
 id = 1
-name = "linux-qemu-net-dual"
+name = "linux-qemu-net-emu"
 vm_type = 1
 cpu_num = 2
 phys_cpu_ids = [1, 2]
@@ -24,13 +22,15 @@ memory_regions = [
 ]
 
 [devices]
-interrupt_mode = "passthrough"
+interrupt_mode = "emulated"
+emu_devices = [
+  ["gppt-gicd", 0x0800_0000, 0x1_0000, 0, 0x21, []],
+  ["gppt-gicr", 0x080a_0000, 0x2_0000, 0, 0x20, [2, 0x2_0000, 1]],
+]
 passthrough_devices = [
-  ["/psci"],
   ["/pl011@9000000"],
   ["/intc@8000000"],
   ["/timer"],
 ]
 passthrough_addresses = []
 excluded_devices = []
-emu_devices = []

@@ -12,7 +12,7 @@ phys_cpu_ids = [3]
 [kernel]
 entry_point = 0x4000_10a4
 image_location = "memory"
-kernel_path = "/home/huhu/tgoskits/tmp/axbuild/rootfs/qemu-aarch64/zephyr/zephyr-qemu"
+kernel_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/qemu-aarch64/zephyr/zephyr-qemu"
 kernel_load_addr = 0x4000_0000
 dtb_load_addr = 0x47e0_0000
 memory_regions = [
