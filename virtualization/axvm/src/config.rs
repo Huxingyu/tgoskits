@@ -442,6 +442,14 @@ impl AxVMConfig {
         self.cpu_config.bsp_entry = GuestPhysAddr::from(new_load + bsp_offset);
         self.cpu_config.ap_entry = GuestPhysAddr::from(new_load + ap_offset);
     }
+
+    /// Relocates the ramdisk load address, preserving the rest of the image
+    /// configuration.
+    pub fn relocate_ramdisk_image(&mut self, ramdisk_load_gpa: GuestPhysAddr) {
+        if let Some(ramdisk) = self.image_config.ramdisk.as_mut() {
+            ramdisk.load_gpa = ramdisk_load_gpa;
+        }
+    }
 }
 
 impl Default for AxVMConfig {
