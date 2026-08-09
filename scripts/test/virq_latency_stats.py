@@ -35,34 +35,44 @@ def percentile(values: list[int], fraction: float) -> int:
 def match_guest_samples(
     injections: dict[tuple[int, int], tuple[int, int, str]],
     guests: dict[tuple[int, int], int],
-) -> list[int]:
-    """Match each guest stream to successful host requests by timestamp."""
-    response_ns: list[int] = []
+) -> list[tuple[tuple[int, int], int]]:
+    """Match guest ISR timestamps to the latest preceding host request.
+
+    The guest sequence counts received interrupts, so it no longer identifies
+    the corresponding host sequence after a dropped interrupt. Monotonic host
+    and guest timestamps let us skip the missing request without shifting every
+    later sample by one or more periods.
+    """
+    matched: list[tuple[tuple[int, int], int]] = []
     vectors = {vector for vector, _ in injections} | {vector for vector, _ in guests}
     for vector in sorted(vectors):
         successful = [
-            requested
-            for (injection_vector, _), (requested, _, status) in sorted(injections.items())
+            ((vector, sequence), requested)
+            for (injection_vector, sequence), (requested, _, status) in sorted(
+                injections.items()
+            )
             if injection_vector == vector and status == "ok"
         ]
         injection_index = 0
         vector_guests = sorted(
-            timestamp
-            for (guest_vector, _), timestamp in guests.items()
-            if guest_vector == vector
+            (key, timestamp)
+            for key, timestamp in guests.items()
+            if key[0] == vector
         )
-        for guest_timestamp in vector_guests:
+        for _, guest_timestamp in vector_guests:
             if injection_index >= len(successful):
                 continue
             while (
                 injection_index + 1 < len(successful)
-                and successful[injection_index + 1] <= guest_timestamp
+                and successful[injection_index + 1][1] <= guest_timestamp
             ):
                 injection_index += 1
-            if successful[injection_index] <= guest_timestamp:
-                response_ns.append(guest_timestamp - successful[injection_index])
-                injection_index += 1
-    return response_ns
+            if successful[injection_index][1] > guest_timestamp:
+                continue
+            key, requested = successful[injection_index]
+            matched.append((key, guest_timestamp - requested))
+            injection_index += 1
+    return matched
 
 
 def summarize(path: Path, period_ns: int) -> dict[str, int | float]:
@@ -87,10 +97,12 @@ def summarize(path: Path, period_ns: int) -> dict[str, int | float]:
             vector = int(match["vector"] or 48)
             guests[(vector, int(match["sequence"]))] = int(match["timestamp"])
 
-    response_ns = match_guest_samples(injections, guests)
+    matched_samples = match_guest_samples(injections, guests)
+    response_ns = [latency for _, latency in matched_samples]
     overrun_ns = [max(0, value - period_ns) for value in response_ns]
     matched = len(response_ns)
-    lost_irq = max(0, len(injections) - matched)
+    successful_injections = sum(status == "ok" for _, _, status in injections.values())
+    lost_irq = max(0, successful_injections - matched)
     errors = sum(status != "ok" for _, _, status in injections.values())
     return {
         "injected": len(injections),
@@ -107,12 +119,64 @@ def summarize(path: Path, period_ns: int) -> dict[str, int | float]:
     }
 
 
+def summarize_exact(path: Path) -> dict[str, int | float]:
+    """Match complete rounds by (vector, sequence) index.
+
+    The monotonic matcher misattributes samples when the guest consumes
+    slower than the injector (batched delivery). For a round where the guest
+    received every sequence, index matching is exact and uncensored.
+    """
+    injections: dict[tuple[int, int], int] = {}
+    guests: dict[tuple[int, int], int] = {}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        line = ANSI_RE.sub("", line)
+        if match := INJECT_RE.search(line):
+            injections[(int(match["vector"]), int(match["sequence"]))] = int(
+                match["requested"]
+            )
+            continue
+        if match := GUEST_RE.match(line.strip()):
+            vector = int(match["vector"] or 48)
+            guests[(vector, int(match["sequence"]))] = int(match["timestamp"])
+
+    response_ns: list[int] = []
+    unmatched = 0
+    for key, requested in sorted(injections.items()):
+        if key in guests:
+            response_ns.append(guests[key] - requested)
+        else:
+            unmatched += 1
+    return {
+        "injected": len(injections),
+        "guest_received": len(guests),
+        "matched": len(response_ns),
+        "unmatched": unmatched,
+        "lost_irq": unmatched,
+        "inject_errors": 0,
+        "queue_overflow": 0,
+        "overrun_max_ns": 0,
+        "mean_ns": round(statistics.mean(response_ns)) if response_ns else 0,
+        "p99_ns": percentile(response_ns, 0.99),
+        "p99_9_ns": percentile(response_ns, 0.999),
+        "max_ns": max(response_ns, default=0),
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("log", type=Path)
     parser.add_argument("--period-ns", type=int, default=2_000_000)
+    parser.add_argument(
+        "--exact",
+        action="store_true",
+        help="match complete rounds by (vector, sequence) index",
+    )
     args = parser.parse_args()
-    result = summarize(args.log, args.period_ns)
+    result = (
+        summarize_exact(args.log)
+        if args.exact
+        else summarize(args.log, args.period_ns)
+    )
     print(json.dumps(result, sort_keys=True))
     print(
         "p99={p99_ns}ns p99.9={p99_9_ns}ns max={max_ns}ns "
