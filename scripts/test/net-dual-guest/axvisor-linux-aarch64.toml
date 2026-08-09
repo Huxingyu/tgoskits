@@ -1,0 +1,36 @@
+# Task-2 dual-guest network baseline: Linux with in-memory initramfs.
+# Derived from the day3 isolated dual-guest config (minimal device set,
+# no PCI/NVMe passthrough) that eliminated DMA quarantine noise.
+# virtio-net passthrough entries are added in a later step; keep this
+# file bootable without network first.
+[base]
+id = 1
+name = "linux-qemu-net-dual"
+vm_type = 1
+cpu_num = 2
+phys_cpu_ids = [1, 2]
+
+[kernel]
+entry_point = 0x8020_0000
+image_location = "memory"
+kernel_path = "/home/huhu/tgoskits/tmp/axbuild/rootfs/qemu-aarch64/linux/linux-qemu"
+kernel_load_addr = 0x8020_0000
+ramdisk_path = "/home/huhu/tgoskits/tmp/axbuild/rootfs/initramfs-aarch64-busybox.cpio.gz/initramfs-aarch64-busybox.cpio.gz"
+ramdisk_load_addr = 0x8800_0000
+cmdline = "earlycon=pl011,mmio32,0x09000000 console=ttyAMA0 loglevel=8 rdinit=/bin/sh"
+dtb_load_addr = 0x8f00_0000
+memory_regions = [
+  [0x8000_0000, 0x1000_0000, 0x7, 0],
+]
+
+[devices]
+interrupt_mode = "passthrough"
+passthrough_devices = [
+  ["/psci"],
+  ["/pl011@9000000"],
+  ["/intc@8000000"],
+  ["/timer"],
+]
+passthrough_addresses = []
+excluded_devices = []
+emu_devices = []
