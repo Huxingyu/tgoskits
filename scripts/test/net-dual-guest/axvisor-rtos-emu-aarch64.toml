@@ -13,7 +13,7 @@ entry_point = 0x8020_0000
 image_location = "memory"
 kernel_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/qemu-aarch64/arceos/arceos-udpecho.bin"
 kernel_load_addr = 0x8020_0000
-dtb_path = "/home/huhu/tgoskits-net/scripts/test/net-dual-guest/rtos-virt.dtb"
+dtb_path = "/home/huhu/tgoskits-net/scripts/test/net-dual-guest/pci-virt.dtb"
 dtb_load_addr = 0x8020_0000
 memory_regions = [
   [0x8020_0000, 0x0800_0000, 0x7, 2],

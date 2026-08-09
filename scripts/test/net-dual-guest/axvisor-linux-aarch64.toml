@@ -15,7 +15,7 @@ entry_point = 0x8020_0000
 image_location = "memory"
 kernel_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/qemu-aarch64/linux/linux-qemu"
 kernel_load_addr = 0x8020_0000
-dtb_path = "/home/huhu/tgoskits-net/scripts/test/net-dual-guest/host-virt.dtb"
+dtb_path = "/home/huhu/tgoskits-net/scripts/test/net-dual-guest/pci-virt.dtb"
 ramdisk_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/initramfs-aarch64-busybox-net.cpio.gz"
 ramdisk_load_addr = 0x8800_0000
 cmdline = "earlycon=pl011,mmio32,0x09000000 console=ttyAMA0,115200 loglevel=8 rdinit=/bin/task2-init maxcpus=1 keep_bootcon"

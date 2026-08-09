@@ -118,6 +118,33 @@ console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日�
    路由到 Guest，以及 Host 侧如何掩码这些 IRQ 避免风暴。
 3. Linux 2-vCPU 的 PSCI CPU_ON 仍未实现（当前用 `maxcpus=1` 绕过）。
 
+## T4 第二轮：virtio-net-pci 路线（2026-08-09）
+
+状态：**方向确认有效，仍需收尾**
+
+确认结果：
+
+1. **ArceOS 不探测 virtio-mmio**：`rdrive` 只从 PCI 网卡注册设备；因此
+   virtio-mmio 直通在 ArceOS 侧无效（这也是 T4 第一轮“No network device”的
+   直接原因）。
+2. **改走 `virtio-net-pci` 后 ArceOS 能注册网卡**：双 Guest 都 boot success，
+   ArceOS 注册 `eth0`（静态 `10.0.42.2/24`）和 `eth1`（DHCP），
+   `udpecho ready on 0.0.0.0:4242`；`linux.pcap` 已开始有流量。
+3. **Linux 用完整 PCI DTB 时出现 GIC/ITS 警告**：
+   `GICv3: Expected reserved range ... not found` / `memory probably corrupted`，
+   Linux 未到 init。原因大概率是完整 DTB 的 GIC ITS/保留内存与 AxVisor 生成
+   的 Guest 内存布局不一致，需要裁剪 DTB 或修正内存保留区。
+4. **任务一 realtime injector 与任务二冲突**：`VIRQ_INJECT ... status=error`
+   持续出现（vector 48/49 注入 VM2 失败），任务二实验应禁用 realtime probe
+   或把注入 vector 改到 50+。
+
+下一步：
+
+- 为 Linux/ArceOS 各生成只含自己 NIC 的 PCI DTB（或实现 FDT 设备过滤），
+  避免两个 Guest 都看到两张网卡。
+- 修正提供 DTB 的 GIC ITS/保留内存与 Guest 内存布局的一致性。
+- 任务二运行禁用 realtime injector；2-vCPU Linux 后续补 PSCI CPU_ON。
+
 剩余问题：
 
 - Linux `MAP_RESERVED` / `MAP_IDENTICAL` 的映射路线仍待验证（当前以
