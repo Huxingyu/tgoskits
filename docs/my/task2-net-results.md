@@ -48,3 +48,35 @@ console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日�
 - `qmp.sock` 在 QEMU 运行期间存在（退出后被 QEMU 清理），确认 QMP 可用。
 
 结论：双网卡布线、抓包和 QMP 基础设施可用，进入 T3 映射验证。
+
+## T3 映射路线验证（2026-08-09）
+
+状态：**未通过，但定位到两个根因并修了一个**
+
+实验：
+
+1. Linux `MAP_RESERVED`（`axvisor-linux-reserved-aarch64.toml`）：VM boot
+   success，但内核没有任何 console 输出（卡在 PSCI 探测之后）。
+2. ArceOS `MAP_IDENTICAL` + emulated GIC（`axvisor-rtos-emu-aarch64.toml`）：
+   VM boot success 后立即 MMIO fault：`read guest MMIO ... at 0x48`。
+3. Linux `MAP_IDENTICAL`：同样无 console 输出。
+
+定位到并已修复的问题：
+
+- **Guest DTB 没有写入 VM 配置的 cmdline**：`patch_chosen()` 只会改写已存在的
+  bootargs，不会用 `kernel.cmdline` 覆盖，导致 Guest Linux 继承外层 QEMU 的
+  bootargs（没有 earlycon/console），静默卡住。已修复：
+  `tree.patch_chosen(initrd, bootargs)` 现在接收并写入 guest cmdline，
+  `virtualization/axvm/src/boot/fdt/core/tree.rs`。
+- **aarch64 identity 内存下 ramdisk 不迁移**：补了
+  `BootImagePlan` 的 ramdisk 相对偏移迁移，与 kernel 一起搬到动态 HPA，
+  `virtualization/axvm/src/vm/boot.rs`。
+
+修复后验证：Linux 单 Guest（`MAP_ALLOC`，1-vCPU）已能打印
+`Linux version` 与 `earlycon`，但仍在 `psci: probing for conduit method from
+DT.` 后挂起（PSCI_VERSION HVC 有返回日志，Guest 未继续）。
+
+剩余问题：
+
+- AxVisor 的 PSCI/HVC 返回路径需要继续排查（PSCI_VERSION 之后 Guest 不再前进）。
+- ArceOS `MAP_IDENTICAL` 的 0x48 MMIO fault 需要单独定位。
