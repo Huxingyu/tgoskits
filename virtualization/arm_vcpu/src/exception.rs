@@ -95,6 +95,11 @@ pub fn handle_exception_sync(ctx: &mut TrapFrame) -> ArmVcpuResult<ArmVmExit> {
             // The `#imm` argument when triggering a hvc call, currently not used.
             let _hvc_arg_imm16 = ESR_EL2.read(ESR_EL2::ISS);
 
+            // ELR_EL2 points at the trapping `hvc` instruction; advance it so
+            // the guest resumes after the hypercall once the VMM returns.
+            let elr = ctx.exception_pc();
+            ctx.set_exception_pc(elr + exception_next_instruction_step());
+
             if let Some(result) = handle_hvc_psci_version(ctx) {
                 return result;
             }
@@ -103,9 +108,13 @@ pub fn handle_exception_sync(ctx: &mut TrapFrame) -> ArmVcpuResult<ArmVmExit> {
         }
         Some(ESR_EL2::EC::Value::TrappedMsrMrs) => handle_system_register(ctx),
         // HVC and SMC share the same exception-return semantics: ELR_EL2
-        // already points at the instruction after the trapping `hvc`/`smc`,
-        // so neither case must advance the PC again.
-        Some(ESR_EL2::EC::Value::SMC64) => handle_smc64_exception(ctx),
+        // points at the trapping instruction, so the PC must be advanced
+        // before the guest resumes.
+        Some(ESR_EL2::EC::Value::SMC64) => {
+            let elr = ctx.exception_pc();
+            ctx.set_exception_pc(elr + exception_next_instruction_step());
+            handle_smc64_exception(ctx)
+        }
         _ => {
             panic!(
                 "handler not presents for EC_{} @ipa 0x{:x}, @pc 0x{:x}, @esr 0x{:x},
@@ -382,8 +391,9 @@ mod tests {
 
         let exit = handle_hvc64_exception(&mut ctx).expect("PSCI HVC should produce VM exit");
 
-        // The preferred exception return address for HVC is already the next
-        // instruction after `hvc`; the trap layer must not advance it again.
+        // `handle_hvc64_exception` itself leaves the PC unchanged; the caller
+        // (`handle_exception_sync`) advances ELR_EL2 past the trapping HVC
+        // before dispatching the hypercall to the VMM.
         assert_eq!(ctx.exception_pc(), TEST_PC);
         assert!(matches!(
             exit,
@@ -404,8 +414,7 @@ mod tests {
 
         let exit = handle_hvc64_exception(&mut ctx).expect("generic HVC should produce VM exit");
 
-        // The preferred exception return address for HVC is already the next
-        // instruction after `hvc`; the trap layer must not advance it again.
+        // Same contract as the PSCI test: PC advance is owned by the caller.
         assert_eq!(ctx.exception_pc(), TEST_PC);
         assert!(matches!(
             exit,

@@ -122,6 +122,7 @@ pub(crate) fn handle_hypercall<V: VmArchVcpuOps, D>(
             Ok(outcome) => match hvc_outcome_action(outcome) {
                 HyperCallExitAction::Return(ret_val) => {
                     vcpu.set_return_value(ret_val);
+                    return Ok(BoundVcpuExit::Continue);
                 }
                 HyperCallExitAction::CompleteWithReturn {
                     return_value,
