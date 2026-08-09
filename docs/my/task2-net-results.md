@@ -29,3 +29,22 @@ FEATURES=openrace-realtime timeout 90 /home/huhu/tgoskits-realtime/target/debug/
 
 结论：迁移后的无网卡双 Guest 基线本身能启动；下一步需要先解决共享串口的
 console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日志对账不可靠。
+
+## T2 QEMU 布线冒烟（2026-08-09）
+
+状态：**通过**
+
+命令：与 T1 相同，`--qemu-config` 换成
+`scripts/test/net-dual-guest/qemu-aarch64-net.toml`（双 virtio-net + filter-dump
++ QMP），VM 配置仍为无网卡基线。
+
+结果：
+
+- QEMU 正常拉起 socket netdev（listen/connect `127.0.0.1:12721`）、两个
+  filter-dump 和 QMP UNIX socket，无参数错误。
+- `VM[1]` / `VM[2]` boot success，0 quarantine。
+- `tmp/net-dual-guest/linux.pcap` / `rtos.pcap` 在运行期间创建（当前为空捕获，
+  只有 24 字节 pcap 头，符合“未挂直通”预期）。
+- `qmp.sock` 在 QEMU 运行期间存在（退出后被 QEMU 清理），确认 QMP 可用。
+
+结论：双网卡布线、抓包和 QMP 基础设施可用，进入 T3 映射验证。
