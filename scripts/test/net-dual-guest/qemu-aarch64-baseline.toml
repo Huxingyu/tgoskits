@@ -20,6 +20,7 @@ args = [
   "root=/dev/nvme0n1 rw init=/bin/sh",
   "-m",
   "8g",
+  "-snapshot",
   "-monitor",
   "none",
 ]

@@ -84,6 +84,40 @@ console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日�
 `TASK2_UDP_RECV_STARTED`、`udp_probe: recv on 0.0.0.0:4242` 均出现，
 无 kernel panic。
 
+补充验证（T3 后半段）：
+
+- ArceOS `MAP_RESERVED` @ `0x8020_0000` + 完整 Host DTB（`dtb_path`）可正常
+  启动：`eth0` 注册、静态 IP `10.0.42.2/24`、`udpecho ready on 0.0.0.0:4242`。
+- 结论：ArceOS 早期 boot 依赖完整 DTB；AxVisor 从 VM 配置生成的 DTB 会让
+  ArceOS 在 0x48 处 MMIO fault。
+
+## T4 网卡直通 + 中断可达（2026-08-09）
+
+状态：**未通过（卡在 virtio IRQ 路由）**
+
+做了什么：
+
+- Linux 透传 `/virtio_mmio@a000200`（slot1，INTID 49），ArceOS 透传
+  `/virtio_mmio@a000000`（slot0，INTID 48），均使用 QEMU dump 的完整 DTB。
+- 尝试 passthrough 与 emulated GIC 两种 `interrupt_mode`。
+
+结果：
+
+- 两个 VM 都能 boot success，不再有地址冲突（去掉 `excluded_devices`，改用
+  slot 分工避免 4K 对齐合并）。
+- 但两个 Guest 都探测不到 virtio 网卡：Linux `TASK2_NO_ETH0`，ArceOS
+  `No network device found!`。
+- emulated GIC 下出现持续 `Unhandled IRQ ... hwirq 27` 风暴，说明 virtio
+  物理中断没有被正确路由/掩码。
+
+遗留问题：
+
+1. Guest FDT 中的 virtio 节点与 stage-2 MMIO 映射是否真正建立（需要核对
+   `parse_passthrough_devices_address` 和 `setup_guest_fdt_from_vmm`）。
+2. virtio-net 的 SPI（48/49）在 passthrough/emulated 两种模式下如何正确
+   路由到 Guest，以及 Host 侧如何掩码这些 IRQ 避免风暴。
+3. Linux 2-vCPU 的 PSCI CPU_ON 仍未实现（当前用 `maxcpus=1` 绕过）。
+
 剩余问题：
 
 - Linux `MAP_RESERVED` / `MAP_IDENTICAL` 的映射路线仍待验证（当前以

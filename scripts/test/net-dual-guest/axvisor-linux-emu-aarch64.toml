@@ -13,6 +13,7 @@ entry_point = 0x8020_0000
 image_location = "memory"
 kernel_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/qemu-aarch64/linux/linux-qemu"
 kernel_load_addr = 0x8020_0000
+dtb_path = "/home/huhu/tgoskits-net/scripts/test/net-dual-guest/host-virt.dtb"
 ramdisk_path = "/home/huhu/tgoskits-net/tmp/axbuild/rootfs/initramfs-aarch64-busybox-net.cpio.gz"
 ramdisk_load_addr = 0x8800_0000
 cmdline = "earlycon=pl011,mmio32,0x09000000 console=ttyAMA0 loglevel=8 rdinit=/bin/task2-init"
@@ -31,6 +32,9 @@ passthrough_devices = [
   ["/pl011@9000000"],
   ["/intc@8000000"],
   ["/timer"],
+  ["/virtio_mmio@a000200"],
 ]
-passthrough_addresses = []
+passthrough_addresses = [
+  [0x0a00_0200, 0x200],
+]
 excluded_devices = []

@@ -1,9 +1,9 @@
-# Task-2 RTOS guest (ArceOS UDP echo) with emulated GIC (INTID 49 virtio-net
-# path). MAP_RESERVED pins GPA == HPA at the ArceOS link address 0x8020_0000,
-# so early boot code before MMU setup does not dereference an unmapped GPA.
+# ArceOS UDP echo guest with passthrough interrupt mode (no emulated GIC),
+# used to isolate the T3 0x48 MMIO fault to either the GIC config or the
+# generated guest DTB.
 [base]
 id = 2
-name = "arceos-net-emu"
+name = "arceos-net-passthrough"
 vm_type = 1
 cpu_num = 1
 phys_cpu_ids = [3]
@@ -20,11 +20,7 @@ memory_regions = [
 ]
 
 [devices]
-interrupt_mode = "emulated"
-emu_devices = [
-  ["gppt-gicd", 0x0800_0000, 0x1_0000, 0, 0x21, []],
-  ["gppt-gicr", 0x080a_0000, 0x2_0000, 0, 0x20, [1, 0x2_0000, 3]],
-]
+interrupt_mode = "passthrough"
 passthrough_devices = [
   ["/pl011@9000000"],
   ["/intc@8000000"],
@@ -35,3 +31,4 @@ passthrough_addresses = [
   [0x0a00_0000, 0x200],
 ]
 excluded_devices = []
+emu_devices = []
