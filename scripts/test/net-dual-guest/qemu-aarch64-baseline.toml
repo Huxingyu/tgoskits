@@ -1,0 +1,29 @@
+# T1 no-NIC dual-guest baseline QEMU config.
+#
+# Same machine wiring as the task-1 qemu-aarch64.toml (no virtio-net), plus a
+# shell hook that sends a marker command to the shared console after Zephyr
+# finishes its benchmark, so the Linux initramfs shell can be confirmed even
+# though both guests print to the same PL011.
+args = [
+  "-nographic",
+  "-cpu",
+  "cortex-a72",
+  "-machine",
+  "virt,virtualization=on,gic-version=3",
+  "-smp",
+  "4",
+  "-device",
+  "nvme,drive=disk0,serial=tgoskits,max_ioqpairs=64,msix_qsize=65",
+  "-drive",
+  "id=disk0,if=none,format=raw,file=${workspace}/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img",
+  "-append",
+  "root=/dev/nvme0n1 rw init=/bin/sh",
+  "-m",
+  "8g",
+]
+fail_regex = []
+success_regex = []
+shell_prefix = "PROJECT EXECUTION SUCCESSFUL"
+shell_init_cmd = "echo T1_LINUX_OK"
+to_bin = true
+uefi = false

@@ -1,0 +1,31 @@
+# Task-2 网络探路实验结果
+
+> 分支：`openrace/task2-net`
+> 机器：QEMU AArch64 + AxVisor，任务一 A/B 已结束
+
+## T1 无网卡双 Guest 基线复验（2026-08-09）
+
+状态：**通过（Linux shell 证据待串口分离后补强）**
+
+命令：
+
+```bash
+FEATURES=openrace-realtime timeout 90 /home/huhu/tgoskits-realtime/target/debug/tg-xtask \
+  axvisor qemu \
+  --config os/axvisor/configs/board/qemu-aarch64.toml \
+  --qemu-config scripts/test/net-dual-guest/qemu-aarch64-baseline.toml \
+  --vmconfigs scripts/test/net-dual-guest/axvisor-linux-aarch64.toml \
+  --vmconfigs scripts/test/net-dual-guest/axvisor-zephyr-aarch64.toml \
+  --rootfs /home/huhu/tgoskits/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img
+```
+
+结果：
+
+- `VM[1] boot success` / `VM[2] boot success`：通过。
+- DMA quarantine：0 条：通过。
+- Zephyr `PROJECT EXECUTION SUCCESSFUL`：通过。
+- Linux shell（`rdinit=/bin/sh`）：未拿到干净证据。两个 Guest 都直通同一个
+  PL011，串口输出互相穿插，`echo T1_LINUX_OK` 未能可靠送达/回显。
+
+结论：迁移后的无网卡双 Guest 基线本身能启动；下一步需要先解决共享串口的
+console 隔离（或至少用可锚定的输出协议），否则 T5/T6 的日志对账不可靠。
