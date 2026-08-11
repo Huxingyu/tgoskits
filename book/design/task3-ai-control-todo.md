@@ -350,14 +350,14 @@ M4 证据（2026-08-11，QEMU 双 Guest，6 组 × ~39 s 闭环）：
 
 ### M6：收口和视频
 
-- [ ] 编写 Task-3 设计文档；
-- [ ] 写明 SIL 边界，不声称真实板卡或硬实时保证；
-- [ ] 保存模型结构、权重哈希和推理测试向量；
-- [ ] 保存 baseline/AI 原始 CSV、日志和指标结果；
-- [ ] 保存完整 QEMU 构建/运行命令；
-- [ ] 录制双 Guest 启动、模型推理、CONTROL/STATUS、对象变化和故障处理；
-- [ ] 单独提交 Task-3 PR；
-- [ ] 运行 Task-2 回归和 Task-3 验收。
+- [x] 编写 Task-3 设计文档（`book/design/task3-ai-design.md`）；
+- [x] 写明 SIL 边界，不声称真实板卡或硬实时保证（设计文档 §1/§9）；
+- [x] 保存模型结构、权重哈希和推理测试向量（`model.json` + golden 测试）；
+- [x] 保存 baseline/AI 原始 CSV、日志和指标结果（`results/task3/` + README 清单）；
+- [x] 保存完整 QEMU 构建/运行命令（设计文档 §8）；
+- [ ] 录制双 Guest 启动、模型推理、CONTROL/STATUS、对象变化和故障处理（用户明确暂缓）；
+- [ ] 单独提交 Task-3 PR（用户明确暂缓，先留在本分支）；
+- [x] 运行 Task-2 回归和 Task-3 验收（协议 20 测试 + Python 20 测试通过，M5 2 次复现）。
 
 ## 7. 证据格式
 
@@ -422,14 +422,14 @@ Linux 模型、T2N1 网络协议和控制日志格式不应随之改变。
 
 以下条件全部满足时，Task-3 MVP 即可交付：
 
-- [ ] QEMU 中 Linux/Zephyr 双 Guest 可复现启动；
-- [ ] Zephyr 有非恒定的虚拟传感器/对象状态；
-- [ ] Linux Guest 内真实执行 1D CNN 推理；
-- [ ] 推理输出真实进入 T2N1 CONTROL；
-- [ ] Zephyr 应用控制并回传 STATUS；
-- [ ] baseline 和 AI 均完成至少 100 个控制周期；
-- [ ] 有 RMSE、调节时间和延迟数据；
-- [ ] 有一次 link down/up 安全行为证据；
-- [ ] 有原始日志、CSV、模型哈希和复现命令；
-- [ ] 有可展示完整闭环的演示视频；
-- [ ] Task-2 原有测试和证据不回归。
+- [x] QEMU 中 Linux/Zephyr 双 Guest 可复现启动；
+- [x] Zephyr 有非恒定的虚拟传感器/对象状态；
+- [x] Linux Guest 内真实执行 1D CNN 推理；
+- [x] 推理输出真实进入 T2N1 CONTROL；
+- [x] Zephyr 应用控制并回传 STATUS；
+- [x] baseline 和 AI 均完成至少 100 个控制周期；
+- [x] 有 RMSE、调节时间和延迟数据；
+- [x] 有一次 link down/up 安全行为证据；
+- [x] 有原始日志、CSV、模型哈希和复现命令；
+- [ ] 有可展示完整闭环的演示视频（用户明确暂缓）；
+- [x] Task-2 原有测试和证据不回归。
