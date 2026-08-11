@@ -229,7 +229,7 @@ response       0.35
 - [x] 保留 STATUS.last_control_request；
 - [x] 增加日志：
   - `TASK3_CONTROL_APPLIED`；
-  - `TASK3_STATUS_SENT`；
+  - `TASK2_STATUS_SENT`（沿用 Task-2 标记，未新增 TASK3 前缀版本）；
   - `TASK3_PLANT_STATE`；
 - [x] Linux 暂时使用固定值或固定 Kp 发送 CONTROL。
 
@@ -433,4 +433,3 @@ Linux 模型、T2N1 网络协议和控制日志格式不应随之改变。
 - [ ] 有原始日志、CSV、模型哈希和复现命令；
 - [ ] 有可展示完整闭环的演示视频；
 - [ ] Task-2 原有测试和证据不回归。
-

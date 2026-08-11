@@ -94,11 +94,11 @@ components/task3-model  no_std 纯 Rust f64 前向，权重 include_bytes 嵌入
 - 对照：Task-2 旧证据（`task2-p2-link-2325-axvisor.log`）显示同命令在**开机前**置 down 有效（guest 驱动 probe 时读到 link=down，carrier 起不来 → 5s peer timeout → Safe → 置 up 后恢复）。
 - 根因推断：`set_link` 只翻转 virtio-net 的 VIRTIO_NET_S_LINK_UP 状态位；运行中生效依赖 guest 驱动处理 CONFIG_CHANGE 中断重新读状态，该路径在"virtio-mmio 直通 AxVisor + 此 Linux guest"组合下未生效。
 - 备选方案（待执行）：沿用 Task-2 同款"开机前置 down → Safe → 置 up → TASK2_RECOVERED + 控制环续跑"完成 M5 验收，并把"运行中 set_link 无效"作为已知边界写入 M6 文档。
-- 备注：控制器已在 `TASK2_RECOVERED` 后补发下一条 CONTROL（否则纯请求-响应会在恢复后卡死），此改动已随 6129adc44 提交。
+- 备注：控制器已在 `TASK2_RECOVERED` 后补发下一条 CONTROL（否则纯请求-响应会在恢复后卡死），此改动已随 6dbd11841 提交。
 
 ## 5. 遗留工作
 
-1. **M5**：跑"开机前置 down"故障实验（脚本已就绪：`scripts/task3/run-task3-fault.sh`），存 AxVisor 日志 + 两侧 pcap。
+1. **M5**：跑"开机前置 down"故障实验（脚本已就绪并提交：`scripts/task3/run-task3-fault.sh`，见 `6dbd11841`），存 AxVisor 日志 + 两侧 pcap。
 2. **M6**：
    - 编写 Task-3 设计文档（SIL 边界、不声称硬实时）；
    - 归档：模型结构/权重哈希（`model.json`）、6 组 CSV、`comparison.png`、构建/运行命令；
