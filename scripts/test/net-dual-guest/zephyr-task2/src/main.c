@@ -347,7 +347,21 @@ int main(void)
 				printk("TASK2_REJECTED malformed_frame\n");
 			} else {
 				last_rx = now;
+				int was_safe = state_safe;
 				state_safe = 0;
+				if (was_safe) {
+					/* Mirror the Rust endpoint's recovery resync: after a
+					 * data-link outage both sides restart the reliable
+					 * stream from sequence 1.  Otherwise a lost STATUS
+					 * (the peer advanced to n+1 while we still expect n)
+					 * loops on OutOfOrder forever after recovery. */
+					next_tx_sequence = 1;
+					expected_rx_sequence = 1;
+					last_acknowledged = 0;
+					pending_sequence = 0;
+					pending_length = 0;
+					retry_count = 0;
+				}
 				if (kind == KIND_ACK) {
 					if (pending_length > 0 && acknowledgement == pending_sequence) {
 						pending_length = 0;

@@ -256,6 +256,16 @@ fn run() -> Result<(), &'static str> {
                 endpoint.state(),
                 poll.event
             );
+            if TASK3_CONTROL && ROLE == "controller" {
+                // Entering Safe means the outstanding request can never
+                // complete: RetryExhausted has dropped the protocol pending
+                // frame, and HeartbeatTimeout means no STATUS is coming for
+                // the current request (a pending frame would have exhausted
+                // its retries first).  Without clearing this marker the
+                // TASK2_RECOVERED resend below returns early and the
+                // request-response loop stays stalled after link recovery.
+                control.request_in_flight = false;
+            }
         }
         #[cfg(feature = "arceos")]
         ax_net::request_poll();
