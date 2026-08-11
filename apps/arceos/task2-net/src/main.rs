@@ -217,6 +217,13 @@ fn run() -> Result<(), &'static str> {
                     && endpoint.state() == EndpointState::Active
                 {
                     println!("TASK2_RECOVERED state=Active elapsed_ms={now}");
+                    if TASK3_CONTROL && ROLE == "controller" {
+                        // A pure request-response loop would stall after link
+                        // recovery: the peer only answers a CONTROL, but a new
+                        // CONTROL is only sent on STATUS delivery.  Resend the
+                        // next CONTROL right after the Safe->Active transition.
+                        control.send_next(&socket, &peer, &mut endpoint, &mut outbound, now)?;
+                    }
                 }
             }
             Err(error) if is_would_block(&error) => {}
@@ -376,8 +383,7 @@ impl Controller {
             let (output, infer_us) = self.ai_output(target);
             println!(
                 "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={infer_us}",
-                self.request_id,
-                output
+                self.request_id, output
             );
             output
         } else {
