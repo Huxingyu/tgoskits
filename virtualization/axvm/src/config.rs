@@ -441,7 +441,35 @@ impl AxVMConfig {
         self.image_config.kernel_load_gpa = kernel_load_gpa;
         self.cpu_config.bsp_entry = GuestPhysAddr::from(new_load + bsp_offset);
         self.cpu_config.ap_entry = GuestPhysAddr::from(new_load + ap_offset);
+        self.image_config.dtb_load_gpa = self
+            .image_config
+            .dtb_load_gpa
+            .map(|address| relocate_boot_image_address(address, old_load, new_load));
+        if let Some(ramdisk) = &mut self.image_config.ramdisk {
+            ramdisk.load_gpa = relocate_boot_image_address(ramdisk.load_gpa, old_load, new_load);
+        }
     }
+}
+
+/// Moves a boot image by the same signed offset as its kernel image.
+fn relocate_boot_image_address(
+    address: GuestPhysAddr,
+    old_kernel_load: usize,
+    new_kernel_load: usize,
+) -> GuestPhysAddr {
+    let address = address.as_usize();
+    let relocated = if new_kernel_load >= old_kernel_load {
+        let delta = new_kernel_load - old_kernel_load;
+        address
+            .checked_add(delta)
+            .expect("guest boot image address overflow during relocation")
+    } else {
+        let delta = old_kernel_load - new_kernel_load;
+        address
+            .checked_sub(delta)
+            .expect("guest boot image address underflow during relocation")
+    };
+    GuestPhysAddr::from(relocated)
 }
 
 impl Default for AxVMConfig {
@@ -553,6 +581,47 @@ mod tests {
         assert_eq!(regions[1].gpa, 0x110000);
         assert_eq!(regions[1].size, 0x10000);
         assert_eq!(regions[1].map_type, VmMemMappingType::MapReserved);
+    }
+
+    #[test]
+    fn relocating_kernel_also_moves_guest_boot_images() {
+        let mut config = AxVMConfig::new(AxVMConfigParams {
+            cpu_config: AxVCpuConfig {
+                bsp_entry: GuestPhysAddr::from(0x8020_1000),
+                ap_entry: GuestPhysAddr::from(0x8020_2000),
+            },
+            image_config: VMImageConfig {
+                kernel_load_gpa: GuestPhysAddr::from(0x8020_0000),
+                dtb_load_gpa: Some(GuestPhysAddr::from(0x8f00_0000)),
+                ramdisk: Some(RamdiskInfo {
+                    load_gpa: GuestPhysAddr::from(0x8800_0000),
+                    size: Some(0x1000),
+                }),
+                ..Default::default()
+            },
+            ..Default::default()
+        });
+
+        config.relocate_kernel_image(GuestPhysAddr::from(0x1_c220_0000));
+
+        assert_eq!(
+            config.image_config().kernel_load_gpa.as_usize(),
+            0x1_c220_0000
+        );
+        assert_eq!(
+            config.image_config().dtb_load_gpa.unwrap().as_usize(),
+            0x1_d10_00000
+        );
+        assert_eq!(
+            config
+                .image_config()
+                .ramdisk
+                .as_ref()
+                .unwrap()
+                .load_gpa
+                .as_usize(),
+            0x1_ca0_00000
+        );
     }
 
     #[cfg(target_arch = "x86_64")]

@@ -1,0 +1,11 @@
+/* Direct QEMU allocates its first virtio-mmio device at slot 31.  The final
+ * dual-Guest topology uses slot 30 for Zephyr after Linux owns slot 31. */
+&virtio_mmio31 {
+	status = "okay";
+
+	virtio_net: virtio-net {
+		compatible = "virtio,net";
+		status = "okay";
+		zephyr,random-mac-address;
+	};
+};

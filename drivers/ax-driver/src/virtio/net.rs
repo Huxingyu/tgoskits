@@ -4,12 +4,12 @@ use alloc::{boxed::Box, collections::BTreeMap, format, sync::Arc};
 use core::{
     cell::UnsafeCell,
     hint::spin_loop,
-    sync::atomic::{AtomicBool, Ordering},
+    sync::atomic::{AtomicBool, AtomicUsize, Ordering},
 };
 
 use ax_kernel_guard::NoPreemptIrqSave;
 use rd_net::{DmaBuffer, Event, IRxQueue, ITxQueue, NetError, QueueConfig};
-use rdrive::{DriverGeneric, PlatformDevice, probe::OnProbeError};
+use rdrive::{DriverGeneric, PlatformDevice, probe::OnProbeError, register::ProbeKind};
 #[cfg(feature = "pci")]
 use virtio_drivers::transport::DeviceType;
 use virtio_drivers::{
@@ -21,7 +21,7 @@ use virtio_drivers::{
 #[cfg(feature = "pci")]
 use crate::{PciIrqRequirement, binding_info_from_pci};
 use crate::{
-    net::PlatformDeviceNet,
+    net::{PlatformDeviceNet, ProbeFdtNet},
     virtio::{self, VirtIoHalImpl, VirtIoTransport},
 };
 
@@ -29,13 +29,22 @@ const QUEUE_SIZE: usize = 64;
 const BUFFER_SIZE: usize = 2048;
 
 #[cfg(feature = "pci")]
+const VIRTIO_NET_PROBE_KINDS: &[ProbeKind] = &[
+    ProbeKind::Fdt {
+        compatibles: &["virtio,mmio"],
+        on_probe: probe_fdt,
+    },
+    ProbeKind::Pci {
+        on_probe: probe_pci,
+    },
+];
+
+#[cfg(feature = "pci")]
 crate::model_register!(
     name: "VirtIO Net",
     level: ProbeLevel::PostKernel,
     priority: ProbePriority::DEFAULT,
-    probe_kinds: &[ProbeKind::Pci {
-        on_probe: probe_pci,
-    }],
+    probe_kinds: VIRTIO_NET_PROBE_KINDS,
 );
 
 struct VirtIoNetDevice<T: VirtIoTransport> {
@@ -118,6 +127,7 @@ struct VirtioNetInnerCell<T: VirtIoTransport> {
     inner: UnsafeCell<NetInner<T>>,
     access_active: AtomicBool,
     irq_ack_pending: AtomicBool,
+    irq_count: AtomicUsize,
 }
 
 unsafe impl<T: VirtIoTransport> Send for VirtioNetInnerCell<T> {}
@@ -129,6 +139,7 @@ impl<T: VirtIoTransport> VirtioNetInnerCell<T> {
             inner: UnsafeCell::new(inner),
             access_active: AtomicBool::new(false),
             irq_ack_pending: AtomicBool::new(false),
+            irq_count: AtomicUsize::new(0),
         }
     }
 
@@ -152,6 +163,13 @@ impl<T: VirtIoTransport> VirtioNetInnerCell<T> {
     }
 
     fn handle_irq(&self) -> Event {
+        let count = self
+            .irq_count
+            .fetch_add(1, Ordering::Relaxed)
+            .saturating_add(1);
+        if count == 1 || count.is_power_of_two() {
+            log::info!("virtio-net guest IRQ handler invoked count={count}");
+        }
         let queue_interrupt = self
             .try_with_irq(|inner| {
                 self.irq_ack_pending.store(false, Ordering::Release);
@@ -372,6 +390,17 @@ fn probe_pci(mut probe: rdrive::probe::pci::ProbePci<'_>) -> Result<(), OnProbeE
     register_pci_transport(probe, transport)
 }
 
+fn probe_fdt(probe: rdrive::register::ProbeFdt<'_>) -> Result<(), OnProbeError> {
+    let (device_type, transport) = virtio::probe_fdt_mmio_device(probe.info())?;
+    if device_type != DeviceType::Network {
+        return Err(OnProbeError::NotMatch);
+    }
+    let net = make_net(transport)?;
+    let irq = probe.register_net("virtio-net", net)?;
+    log::info!("registered FDT VirtIO network device irq={irq:?}");
+    Ok(())
+}
+
 pub fn register_transport<T: Transport + 'static>(
     plat_dev: PlatformDevice,
     transport: T,
@@ -399,7 +428,7 @@ fn register_pci_transport<T: Transport + 'static>(
 fn make_net<T: Transport + 'static>(transport: T) -> Result<VirtIoNetDevice<T>, OnProbeError> {
     VirtIoNetDevice::new(transport).map_err(|err| {
         OnProbeError::other(format!(
-            "failed to initialize static VirtIO net device: {err:?}"
+            "failed to initialize VirtIO network device: {err:?}"
         ))
     })
 }
@@ -421,7 +450,16 @@ mod tests {
 
     use core::sync::atomic::{AtomicBool, Ordering};
 
-    use super::VirtioNetAccessGuard;
+    use super::{VIRTIO_NET_PROBE_KINDS, VirtioNetAccessGuard};
+
+    #[test]
+    fn virtio_net_is_discoverable_from_fdt_mmio() {
+        assert!(VIRTIO_NET_PROBE_KINDS.iter().any(|kind| matches!(
+            kind,
+            rdrive::register::ProbeKind::Fdt { compatibles, .. }
+                if compatibles.contains(&"virtio,mmio")
+        )));
+    }
 
     #[test]
     fn irq_access_returns_none_when_task_access_is_active() {

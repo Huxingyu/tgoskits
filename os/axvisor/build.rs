@@ -377,6 +377,19 @@ fn main() -> anyhow::Result<()> {
         );
     }
 
+    if let Ok(config_files) = &config_files {
+        for config_file in config_files {
+            if let Some(images) = parse_config_file(config_file) {
+                for path in [Some(images.kernel), images.dtb, images.bios, images.ramdisk]
+                    .into_iter()
+                    .flatten()
+                {
+                    println!("cargo:rerun-if-changed={}", path.display());
+                }
+            }
+        }
+    }
+
     match config_files {
         Ok(config_files) => {
             let output = if config_files.is_empty() {

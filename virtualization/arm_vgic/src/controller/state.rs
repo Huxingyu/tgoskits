@@ -1,6 +1,7 @@
 //! VM-local interrupt delivery and CPU-interface state transitions.
 
 use alloc::{sync::Arc, vec::Vec};
+use core::sync::atomic::{AtomicUsize, Ordering};
 
 use super::{ControllerState, GicV3VcpuWake, SpiBacking};
 use crate::{
@@ -8,6 +9,12 @@ use crate::{
     ListRegisterState, LpiId, PhysicalInterruptBinding, QueuedDelivery, RedistributorState,
     SgiTarget, SpiId, TriggerMode, VgicError, VgicResult,
 };
+
+// Physical passthrough delivery is intentionally observable while bringing up
+// a new host/Guest GIC route. Keep the counters bounded and emit only at powers
+// of two so a level-triggered device cannot flood the hypervisor log.
+static PHYSICAL_QUEUE_DIAGNOSTICS: [AtomicUsize; 1020] = [const { AtomicUsize::new(0) }; 1020];
+static PHYSICAL_REFILL_DIAGNOSTICS: [AtomicUsize; 1020] = [const { AtomicUsize::new(0) }; 1020];
 
 pub(super) enum DeliveryRetirement {
     Emulated { intid: IntId },
@@ -144,16 +151,48 @@ impl ControllerState {
         };
         let distributor_enabled = self.distributor.enabled();
         let interrupt = self.distributor.interrupt_mut(spi)?;
+        let count = PHYSICAL_QUEUE_DIAGNOSTICS
+            .get(spi.raw() as usize)
+            .map(|counter| counter.fetch_add(1, Ordering::Relaxed).saturating_add(1))
+            .unwrap_or(1);
+        let should_log = count == 1 || count.is_power_of_two();
+        if should_log {
+            log::info!(
+                "VGIC physical SPI queue attempt spi={} count={} distributor_enabled={} \
+                 interrupt_enabled={} pending_before={}",
+                spi.raw(),
+                count,
+                distributor_enabled,
+                interrupt.enabled(),
+                interrupt.pending(),
+            );
+        }
         // A host acknowledge is an architectural pending latch even when the
         // guest races to mask the input. Keep it outside the LR queues until
         // both guest enable gates reopen.
         interrupt.set_pending(true);
+        let pending_after = interrupt.pending();
         if !distributor_enabled || !interrupt.enabled() {
+            if should_log {
+                log::info!(
+                    "VGIC physical SPI deferred spi={} reason=guest_delivery_gate_closed",
+                    spi.raw()
+                );
+            }
             return Ok(None);
         }
         let redistributor = self.redistributor_mut(binding.target(), "forward physical SPI")?;
         let queued = redistributor.queue_physical(IntId::Spi(spi), binding.host())?;
         let wake = redistributor.wake();
+        if should_log {
+            log::info!(
+                "VGIC physical SPI queue result spi={} target_vcpu={} queued={} pending_after={}",
+                spi.raw(),
+                binding.target().raw(),
+                queued,
+                pending_after,
+            );
+        }
         if queued {
             *self
                 .physical_spi_acknowledged
@@ -389,6 +428,23 @@ impl ControllerState {
                 .refill_list_registers(|spi| Ok(distributor.interrupt(spi)?.priority()))?;
             (outcome, redistributor.cpu_interface().clone())
         };
+        for intid in &loaded.loaded {
+            let IntId::Spi(spi) = *intid else {
+                continue;
+            };
+            let count = PHYSICAL_REFILL_DIAGNOSTICS
+                .get(spi.raw() as usize)
+                .map(|counter| counter.fetch_add(1, Ordering::Relaxed).saturating_add(1))
+                .unwrap_or(1);
+            if count == 1 || count.is_power_of_two() {
+                log::info!(
+                    "VGIC physical SPI loaded into LR spi={} vcpu={} count={}",
+                    spi.raw(),
+                    vcpu.raw(),
+                    count,
+                );
+            }
+        }
         for intid in loaded.spilled_pending {
             self.cancel_inflight(vcpu, intid)?;
         }

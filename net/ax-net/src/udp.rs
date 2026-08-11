@@ -750,4 +750,48 @@ mod tests {
             }
         );
     }
+
+    #[test]
+    fn send_to_is_dispatched_to_the_peer_after_polling() {
+        let _guard = network_test_guard();
+        init_split_route_network();
+
+        let sender = UdpSocket::new();
+        sender
+            .bind(SocketAddrEx::Ip(SocketAddr::new(
+                IpAddr::V4(LOCAL_ADDR),
+                4242,
+            )))
+            .unwrap();
+        let receiver = UdpSocket::new();
+        receiver
+            .bind(SocketAddrEx::Ip(SocketAddr::new(
+                IpAddr::V4(PEER_ADDR),
+                4243,
+            )))
+            .unwrap();
+
+        let payload = b"task2-egress-regression";
+        let sent = sender
+            .send(
+                &payload[..],
+                SendOptions {
+                    to: Some(SocketAddrEx::Ip(SocketAddr::new(
+                        IpAddr::V4(PEER_ADDR),
+                        4243,
+                    ))),
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        assert_eq!(sent, payload.len());
+
+        flush_egress();
+
+        let mut received = [0; 64];
+        let length = receiver
+            .recv(&mut received[..], RecvOptions::default())
+            .unwrap();
+        assert_eq!(&received[..length], payload);
+    }
 }

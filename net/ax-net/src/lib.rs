@@ -510,7 +510,12 @@ pub fn request_poll() {
 /// queued in its TX buffer. Draining egress here mirrors Linux, where a sent
 /// datagram already sits in the peer's receive buffer and `close()` cannot
 /// unsend it. Must not be called while holding `SOCKET_SET.inner`.
-pub(crate) fn flush_egress() {
+/// Drains queued socket egress through the interface poller before returning.
+///
+/// This is useful for short-lived bare-metal applications that send a final
+/// datagram and immediately transition state; long-running applications should
+/// normally rely on [`request_poll`] and the background poll worker.
+pub fn flush_egress() {
     poll_until_idle(PollOwnership::Required);
 }
 

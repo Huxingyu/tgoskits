@@ -28,6 +28,9 @@ pinctrl = ["dep:rdif-pinctrl", "rdif-pinctrl/fdt"]
 virtio-core = ["dep:ax-alloc", "dep:virtio-drivers", "virtio-drivers/alloc"]
 virtio = ["virtio-core"]
 virtio-net = ["net", "virtio", "pci", "dep:ax-kernel-guard"]
+# Emit bounded queue and DMA addresses for the task-2 isolation evidence run.
+# This is opt-in so ordinary driver users do not receive address diagnostics.
+task2-net-evidence = []
 virtio-gpu = ["display", "virtio", "pci"]
 virtio-input = ["input", "virtio", "pci"]
 virtio-socket = ["vsock", "virtio", "pci"]

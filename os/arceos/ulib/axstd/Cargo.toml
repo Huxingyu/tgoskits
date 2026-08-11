@@ -106,6 +106,8 @@ fd = [
 # Driver feature forwards used by std-aware apps that depend on `axstd` directly.
 nvme = ["ax-driver/nvme"]
 virtio-net = ["ax-driver/virtio-net"]
+# Task-2 evidence builds opt in to bounded VirtIO queue/DMA address logging.
+task2-net-evidence = ["ax-driver/task2-net-evidence"]
 virtio-gpu = ["ax-driver/virtio-gpu"]
 virtio-input = ["ax-driver/virtio-input"]
 virtio-socket = ["ax-driver/virtio-socket"]

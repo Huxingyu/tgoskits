@@ -43,6 +43,7 @@ impl AssignedSpiRoutes {
                     irq: assigned.host_irq(),
                     controller: controller.clone(),
                     accepting: AtomicBool::new(false),
+                    acknowledged_count: AtomicUsize::new(0),
                     delivery: IrqSafeMutex::new(AssignedSpiDelivery::Idle),
                 })
             })
@@ -67,6 +68,11 @@ impl AssignedSpiRoutes {
         }
         for binding in &routes.bindings {
             binding.accepting.store(true, Ordering::Release);
+            info!(
+                "registered assigned AArch64 SPI route host_intid={} guest_intid={}",
+                binding.irq.value(),
+                binding.irq.value()
+            );
         }
         Ok(routes)
     }
@@ -103,6 +109,7 @@ struct AssignedSpiBinding {
     irq: HostIrqId,
     controller: Arc<VgicCore>,
     accepting: AtomicBool,
+    acknowledged_count: AtomicUsize,
     delivery: IrqSafeMutex<AssignedSpiDelivery>,
 }
 
@@ -116,6 +123,17 @@ enum AssignedSpiDelivery {
 impl AssignedSpiBinding {
     /// Publishes one acknowledged activation without VM lookup or allocation.
     fn publish_from_irq(&self, token: usize) -> bool {
+        let count = self
+            .acknowledged_count
+            .fetch_add(1, Ordering::Relaxed)
+            .saturating_add(1);
+        if count == 1 || count.is_power_of_two() {
+            info!(
+                "assigned AArch64 SPI host_intid={} acknowledged count={}",
+                self.irq.value(),
+                count
+            );
+        }
         let mut delivery = self.delivery.lock();
         if !self.accepting.load(Ordering::Acquire) {
             deactivate_host_irq(token);

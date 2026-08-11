@@ -1,3 +1,5 @@
+#[cfg(feature = "task2-net-evidence")]
+use core::sync::atomic::{AtomicUsize, Ordering};
 use core::{marker::PhantomData, ptr::NonNull};
 
 use ax_alloc::{UsageKind, global_allocator};
@@ -21,6 +23,19 @@ pub const MMIO_DEVICE_NAME: &str = "virtio-mmio";
 
 pub struct VirtIoHalImpl(PhantomData<()>);
 
+#[cfg(feature = "task2-net-evidence")]
+static TASK2_DMA_LOG_COUNT: AtomicUsize = AtomicUsize::new(0);
+
+#[cfg(feature = "task2-net-evidence")]
+fn log_task2_dma(kind: &str, bus_addr: VirtIoPhysAddr, bytes: usize, pages: usize) {
+    // Keep the evidence bounded: the first allocations identify queue/ring and
+    // initial buffer ranges without turning a long stability run into a log
+    // stream of per-packet addresses.
+    if TASK2_DMA_LOG_COUNT.fetch_add(1, Ordering::Relaxed) < 32 {
+        log::info!("TASK2_DMA kind={kind} bus_addr={bus_addr:#x} bytes={bytes} pages={pages}");
+    }
+}
+
 pub const fn has_static_mmio_drivers() -> bool {
     cfg!(any(
         feature = "virtio-net",
@@ -40,6 +55,8 @@ unsafe impl VirtIoHal for VirtIoHalImpl {
         }
         let paddr = axklib::mem::virt_to_phys(vaddr.into()).as_usize() as VirtIoPhysAddr;
         let ptr = NonNull::new(vaddr as _).expect("DMA allocator returned null");
+        #[cfg(feature = "task2-net-evidence")]
+        log_task2_dma("alloc", paddr, pages * 0x1000, pages);
         (paddr, ptr)
     }
 
@@ -56,7 +73,15 @@ unsafe impl VirtIoHal for VirtIoHalImpl {
 
     unsafe fn share(buffer: NonNull<[u8]>, _direction: BufferDirection) -> VirtIoPhysAddr {
         let vaddr = buffer.as_ptr() as *mut u8 as usize;
-        axklib::mem::virt_to_phys(vaddr.into()).as_usize() as VirtIoPhysAddr
+        let paddr = axklib::mem::virt_to_phys(vaddr.into()).as_usize() as VirtIoPhysAddr;
+        #[cfg(feature = "task2-net-evidence")]
+        {
+            // SAFETY: virtio-drivers passes a valid, live slice owned by the
+            // queue until the matching `unshare` callback.
+            let bytes = unsafe { buffer.as_ref().len() };
+            log_task2_dma("share", paddr, bytes, 0);
+        }
+        paddr
     }
 
     unsafe fn unshare(_paddr: VirtIoPhysAddr, _buffer: NonNull<[u8]>, _direction: BufferDirection) {

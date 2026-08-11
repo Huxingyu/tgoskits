@@ -19,6 +19,7 @@ const KICK_WORKER_STACK_SIZE: usize = 0x20_000;
 pub(crate) struct DeferredVcpuKick {
     vm_id: usize,
     pending_vcpus: AtomicUsize,
+    published_count: AtomicUsize,
     worker_started: AtomicBool,
     stopping: AtomicBool,
     notify: IrqNotify,
@@ -31,6 +32,7 @@ impl DeferredVcpuKick {
         Arc::new(Self {
             vm_id,
             pending_vcpus: AtomicUsize::new(0),
+            published_count: AtomicUsize::new(0),
             worker_started: AtomicBool::new(false),
             stopping: AtomicBool::new(false),
             notify: IrqNotify::new(),
@@ -73,6 +75,16 @@ impl DeferredVcpuKick {
             );
         };
         self.pending_vcpus.fetch_or(bit, Ordering::Release);
+        let count = self
+            .published_count
+            .fetch_add(1, Ordering::Relaxed)
+            .saturating_add(1);
+        if count == 1 || count.is_power_of_two() {
+            info!(
+                "VM[{}] deferred vCPU kick published vcpu={} count={}",
+                self.vm_id, vcpu_id, count,
+            );
+        }
         if self.worker_started.load(Ordering::Acquire) {
             self.notify.notify_irq();
         }

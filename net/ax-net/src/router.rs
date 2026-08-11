@@ -979,8 +979,8 @@ fn dispatch_unicast_packet(
 ) -> bool {
     let routes = table.read();
     let Some(route) = routes.select_route_for_source(&dst_addr, &src_addr) else {
-        debug!(
-            "No route found for source {} destination {}",
+        warn!(
+            "No route found for source {} destination {} while dispatching UDP/IP packet",
             src_addr, dst_addr
         );
         // The packet is dropped at the IP layer before reaching any device's

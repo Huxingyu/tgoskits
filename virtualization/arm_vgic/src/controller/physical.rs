@@ -314,6 +314,18 @@ impl GicV3Controller {
     ) -> Result<(), crate::GicV3BackendError> {
         let previous = change.previous.delivery_enabled();
         let current = change.current.delivery_enabled();
+        log::info!(
+            "VGIC physical SPI gate spi={} host_irq={} distributor={}=>{} interrupt={}=>{} \
+             delivery={}=>{}",
+            change.spi.raw(),
+            change.binding.host().raw(),
+            change.previous.distributor_enabled,
+            change.current.distributor_enabled,
+            change.previous.interrupt_enabled,
+            change.current.interrupt_enabled,
+            previous,
+            current,
+        );
         if previous != current
             && let Err(error) = self
                 .inner

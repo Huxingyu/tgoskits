@@ -1,0 +1,14 @@
+args = [
+  "-nographic",
+  "-cpu", "cortex-a72",
+  "-machine", "virt,gic-version=3",
+  "-smp", "1",
+  "-m", "512m",
+  "-netdev", "user,id=net-p1,net=10.0.42.0/24",
+  "-device", "virtio-net-pci,netdev=net-p1,addr=0x4,mac=52:54:00:12:34:02",
+  "-object", "filter-dump,id=fd-p1,netdev=net-p1,file=${workspace}/tmp/net-dual-guest/p1-direct.pcap",
+]
+fail_regex = []
+success_regex = []
+to_bin = true
+uefi = false
