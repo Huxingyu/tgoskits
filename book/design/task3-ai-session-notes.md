@@ -12,7 +12,7 @@
 | M2 Linux 控制循环+baseline | ✅ | 100ms 周期（5-10Hz），1173 周期/104s/0 错误 |
 | M3 模型训练+Rust 推理 | ✅ | DAgger 残差模型；golden 测试全过；Guest 内真实推理 |
 | M4 AI/baseline 对比 | ✅ | 3+3 组 ×~39s，RMSE 29.3 vs 190.9 |
-| M5 故障闭环 | ⚠️ 部分解决 | 运行时断链→Safe 已复现；恢复修复已实现，端到端验证待 Zephyr 重建（详见 §4.3） |
+| M5 故障闭环 | ✅ | 黑障→Safe→恢复→控制环续跑，2 次复现，证据 `results/task3/fault/`（详见 §4.3） |
 | M6 收口/文档/PR | ❌ 未开始 | 设计文档、证据归档、PR、回归 |
 
 ## 2. 已完成的证据（全部已提交）
@@ -96,10 +96,12 @@ components/task3-model  no_std 纯 Rust f64 前向，权重 include_bytes 嵌入
   1. 控制器进 Safe 时 `request_in_flight` 未清，`TASK2_RECOVERED` 补发被早退吞掉 → 请求-响应循环永远不续跑；现于 RetryExhausted/HeartbeatTimeout 时复位。
   2. Safe 恢复后可靠流序号分歧：managed 侧丢失的 STATUS 已重传耗尽、下一条是 n+1，controller 仍期望 n → `out_of_order` 死循环；Rust 协议与 Zephyr C 均在 Safe→Active 时把 `next_tx/next_rx/pending` 重置，重新从序号 1 同步（含 Rust 回归测试）。
 - **当前阻塞**：Zephyr C 修复已写好，但本环境 `/tmp/zephyrproject/zephyr` 与 `/tmp/zephyr-sdk` 已清理且网络不通，无法重建 `zephyr-task2.bin`；端到端"恢复后控制环续跑"需在具备 Zephyr 工具链的机器上 `bash scripts/test/net-dual-guest/build-zephyr-task2.sh` 后重跑 `bash scripts/task3/run-task3-fault.sh` 验证。
+- **收尾（2026-08-12）**：修复 git 代理端口（7890→7897）后网络恢复，下载 Zephyr SDK 1.0.1（hosttools + `aarch64-zephyr-elf`）并用与旧构建一致的 commit `aa37fa1eb` 重建 `zephyr-task2.bin`（入口 0xa000117c 不变，含 C 侧重同步修复）；随后 `run-task3-fault.sh` **连续两次完整跑通**（fault-final3/final4）：黑障 10s（代理丢 102 帧）→ 双方 Safe → RECOVERED → 控制环续跑（final4 恢复后 82 个 STATUS 周期、rtt ~74-109ms、0 错误）。
+- 过程中又修掉一个**协议竞争**：P3 代理下 STATUS 可能先于上一个 CONTROL 的 ACK 被处理，`queue_reliable` 报 `ReliableFramePending` 曾导致应用退出；现改为"延迟到 ACK 事件后续发"（`TASK2_CONTROL_DEFERRED`，非致命），并给非阻塞 UDP 发送加 WouldBlock 短重试（`send_datagram`）。两处均随代码提交。
 
 ## 5. 遗留工作
 
-1. **M5 收尾**：在具备 Zephyr 工具链的机器重建 Zephyr（`build-zephyr-task2.sh`，含 §4.3 的 C 侧重同步修复），重跑 `run-task3-fault.sh` 验证"黑障→Safe→恢复→控制环续跑"，归档 AxVisor 日志 + 两侧 pcap 到 `results/task3/fault/`。
+1. ~~M5 收尾~~：已完成（见 §4.3），证据在 `results/task3/fault/`（guest/proxy 日志 + 两侧 pcap + SHA-256）。
 2. **M6**：
    - 编写 Task-3 设计文档（SIL 边界、不声称硬实时）；
    - 归档：模型结构/权重哈希（`model.json`）、6 组 CSV、`comparison.png`、构建/运行命令；
@@ -139,4 +141,4 @@ python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
 - 冻结场景外推有限：模型只在随机化训练分布上验证；
 - t800 目标（800）超过 plant 可持续上限（~760，含 +150 扰动 ~880），AI 以 ~790-810 逼近而非达到；
 - baseline 为 M0 冻结的 Kp=2 纯 P 控制器，非故意调差；
-- M5 断链通过 P3 代理黑障实现（真实 guest 链路全帧丢弃），非 QEMU `set_link`；恢复路径修复已实现，端到端验证待 Zephyr 重建后补跑。
+- M5 断链通过 P3 代理黑障实现（真实 guest 链路全帧丢弃），非 QEMU `set_link`；恢复路径（Rust+Zephyr 双端序号重同步）已在重建 Zephyr 后完成端到端验证，2 次复现。
