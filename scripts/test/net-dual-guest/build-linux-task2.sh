@@ -35,6 +35,7 @@ build_role() {
         TASK2_ROLE="$role" \
         TASK2_LOCAL_IP="$local_ip" \
         TASK2_PEER_IP="$peer_ip" \
+        ${TASK3_CONTROL_LOOP:+TASK3_CONTROL_LOOP="$TASK3_CONTROL_LOOP"} \
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$cross_cc" \
         cargo build \
         --package arceos-task2-net \
