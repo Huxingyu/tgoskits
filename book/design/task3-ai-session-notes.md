@@ -12,7 +12,7 @@
 | M2 Linux 控制循环+baseline | ✅ | 100ms 周期（5-10Hz），1173 周期/104s/0 错误 |
 | M3 模型训练+Rust 推理 | ✅ | DAgger 残差模型；golden 测试全过；Guest 内真实推理 |
 | M4 AI/baseline 对比 | ✅ | 3+3 组 ×~39s，RMSE 29.3 vs 190.9 |
-| M5 故障闭环 | ⚠️ 受阻 | QMP `set_link` 运行中切不断流量（详见 §4） |
+| M5 故障闭环 | ⚠️ 部分解决 | 运行时断链→Safe 已复现；恢复修复已实现，端到端验证待 Zephyr 重建（详见 §4.3） |
 | M6 收口/文档/PR | ❌ 未开始 | 设计文档、证据归档、PR、回归 |
 
 ## 2. 已完成的证据（全部已提交）
@@ -90,15 +90,16 @@ components/task3-model  no_std 纯 Rust f64 前向，权重 include_bytes 嵌入
 
 ### 4.3 M5 受阻：QMP `set_link` 运行中切不断流量
 
-- 现象：AI 闭环运行中 `set_link net-linux off`，STATUS 仍持续到达（6.7s+），无 Safe、无 carrier-down。
-- 对照：Task-2 旧证据（`task2-p2-link-2325-axvisor.log`）显示同命令在**开机前**置 down 有效（guest 驱动 probe 时读到 link=down，carrier 起不来 → 5s peer timeout → Safe → 置 up 后恢复）。
-- 根因推断：`set_link` 只翻转 virtio-net 的 VIRTIO_NET_S_LINK_UP 状态位；运行中生效依赖 guest 驱动处理 CONFIG_CHANGE 中断重新读状态，该路径在"virtio-mmio 直通 AxVisor + 此 Linux guest"组合下未生效。
-- 备选方案（待执行）：沿用 Task-2 同款"开机前置 down → Safe → 置 up → TASK2_RECOVERED + 控制环续跑"完成 M5 验收，并把"运行中 set_link 无效"作为已知边界写入 M6 文档。
-- 备注：控制器已在 `TASK2_RECOVERED` 后补发下一条 CONTROL（否则纯请求-响应会在恢复后卡死），此改动已随 6dbd11841 提交。
+- 实测（2026-08-11 深夜复现）：`set_link net-linux off` **连开机前置 down 都切不断数据**——双方仍互收心跳并自动恢复，早前的 Safe 只是启动时序（对端未就绪→重传耗尽）造成的假象；`netdev_del` 能真正切断（双方 RetryExhausted/HeartbeatTimeout 进 Safe）但无法恢复（listen 端口不释放、NIC 仍挂旧 peer，`netdev_add` 报 Address already in use）。
+- 解决（已提交 `dea4f5dd2`）：改用 **P3 代理黑障**——`ack_drop_proxy.py` 新增 `--blackout-start-ms/--blackout-duration-ms`，在真实 guest 链路中间按时间窗口丢弃全部帧，窗口结束自动恢复转发；`run-task3-fault.sh` 重写为 P3 拓扑 + 黑障，并修复 `wait_for` 匹配旧日志行的缺陷（改为只扫新增行）。
+- 恢复路径又发现并修复两个真 bug（`9eba59446`）：
+  1. 控制器进 Safe 时 `request_in_flight` 未清，`TASK2_RECOVERED` 补发被早退吞掉 → 请求-响应循环永远不续跑；现于 RetryExhausted/HeartbeatTimeout 时复位。
+  2. Safe 恢复后可靠流序号分歧：managed 侧丢失的 STATUS 已重传耗尽、下一条是 n+1，controller 仍期望 n → `out_of_order` 死循环；Rust 协议与 Zephyr C 均在 Safe→Active 时把 `next_tx/next_rx/pending` 重置，重新从序号 1 同步（含 Rust 回归测试）。
+- **当前阻塞**：Zephyr C 修复已写好，但本环境 `/tmp/zephyrproject/zephyr` 与 `/tmp/zephyr-sdk` 已清理且网络不通，无法重建 `zephyr-task2.bin`；端到端"恢复后控制环续跑"需在具备 Zephyr 工具链的机器上 `bash scripts/test/net-dual-guest/build-zephyr-task2.sh` 后重跑 `bash scripts/task3/run-task3-fault.sh` 验证。
 
 ## 5. 遗留工作
 
-1. **M5**：跑"开机前置 down"故障实验（脚本已就绪并提交：`scripts/task3/run-task3-fault.sh`，见 `6dbd11841`），存 AxVisor 日志 + 两侧 pcap。
+1. **M5 收尾**：在具备 Zephyr 工具链的机器重建 Zephyr（`build-zephyr-task2.sh`，含 §4.3 的 C 侧重同步修复），重跑 `run-task3-fault.sh` 验证"黑障→Safe→恢复→控制环续跑"，归档 AxVisor 日志 + 两侧 pcap 到 `results/task3/fault/`。
 2. **M6**：
    - 编写 Task-3 设计文档（SIL 边界、不声称硬实时）；
    - 归档：模型结构/权重哈希（`model.json`）、6 组 CSV、`comparison.png`、构建/运行命令；
@@ -138,4 +139,4 @@ python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
 - 冻结场景外推有限：模型只在随机化训练分布上验证；
 - t800 目标（800）超过 plant 可持续上限（~760，含 +150 扰动 ~880），AI 以 ~790-810 逼近而非达到；
 - baseline 为 M0 冻结的 Kp=2 纯 P 控制器，非故意调差；
-- M5 运行中 link-down 注入受环境限制，采用开机前置注入并如实记录。
+- M5 断链通过 P3 代理黑障实现（真实 guest 链路全帧丢弃），非 QEMU `set_link`；恢复路径修复已实现，端到端验证待 Zephyr 重建后补跑。

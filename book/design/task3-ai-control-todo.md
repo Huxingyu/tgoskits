@@ -339,14 +339,14 @@ M4 证据（2026-08-11，QEMU 双 Guest，6 组 × ~39 s 闭环）：
 
 ### M5：一次故障闭环
 
-- [ ] 运行 AI 控制时通过 QMP 执行 link down；
-- [ ] 验证 heartbeat timeout 或重传耗尽可观察；
-- [ ] Zephyr 输出进入 Safe 或安全默认值；
-- [ ] link up 后观察恢复事件；
+- [x] 运行 AI 控制时执行 link down（P3 代理黑障，`run-task3-fault.sh`，提交 `dea4f5dd2`）；
+- [x] 验证 heartbeat timeout 或重传耗尽可观察（双方 RetryExhausted / HeartbeatTimeout 进 Safe）；
+- [x] Zephyr 输出进入 Safe 或安全默认值；
+- [ ] link up 后观察恢复事件（恢复修复已提交 `9eba59446`，待重建 Zephyr 后验证）；
 - [ ] 至少保存一份 AxVisor 日志和两侧 pcap；
 - [ ] 不要求此阶段重新实现 ACK-drop proxy，Task-2 已有证据可以引用。
 
-验收：故障期间对象不出现无界发散；恢复行为有明确日志。
+验收：故障期间对象不出现无界发散；恢复行为有明确日志（Safe/Recovered 已有日志，续跑待验证）。
 
 ### M6：收口和视频
 
