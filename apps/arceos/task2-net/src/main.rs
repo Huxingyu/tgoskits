@@ -101,6 +101,11 @@ mod scenario {
 
     /// History window feeding the model input (M3).
     pub const HISTORY_LEN: usize = 64;
+
+    /// Minimum interval between two Task-3 CONTROL frames (request-response
+    /// rate limiter).  The MVP control period is 5-10 Hz, so the loop never
+    /// sends a CONTROL faster than this even when the peer RTT is short.
+    pub const MIN_CYCLE_MS: u64 = 100;
 }
 
 /// Trajectory of the fixed target: `[(start_ms, value), ...]`.
@@ -255,6 +260,7 @@ struct Controller {
     request_id: u32,
     request_in_flight: bool,
     request_sent_at_ms: u64,
+    next_send_at_ms: u64,
     state_history: [i32; scenario::HISTORY_LEN],
     history_len: usize,
     last_state: i32,
@@ -267,6 +273,7 @@ impl Controller {
             request_id: 0,
             request_in_flight: false,
             request_sent_at_ms: 0,
+            next_send_at_ms: 0,
             state_history: [0; scenario::HISTORY_LEN],
             history_len: 0,
             last_state: 300,
@@ -312,6 +319,9 @@ impl Controller {
         if self.request_in_flight {
             return Ok(());
         }
+        if now_ms < self.next_send_at_ms {
+            thread::sleep(Duration::from_millis(self.next_send_at_ms - now_ms));
+        }
         self.request_id = self.request_id.wrapping_add(1);
         let target = self.target_for(now_ms);
         let output = self.baseline_output(target, self.last_state);
@@ -337,8 +347,9 @@ impl Controller {
         flush_network();
         self.request_in_flight = true;
         self.request_sent_at_ms = now_ms;
+        self.next_send_at_ms = now_ms + scenario::MIN_CYCLE_MS;
         println!(
-            "TASK3_CONTROL_SENT request={} value={} target={} state={} seq={}",
+            "TASK3_CONTROL_SENT elapsed_ms={now_ms} request={} value={} target={} state={} seq={}",
             self.request_id,
             output,
             target,
@@ -358,7 +369,7 @@ impl Controller {
         self.last_state = state;
         self.push_state(state);
         println!(
-            "TASK3_STATUS_RECEIVED request={} value={} state={} sample={} rtt_ms={}",
+            "TASK3_STATUS_RECEIVED elapsed_ms={now_ms} request={} value={} state={} sample={} rtt_ms={}",
             status.last_control_request(),
             status.value(),
             state,

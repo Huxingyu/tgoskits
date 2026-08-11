@@ -223,30 +223,47 @@ response       0.35
 
 ### M1：Zephyr 虚拟对象和状态回传
 
-- [ ] 增加 `state`、`target`、`output` 和扰动状态；
-- [ ] 实现一次 CONTROL 对应一次 plant 更新；
-- [ ] 将 STATUS.value 改为实际对象状态；
-- [ ] 保留 STATUS.last_control_request；
-- [ ] 增加日志：
+- [x] 增加 `state`、`target`、`output` 和扰动状态；
+- [x] 实现一次 CONTROL 对应一次 plant 更新；
+- [x] 将 STATUS.value 改为实际对象状态；
+- [x] 保留 STATUS.last_control_request；
+- [x] 增加日志：
   - `TASK3_CONTROL_APPLIED`；
   - `TASK3_STATUS_SENT`；
   - `TASK3_PLANT_STATE`；
-- [ ] Linux 暂时使用固定值或固定 Kp 发送 CONTROL。
+- [x] Linux 暂时使用固定值或固定 Kp 发送 CONTROL。
 
 验收：连续完成至少 100 次 CONTROL→STATUS；STATUS.value 不再恒等于 CONTROL.value；
 对象状态随目标值变化。
 
+M1 证据（2026-08-11，commit `6e8d6f3ce` + M2 验证轮次）：
+
+- Zephyr 侧 `TASK3_CONTROL_APPLIED` / `TASK3_PLANT_STATE` / `TASK3_DISTURBANCE`
+  标记存在；8s/17s 负载扰动按场景触发；
+- 单轮 1173 个 CONTROL→STATUS 周期（见 M2 记录），无协议错误；
+- STATUS.value 与 CONTROL.value 不同（例：CONTROL=0 → plant 170；CONTROL=236 →
+  181），对象状态随目标值 300/800/500 分段变化。
+
 ### M2：Linux 控制循环和 baseline
 
-- [ ] 删除启动时只发送一次固定 CONTROL 的逻辑；
-- [ ] 收到 STATUS 后维护历史窗口；
-- [ ] 实现 baseline 控制器；
-- [ ] 每次可靠事务完成后才发送下一条 CONTROL；
-- [ ] 增加 sample/request ID；
-- [ ] 输出结构化控制日志；
-- [ ] 连续运行 30 秒并保存 CSV。
+- [x] 删除启动时只发送一次固定 CONTROL 的逻辑；
+- [x] 收到 STATUS 后维护历史窗口；
+- [x] 实现 baseline 控制器；
+- [x] 每次可靠事务完成后才发送下一条 CONTROL；
+- [x] 增加 sample/request ID；
+- [x] 输出结构化控制日志；
+- [x] 连续运行 30 秒并保存 CSV。
 
 验收：baseline 能稳定跟踪目标；没有意外 `TASK2_SAFE`、协议错误或发送错误。
+
+M2 证据（2026-08-11，commit `907922205` + `2758972c8` 后续修订）：
+
+- 运行日志：`results/task3/`（基线 CSV 与指标汇总，见 M4 章节）；
+- 单轮运行 104.3 s、1173 个控制周期（>100 周期、>30 s）；
+- `TASK2_SAFE` / `TASK2_PROTOCOL_ERROR` / `TASK2_ERROR` 计数为 0；
+- 控制周期 100 ms（5-10 Hz 规格内），RTT 均值 ~89 ms；
+- baseline 各段稳态：t300→~182、t800（带扰动）→~630、t500→~290，
+  存在由非线性损耗引起的稳态误差，作为 AI 对比的诚实基线。
 
 ### M3：离线模型和 Linux 推理
 
