@@ -85,6 +85,12 @@ const SEND_P1_PROBE: bool = option_env!("TASK2_SEND_P1_PROBE").is_some();
 // stays available so the Task-2 evidence remains reproducible.
 const TASK3_CONTROL: bool = option_env!("TASK3_CONTROL_LOOP").is_some();
 
+// Presence of this build-time variable selects the AI controller inside the
+// Task-3 loop: the output is the frozen P term plus the model's learned
+// loss/disturbance compensation (see task3-model).  Absent, the loop uses the
+// pure P baseline with identical scenario and protocol behaviour.
+const TASK3_AI: bool = option_env!("TASK3_AI").is_some();
+
 /// Fixed Task-3 scenario parameters (frozen in M0, see
 /// book/design/task3-ai-control-todo.md).  Values must not be tuned after
 /// baseline/AI comparison runs start.
@@ -263,7 +269,10 @@ struct Controller {
     next_send_at_ms: u64,
     state_history: [i32; scenario::HISTORY_LEN],
     history_len: usize,
+    output_history: [i32; scenario::HISTORY_LEN],
+    output_len: usize,
     last_state: i32,
+    prev_output: i32,
     sample_count: u32,
 }
 
@@ -276,7 +285,10 @@ impl Controller {
             next_send_at_ms: 0,
             state_history: [0; scenario::HISTORY_LEN],
             history_len: 0,
+            output_history: [0; scenario::HISTORY_LEN],
+            output_len: 0,
             last_state: 300,
+            prev_output: 0,
             sample_count: 0,
         }
     }
@@ -301,11 +313,47 @@ impl Controller {
         }
     }
 
+    fn push_output(&mut self, output: i32) {
+        if self.output_len < scenario::HISTORY_LEN {
+            self.output_history[self.output_len] = output;
+            self.output_len += 1;
+        } else {
+            self.output_history.copy_within(1.., 0);
+            self.output_history[scenario::HISTORY_LEN - 1] = output;
+        }
+    }
+
     /// Baseline P controller output for the current target and state.
     fn baseline_output(&self, target: i32, state: i32) -> i32 {
         let error = target - state;
         let output = scenario::BIAS + error * scenario::KP / scenario::KP_DEN;
         output.clamp(scenario::OUTPUT_MIN, scenario::OUTPUT_MAX)
+    }
+
+    /// AI controller output: the frozen P term plus the model's learned
+    /// loss/disturbance compensation.  The P term keeps the loop stable where
+    /// the model is inaccurate; the model adds the feedforward the P term
+    /// cannot produce.  Feature windows are built by the shared contract
+    /// (`task3_model::build_features`, mirrored from the training pipeline).
+    fn ai_output(&mut self, target: i32) -> (i32, u64) {
+        let features = task3_model::build_features(
+            &self.state_history[..self.history_len],
+            &self.output_history[..self.output_len],
+            target,
+            self.last_state,
+            self.prev_output,
+        );
+        let infer_start = Instant::now();
+        // The model emits the normalised correction (label scale /1000), the
+        // same value the golden vectors pin against the torch reference.
+        let correction = task3_model::forward(&features) * scenario::STATE_MAX as f64;
+        let infer_us = infer_start.elapsed().as_micros() as u64;
+        let output =
+            (self.baseline_output(target, self.last_state) as f64 + correction).round() as i64;
+        (
+            output.clamp(scenario::OUTPUT_MIN as i64, scenario::OUTPUT_MAX as i64) as i32,
+            infer_us,
+        )
     }
 
     fn send_next(
@@ -324,7 +372,18 @@ impl Controller {
         }
         self.request_id = self.request_id.wrapping_add(1);
         let target = self.target_for(now_ms);
-        let output = self.baseline_output(target, self.last_state);
+        let output = if TASK3_AI {
+            let (output, infer_us) = self.ai_output(target);
+            println!(
+                "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={infer_us}",
+                self.request_id,
+                output
+            );
+            output
+        } else {
+            self.baseline_output(target, self.last_state)
+        };
+        self.push_output(output);
 
         let mut payload = [0; 12];
         let command = ControlMessage::new(ControlAction::SetOutput, output, self.request_id)
@@ -369,7 +428,8 @@ impl Controller {
         self.last_state = state;
         self.push_state(state);
         println!(
-            "TASK3_STATUS_RECEIVED elapsed_ms={now_ms} request={} value={} state={} sample={} rtt_ms={}",
+            "TASK3_STATUS_RECEIVED elapsed_ms={now_ms} request={} value={} state={} sample={} \
+             rtt_ms={}",
             status.last_control_request(),
             status.value(),
             state,

@@ -1,0 +1,48 @@
+{
+  "architecture": {
+    "input": [
+      64,
+      4
+    ],
+    "conv1": {
+      "in": 4,
+      "out": 32,
+      "kernel": 5,
+      "padding": "same"
+    },
+    "conv2": {
+      "in": 32,
+      "out": 64,
+      "kernel": 5,
+      "padding": "same"
+    },
+    "pool": "global average",
+    "fc1": [
+      64,
+      32
+    ],
+    "fc2": [
+      32,
+      1
+    ],
+    "activation": "relu"
+  },
+  "params": 13089,
+  "macs_estimate": 698400,
+  "weights_file": "weights.bin",
+  "weights_sha256": "cc3bc2f25fe26f15087964021da8e47b59c9296f2e0b1b4755f84d3717960831",
+  "weights_bytes": 104712,
+  "trainer_sha256": "8c4a12ff4d41ca0a975a8e21257b69b8438f99834f2c7c06f6066d6503cdb834",
+  "best_val_mse": 0.0009209701674990356,
+  "val_label_mae": 20.004449236275608,
+  "normalization": {
+    "state_scale": 1000.0,
+    "target_scale": 1000.0,
+    "error_scale": 1000.0,
+    "output_scale": 1000.0,
+    "label_scale": 1000.0
+  },
+  "seed": 20260811,
+  "epochs": 60,
+  "trainer": "train_model.py"
+}

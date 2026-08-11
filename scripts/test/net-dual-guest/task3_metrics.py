@@ -137,14 +137,22 @@ def main():
     parser.add_argument("logs", nargs="+", type=Path)
     parser.add_argument("--out-dir", type=Path, default=Path("results/task3"))
     parser.add_argument("--label", type=str, default="run")
+    parser.add_argument("--modes", type=str, default=None,
+                        help="comma-separated mode per log: ai|baseline")
     parser.add_argument("--plot", type=Path)
     args = parser.parse_args()
 
+    if args.modes:
+        modes = args.modes.split(",")
+        if len(modes) != len(args.logs):
+            raise SystemExit("--modes must have one entry per log")
+    else:
+        modes = ["ai" if "ai" in label else "baseline" for label in [args.label] * len(args.logs)]
+
     args.out_dir.mkdir(parents=True, exist_ok=True)
     summary_rows = []
-    for index, log_path in enumerate(args.logs, start=1):
+    for index, (log_path, mode) in enumerate(zip(args.logs, modes), start=1):
         label = f"{args.label}-{index}" if len(args.logs) > 1 else args.label
-        mode = "ai" if "ai" in label else "baseline"
         rows = parse_run(log_path, mode)
         csv_path = args.out_dir / f"{label}.csv"
         with open(csv_path, "w", newline="", encoding="utf-8") as handle:

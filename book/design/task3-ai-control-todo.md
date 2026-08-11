@@ -267,33 +267,75 @@ M2 证据（2026-08-11，commit `907922205` + `2758972c8` 后续修订）：
 
 ### M3：离线模型和 Linux 推理
 
-- [ ] 编写宿主机数据生成脚本；
-- [ ] 生成多组目标/扰动轨迹；
-- [ ] 训练 1D CNN；
-- [ ] 导出固定权重和归一化参数；
-- [ ] 编写纯 Rust 前向推理模块；
-- [ ] 添加 Python/Rust golden-vector 对照；
-- [ ] 记录模型参数量、MAC 估算、权重哈希；
-- [ ] 在 Linux Guest 内记录推理耗时和模型输出；
-- [ ] 用模型输出生成下一条 CONTROL。
+- [x] 编写宿主机数据生成脚本；
+- [x] 生成多组目标/扰动轨迹；
+- [x] 训练 1D CNN；
+- [x] 导出固定权重和归一化参数；
+- [x] 编写纯 Rust 前向推理模块；
+- [x] 添加 Python/Rust golden-vector 对照；
+- [x] 记录模型参数量、MAC 估算、权重哈希；
+- [x] 在 Linux Guest 内记录推理耗时和模型输出；
+- [x] 用模型输出生成下一条 CONTROL。
 
 验收：Linux Guest 日志中存在真实推理记录；同一输入得到稳定输出；模型输出变化
 会导致后续 CONTROL.value 变化。
 
+M3 证据（2026-08-11，AI 实验 `ai-run2`）：
+
+- `TASK3_INFER` 日志：378 条真实推理记录（Linux Guest 内执行），
+  单次推理 9-12 ms（TCG 环境），模型输出进入 CONTROL.value；
+- 模型：13,089 参数，~70 万 MACs/推理，`weights.bin` SHA-256 记录于
+  `components/task3-model/model/model.json`；
+- golden-vector 与 golden-window 测试（torch f64 参考）全部通过；
+- 固定场景闭环模拟 RMSE 33.1；真实双 Guest 运行 RMSE 29.3（vs baseline 191）。
+
+M3 实现说明（2026-08-11）：
+
+- 数据：400 个随机 episode（随机目标阶梯/扰动/初值，30s@100ms），94,800 样本；
+  冻结的固定测试场景不进入训练集；
+- 标签：残差监督——模型学习 teacher 跟踪策略（gain=0.5 逆控制）与冻结 P 控制器
+  的差值（损耗/扰动补偿项），P 项保证闭环稳定；
+- 训练：torch（CPU）浮点训练 + 6 轮 DAgger 闭环数据聚合（每轮 120 个随机
+  episode 真闭环 rollout、teacher 打标、3 倍重采样），固定 seed；
+- 特征契约统一：`scripts/task3/features.py::build_window` 是唯一实现，
+  数据集/DAgger/评估/Rust guest（`task3_model::build_features`）全部复用，
+  并由 golden-window 测试跨语言锁定；
+- Rust 推理：`components/task3-model`，no_std、无分配、f64，权重以
+  `model/weights.bin`（LE f64 大端序排列）嵌入；golden-vector 测试 3 例
+  （全 0/常数/斜坡）与 torch f64 参考对照，误差 < 1e-9。
+
 ### M4：AI/baseline 对比
 
-- [ ] baseline 和 AI 使用完全相同的目标轨迹；
-- [ ] baseline 和 AI 使用完全相同的扰动；
-- [ ] 至少运行 3 组匹配实验；
-- [ ] 每组运行至少 30 秒；
-- [ ] 统计 RMSE；
-- [ ] 统计调节时间；
-- [ ] 统计最大超调；
-- [ ] 统计推理时间和 CONTROL→STATUS 延迟；
-- [ ] 生成一张汇总表和两条响应曲线。
+- [x] baseline 和 AI 使用完全相同的目标轨迹；
+- [x] baseline 和 AI 使用完全相同的扰动；
+- [x] 至少运行 3 组匹配实验；
+- [x] 每组运行至少 30 秒；
+- [x] 统计 RMSE；
+- [x] 统计调节时间；
+- [x] 统计最大超调；
+- [x] 统计推理时间和 CONTROL→STATUS 延迟；
+- [x] 生成一张汇总表和两条响应曲线。
 
 首要指标为 RMSE 和调节时间；AI 不需要在所有指标和所有场景中都获胜，但结果
 必须诚实报告，不能使用故意调差的 baseline。
+
+M4 证据（2026-08-11，QEMU 双 Guest，6 组 × ~39 s 闭环）：
+
+| 指标 | AI (n=3) | baseline (n=3) |
+|---|---|---|
+| 整体 RMSE | 29.2 / 29.3 / 29.3 | 191.3 / 190.6 / 190.7 |
+| t300 段 RMSE（0-5s） | 49.1 | 102.9 |
+| t800 段 RMSE（5-15s） | 40.8 | 217.0-219.3 |
+| t500 段 RMSE（15-25s） | 21.6 | 192.2 |
+| t500 调节时间 | ~0.8 s | 未收敛（稳态误差 ~192） |
+| 稳态误差（t500 段） | ~2（498 vs 500） | ~192（308 vs 500） |
+| 推理耗时（Guest 内） | 均值 11.3 ms，p95 14.6 ms | - |
+| CONTROL→STATUS RTT | ~104 ms | ~91 ms |
+
+原始数据：`results/task3/run-{1..6}.csv`、`summary.csv`、`comparison.png`。
+说明：t800 目标 800 超过 plant 可持续上限（~760，含扰动 ~880），AI 以 ~790-810
+逼近；baseline 因无前馈停留在 ~620。t300/t800 调节时间在 5% 带内未完全收敛，
+如实留空。
 
 ### M5：一次故障闭环
 
