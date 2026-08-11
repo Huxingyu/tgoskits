@@ -186,13 +186,40 @@ Zephyr 仍执行最终安全检查：
 
 ### M0：建立 Task-3 分支和最小记录
 
-- [ ] 从 `openrace/task2-net-clean` 创建 Task-3 工作分支；
-- [ ] 不合并 Task-1 PR，不修改 Task-1 代码；
-- [ ] 记录当前 Task-2 commit、QEMU 版本、Guest 镜像哈希；
-- [ ] 创建 Task-3 配置和日志目录；
-- [ ] 固定场景参数、目标轨迹、扰动和运行时长。
+- [x] 从 `openrace/task2-net-clean` 创建 Task-3 工作分支；
+- [x] 不合并 Task-1 PR，不修改 Task-1 代码；
+- [x] 记录当前 Task-2 commit、QEMU 版本、Guest 镜像哈希；
+- [x] 创建 Task-3 配置和日志目录；
+- [x] 固定场景参数、目标轨迹、扰动和运行时长。
 
 完成标准：Task-2 分支可独立回归，Task-3 有单独配置入口。
+
+M0 基线快照（2026-08-11）：
+
+- Task-2 基线 commit：`01f77307e fix(task2-net): report failures and mark QEMU results`
+- Task-3 分支：`openrace/task3-ai-control`
+- QEMU：`qemu-system-aarch64` 10.2.1（`~/.local/bin/qemu-system-aarch64`）
+- Rust：`rustc 1.99.0-nightly (da80ed070 2026-07-14)`
+- Python：3.12.3（numpy 2.5.2，宿主机训练用）
+- Zephyr：4.4，board `qemu_cortex_a53`（`/tmp/zephyrproject/zephyr`）
+- Zephyr SDK：`/tmp/zephyr-sdk`
+- Linux Guest 基础 initramfs：`/home/huhu/tgoskits-realtime/tmp/initramfs-custom`
+- 拓扑与 IP（沿用 Task-2）：Linux `10.0.42.15:4242` ↔ Zephyr `10.0.42.2:4242`，
+  VirtIO-MMIO 端点 `a003e00`(SPI 47)/`a003c00`(SPI 46)
+
+固定场景参数（MVP）：
+
+```text
+state 范围     0..1000
+output 范围    0..1000
+base_loss      15
+nonlinear_loss 120
+response       0.35
+目标轨迹       0-5s: 300, 5-15s: 800, 15-25s: 500
+扰动轨迹       8s: +150 负载, 17s: -150 负载
+控制周期       5-10 Hz（请求-响应，一条 CONTROL 对应一条 STATUS）
+运行时长       每轮 >= 30s，至少 3 轮配对实验
+```
 
 ### M1：Zephyr 虚拟对象和状态回传
 
