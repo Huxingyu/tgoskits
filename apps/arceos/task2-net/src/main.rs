@@ -1,9 +1,15 @@
-//! Task-2 controller/managed UDP endpoint.
+//! Task-3 controller/managed UDP endpoint.
 //!
 //! The endpoint intentionally uses a nonblocking socket so retransmission and
 //! heartbeat timers keep progressing while the peer is silent. Role and static
 //! addresses are compile-time inputs supplied by the ArceOS build config; the
 //! host build uses the same state machine for deterministic local testing.
+//!
+//! In Task-3 controller mode the endpoint runs a request-response control
+//! loop: one reliable CONTROL is sent after the previous STATUS completes, so
+//! the protocol's single-pending-frame constraint becomes the control rate
+//! limiter.  A fixed target trajectory and a fixed P controller provide the
+//! baseline; the AI mode (M3) replaces only the output computation.
 
 use core::net::{Ipv4Addr, SocketAddr};
 #[cfg(not(feature = "arceos"))]
@@ -24,7 +30,28 @@ use task2_net_protocol::{
     PollEvent, ReceiveEvent, RetryPolicy, SessionId, StatusMessage, StatusState,
 };
 
-const LOCAL_PORT: u16 = 4242;
+const LOCAL_PORT: u16 = match option_env!("TASK2_LOCAL_PORT") {
+    None => 4242,
+    Some(port) => {
+        let mut value: u16 = 0;
+        let mut index = 0;
+        let bytes = port.as_bytes();
+        while index < bytes.len() {
+            if !bytes[index].is_ascii_digit() {
+                panic!("TASK2_LOCAL_PORT must be a valid UDP port");
+            }
+            value = value * 10 + (bytes[index] - b'0') as u16;
+            if value == 0 && index != 0 {
+                panic!("TASK2_LOCAL_PORT must be a valid UDP port");
+            }
+            index += 1;
+        }
+        if value == 0 || index > 5 {
+            panic!("TASK2_LOCAL_PORT must be a valid UDP port");
+        }
+        value
+    }
+};
 const SESSION_ID: SessionId = SessionId::new(0x5452_5432);
 // Device discovery and first ARP resolution happen after the endpoint starts.
 // Keep the initial reliable exchange alive long enough for that real link
@@ -53,6 +80,32 @@ const PEER_IP: &str = match option_env!("TASK2_PEER_IP") {
 // from accidentally changing the protocol evidence.
 const SEND_P1_PROBE: bool = option_env!("TASK2_SEND_P1_PROBE").is_some();
 
+// Presence of this build-time variable enables the Task-3 control loop in the
+// controller role.  Task-2 default behaviour (single CONTROL then liveness)
+// stays available so the Task-2 evidence remains reproducible.
+const TASK3_CONTROL: bool = option_env!("TASK3_CONTROL_LOOP").is_some();
+
+/// Fixed Task-3 scenario parameters (frozen in M0, see
+/// book/design/task3-ai-control-todo.md).  Values must not be tuned after
+/// baseline/AI comparison runs start.
+mod scenario {
+    pub const STATE_MIN: i32 = 0;
+    pub const STATE_MAX: i32 = 1000;
+    pub const OUTPUT_MIN: i32 = 0;
+    pub const OUTPUT_MAX: i32 = 1000;
+
+    /// Baseline P controller: output = Kp * error + bias, clamped.
+    pub const KP: i32 = 2;
+    pub const KP_DEN: i32 = 1;
+    pub const BIAS: i32 = 0;
+
+    /// History window feeding the model input (M3).
+    pub const HISTORY_LEN: usize = 64;
+}
+
+/// Trajectory of the fixed target: `[(start_ms, value), ...]`.
+const TARGET_STEPS: [(u64, i32); 3] = [(0, 300), (5_000, 800), (15_000, 500)];
+
 fn main() {
     if let Err(message) = run() {
         report_failure(message);
@@ -76,7 +129,7 @@ fn run() -> Result<(), &'static str> {
     let peer_ip = parse_ipv4(PEER_IP).ok_or("TASK2_PEER_IP is invalid")?;
     configure_network(local_ip)?;
 
-    let socket = UdpSocket::bind(SocketAddr::from((Ipv4Addr::UNSPECIFIED, LOCAL_PORT)))
+    let socket = UdpSocket::bind(SocketAddr::from((local_ip, LOCAL_PORT)))
         .map_err(|_| "failed to bind UDP socket")?;
     let peer = SocketAddr::from((peer_ip, LOCAL_PORT));
     let start = Instant::now();
@@ -84,10 +137,17 @@ fn run() -> Result<(), &'static str> {
     let mut inbound = [0; MAX_DATAGRAM_LEN];
     let mut response = [0; MAX_DATAGRAM_LEN];
     let mut outbound = [0; MAX_DATAGRAM_LEN];
+    let mut control = Controller::new();
 
     println!("TASK2_READY role={ROLE} local={LOCAL_IP}:{LOCAL_PORT} peer={PEER_IP}:{LOCAL_PORT}");
     if ROLE == "controller" {
-        send_control(&socket, &peer, &mut endpoint, &mut outbound, now_ms(&start))?;
+        if TASK3_CONTROL {
+            control
+                .send_next(&socket, &peer, &mut endpoint, &mut outbound, now_ms(&start))
+                .map_err(|_| "failed to send first Task-3 control")?;
+        } else {
+            send_control(&socket, &peer, &mut endpoint, &mut outbound, now_ms(&start))?;
+        }
         if SEND_P1_PROBE {
             let probe_len = socket
                 .send_to(b"TASK2_P1_PROBE", peer)
@@ -122,14 +182,26 @@ fn run() -> Result<(), &'static str> {
                     }
                     flush_network();
                 }
-                handle_receive_event(
-                    result.event,
-                    &socket,
-                    &peer,
-                    &mut endpoint,
-                    &mut outbound,
-                    now,
-                )?;
+                if TASK3_CONTROL && ROLE == "controller" {
+                    handle_receive_event_task3(
+                        result.event,
+                        &socket,
+                        &peer,
+                        &mut endpoint,
+                        &mut outbound,
+                        &mut control,
+                        now,
+                    )?;
+                } else {
+                    handle_receive_event(
+                        result.event,
+                        &socket,
+                        &peer,
+                        &mut endpoint,
+                        &mut outbound,
+                        now,
+                    )?;
+                }
                 if state_before_receive == EndpointState::Safe
                     && endpoint.state() == EndpointState::Active
                 {
@@ -171,6 +243,197 @@ fn run() -> Result<(), &'static str> {
         ax_net::request_poll();
         thread::sleep(Duration::from_millis(10));
     }
+}
+
+/// Task-3 control-loop state on the controller side.
+///
+/// The loop is request-response: a new CONTROL is queued only after the
+/// previous STATUS completes.  `request_in_flight` tracks whether a CONTROL is
+/// currently awaiting its STATUS; history keeps the last state samples for the
+/// model input (M3).
+struct Controller {
+    request_id: u32,
+    request_in_flight: bool,
+    request_sent_at_ms: u64,
+    state_history: [i32; scenario::HISTORY_LEN],
+    history_len: usize,
+    last_state: i32,
+    sample_count: u32,
+}
+
+impl Controller {
+    fn new() -> Self {
+        Self {
+            request_id: 0,
+            request_in_flight: false,
+            request_sent_at_ms: 0,
+            state_history: [0; scenario::HISTORY_LEN],
+            history_len: 0,
+            last_state: 300,
+            sample_count: 0,
+        }
+    }
+
+    fn target_for(&self, now_ms: u64) -> i32 {
+        let mut target = TARGET_STEPS[0].1;
+        for &(start_ms, value) in &TARGET_STEPS {
+            if now_ms >= start_ms {
+                target = value;
+            }
+        }
+        target
+    }
+
+    fn push_state(&mut self, state: i32) {
+        if self.history_len < scenario::HISTORY_LEN {
+            self.state_history[self.history_len] = state;
+            self.history_len += 1;
+        } else {
+            self.state_history.copy_within(1.., 0);
+            self.state_history[scenario::HISTORY_LEN - 1] = state;
+        }
+    }
+
+    /// Baseline P controller output for the current target and state.
+    fn baseline_output(&self, target: i32, state: i32) -> i32 {
+        let error = target - state;
+        let output = scenario::BIAS + error * scenario::KP / scenario::KP_DEN;
+        output.clamp(scenario::OUTPUT_MIN, scenario::OUTPUT_MAX)
+    }
+
+    fn send_next(
+        &mut self,
+        socket: &UdpSocket,
+        peer: &SocketAddr,
+        endpoint: &mut Endpoint,
+        outbound: &mut [u8; MAX_DATAGRAM_LEN],
+        now_ms: u64,
+    ) -> Result<(), &'static str> {
+        if self.request_in_flight {
+            return Ok(());
+        }
+        self.request_id = self.request_id.wrapping_add(1);
+        let target = self.target_for(now_ms);
+        let output = self.baseline_output(target, self.last_state);
+
+        let mut payload = [0; 12];
+        let command = ControlMessage::new(ControlAction::SetOutput, output, self.request_id)
+            .map_err(|_| "invalid Task-3 control command")?;
+        let payload_len = command
+            .encode(&mut payload)
+            .map_err(|_| "failed to encode Task-3 control")?;
+        let transmission = endpoint
+            .queue_reliable(
+                MessageKind::Control,
+                &payload[..payload_len],
+                now_ms,
+                outbound,
+            )
+            .map_err(|_| "failed to queue Task-3 control")?;
+        if let Err(error) = socket.send_to(&outbound[..transmission.datagram_len()], peer) {
+            println!("TASK2_SEND_ERROR kind=control error={error:?}");
+            return Err("failed to send Task-3 control");
+        }
+        flush_network();
+        self.request_in_flight = true;
+        self.request_sent_at_ms = now_ms;
+        println!(
+            "TASK3_CONTROL_SENT request={} value={} target={} state={} seq={}",
+            self.request_id,
+            output,
+            target,
+            self.last_state,
+            transmission.sequence().get()
+        );
+        Ok(())
+    }
+
+    fn on_status(&mut self, status: &StatusMessage, now_ms: u64) -> Result<(), &'static str> {
+        self.request_in_flight = false;
+        self.sample_count = self.sample_count.wrapping_add(1);
+        let state = status
+            .value()
+            .clamp(scenario::STATE_MIN, scenario::STATE_MAX);
+        let rtt_ms = now_ms.saturating_sub(self.request_sent_at_ms);
+        self.last_state = state;
+        self.push_state(state);
+        println!(
+            "TASK3_STATUS_RECEIVED request={} value={} state={} sample={} rtt_ms={}",
+            status.last_control_request(),
+            status.value(),
+            state,
+            self.sample_count,
+            rtt_ms
+        );
+        Ok(())
+    }
+}
+
+fn handle_receive_event_task3(
+    event: ReceiveEvent<'_>,
+    socket: &UdpSocket,
+    peer: &SocketAddr,
+    endpoint: &mut Endpoint,
+    outbound: &mut [u8; MAX_DATAGRAM_LEN],
+    control: &mut Controller,
+    now_ms: u64,
+) -> Result<(), &'static str> {
+    match event {
+        ReceiveEvent::Delivered { frame } if frame.kind() == MessageKind::Status => {
+            let status = StatusMessage::decode(frame.payload())
+                .map_err(|_| "validated status payload failed to decode")?;
+            control.on_status(&status, now_ms)?;
+            control
+                .send_next(socket, peer, endpoint, outbound, now_ms)
+                .map_err(|_| "failed to send next Task-3 control")?;
+        }
+        ReceiveEvent::Delivered { frame } if frame.kind() == MessageKind::Control => {
+            let command = ControlMessage::decode(frame.payload())
+                .map_err(|_| "validated control payload failed to decode")?;
+            println!(
+                "TASK2_CONTROL_RECEIVED seq={} request={} action={:?} value={}",
+                frame.sequence().get(),
+                command.request_id(),
+                command.action(),
+                command.value()
+            );
+        }
+        ReceiveEvent::Acknowledged { sequence } => {
+            println!("TASK2_ACK seq={}", sequence.get());
+        }
+        ReceiveEvent::DuplicateAcknowledgement { sequence } => {
+            println!("TASK2_DUPLICATE_ACK seq={}", sequence.get());
+        }
+        ReceiveEvent::InvalidPayload { error } => {
+            println!("TASK2_PROTOCOL_ERROR invalid_payload={error}");
+        }
+        ReceiveEvent::OutOfOrder { sequence, expected } => {
+            println!(
+                "TASK2_PROTOCOL_ERROR out_of_order={} expected={}",
+                sequence.get(),
+                expected.get()
+            );
+        }
+        ReceiveEvent::RemoteError { code, sequence } => {
+            println!(
+                "TASK2_REMOTE_ERROR code={code:?} sequence={}",
+                sequence.get()
+            );
+        }
+        ReceiveEvent::Heartbeat { message } => {
+            println!(
+                "TASK2_HEARTBEAT_RECEIVED peer_uptime_ms={}",
+                message.uptime_ms()
+            );
+        }
+        ReceiveEvent::Duplicate { sequence } => {
+            println!("TASK2_DUPLICATE seq={}", sequence.get());
+        }
+        ReceiveEvent::Rejected { error } => println!("TASK2_REJECTED error={error}"),
+        ReceiveEvent::SessionMismatch => println!("TASK2_REJECTED session_mismatch"),
+        ReceiveEvent::Delivered { .. } => {}
+    }
+    Ok(())
 }
 
 fn send_control(
