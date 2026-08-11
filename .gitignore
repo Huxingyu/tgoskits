@@ -72,3 +72,6 @@ loongarch64-axvisor-guest-tests.md
 /logs/offline-monitor/
 /images/linux-qemu/
 offline-monitor-analysis*.html
+
+# Personal planning notes
+/docs/my/
