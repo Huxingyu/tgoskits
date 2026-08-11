@@ -27,7 +27,7 @@ use ax_std::{
 };
 use task2_net_protocol::{
     ControlAction, ControlMessage, Endpoint, EndpointState, MAX_DATAGRAM_LEN, MessageKind,
-    PollEvent, ReceiveEvent, RetryPolicy, SessionId, StatusMessage, StatusState,
+    PollEvent, ReceiveEvent, RetryPolicy, SessionError, SessionId, StatusMessage, StatusState,
 };
 
 const LOCAL_PORT: u16 = match option_env!("TASK2_LOCAL_PORT") {
@@ -187,10 +187,8 @@ fn run() -> Result<(), &'static str> {
                     .receive(&inbound[..length], now, &mut response)
                     .map_err(|_| "protocol receive failed")?;
                 if result.response_len > 0 {
-                    if let Err(error) = socket.send_to(&response[..result.response_len], source) {
-                        println!("TASK2_SEND_ERROR kind=response error={error:?}");
-                        return Err("failed to send protocol response");
-                    }
+                    send_datagram(&socket, &source, &response[..result.response_len])
+                        .map_err(|_| "failed to send protocol response")?;
                     flush_network();
                 }
                 if TASK3_CONTROL && ROLE == "controller" {
@@ -222,7 +220,13 @@ fn run() -> Result<(), &'static str> {
                         // recovery: the peer only answers a CONTROL, but a new
                         // CONTROL is only sent on STATUS delivery.  Resend the
                         // next CONTROL right after the Safe->Active transition.
-                        control.send_next(&socket, &peer, &mut endpoint, &mut outbound, now)?;
+                        control.send_next_or_defer(
+                            &socket,
+                            &peer,
+                            &mut endpoint,
+                            &mut outbound,
+                            now,
+                        )?;
                     }
                 }
             }
@@ -234,10 +238,8 @@ fn run() -> Result<(), &'static str> {
             .poll(now, &mut outbound)
             .map_err(|_| "protocol timer failed")?;
         if poll.datagram_len > 0 {
-            if let Err(error) = socket.send_to(&outbound[..poll.datagram_len], peer) {
-                println!("TASK2_SEND_ERROR kind=timer error={error:?}");
-                return Err("failed to send protocol timer frame");
-            }
+            send_datagram(&socket, &peer, &outbound[..poll.datagram_len])
+                .map_err(|_| "failed to send protocol timer frame")?;
             flush_network();
         }
         if let PollEvent::Retransmit { sequence, attempt } = poll.event {
@@ -291,6 +293,17 @@ struct Controller {
     last_state: i32,
     prev_output: i32,
     sample_count: u32,
+    pending_send: bool,
+}
+
+/// Why queueing the next Task-3 CONTROL did not complete immediately.
+enum SendNextError {
+    /// The previous CONTROL is still awaiting its ACK.  STATUS can be
+    /// delivered before the ACK is processed under the host-side relay, so
+    /// the caller defers and resumes on the Acknowledged event.
+    PendingAck,
+    /// Queueing or transmission failed permanently.
+    Fatal(&'static str),
 }
 
 impl Controller {
@@ -307,6 +320,7 @@ impl Controller {
             last_state: 300,
             prev_output: 0,
             sample_count: 0,
+            pending_send: false,
         }
     }
 
@@ -380,7 +394,7 @@ impl Controller {
         endpoint: &mut Endpoint,
         outbound: &mut [u8; MAX_DATAGRAM_LEN],
         now_ms: u64,
-    ) -> Result<(), &'static str> {
+    ) -> Result<(), SendNextError> {
         if self.request_in_flight {
             return Ok(());
         }
@@ -403,26 +417,27 @@ impl Controller {
 
         let mut payload = [0; 12];
         let command = ControlMessage::new(ControlAction::SetOutput, output, self.request_id)
-            .map_err(|_| "invalid Task-3 control command")?;
+            .map_err(|_| SendNextError::Fatal("invalid Task-3 control command"))?;
         let payload_len = command
             .encode(&mut payload)
-            .map_err(|_| "failed to encode Task-3 control")?;
-        let transmission = endpoint
-            .queue_reliable(
-                MessageKind::Control,
-                &payload[..payload_len],
-                now_ms,
-                outbound,
-            )
-            .map_err(|_| "failed to queue Task-3 control")?;
-        if let Err(error) = socket.send_to(&outbound[..transmission.datagram_len()], peer) {
-            println!("TASK2_SEND_ERROR kind=control error={error:?}");
-            return Err("failed to send Task-3 control");
-        }
+            .map_err(|_| SendNextError::Fatal("failed to encode Task-3 control"))?;
+        let transmission = match endpoint.queue_reliable(
+            MessageKind::Control,
+            &payload[..payload_len],
+            now_ms,
+            outbound,
+        ) {
+            Ok(transmission) => transmission,
+            Err(SessionError::ReliableFramePending) => return Err(SendNextError::PendingAck),
+            Err(_) => return Err(SendNextError::Fatal("failed to queue Task-3 control")),
+        };
+        send_datagram(socket, peer, &outbound[..transmission.datagram_len()])
+            .map_err(SendNextError::Fatal)?;
         flush_network();
         self.request_in_flight = true;
         self.request_sent_at_ms = now_ms;
         self.next_send_at_ms = now_ms + scenario::MIN_CYCLE_MS;
+        self.pending_send = false;
         println!(
             "TASK3_CONTROL_SENT elapsed_ms={now_ms} request={} value={} target={} state={} seq={}",
             self.request_id,
@@ -432,6 +447,31 @@ impl Controller {
             transmission.sequence().get()
         );
         Ok(())
+    }
+
+    /// Sends the next CONTROL, deferring while the previous ACK is in flight.
+    ///
+    /// STATUS can be delivered before the ACK of the CONTROL it answers, so
+    /// `queue_reliable` may still see the previous frame pending.  That is a
+    /// normal race under the host-side relay, not a failure: remember the
+    /// request and resume it from the Acknowledged event.
+    fn send_next_or_defer(
+        &mut self,
+        socket: &UdpSocket,
+        peer: &SocketAddr,
+        endpoint: &mut Endpoint,
+        outbound: &mut [u8; MAX_DATAGRAM_LEN],
+        now_ms: u64,
+    ) -> Result<(), &'static str> {
+        match self.send_next(socket, peer, endpoint, outbound, now_ms) {
+            Ok(()) => Ok(()),
+            Err(SendNextError::PendingAck) => {
+                self.pending_send = true;
+                println!("TASK2_CONTROL_DEFERRED awaiting previous ACK");
+                Ok(())
+            }
+            Err(SendNextError::Fatal(message)) => Err(message),
+        }
     }
 
     fn on_status(&mut self, status: &StatusMessage, now_ms: u64) -> Result<(), &'static str> {
@@ -470,9 +510,7 @@ fn handle_receive_event_task3(
             let status = StatusMessage::decode(frame.payload())
                 .map_err(|_| "validated status payload failed to decode")?;
             control.on_status(&status, now_ms)?;
-            control
-                .send_next(socket, peer, endpoint, outbound, now_ms)
-                .map_err(|_| "failed to send next Task-3 control")?;
+            control.send_next_or_defer(socket, peer, endpoint, outbound, now_ms)?;
         }
         ReceiveEvent::Delivered { frame } if frame.kind() == MessageKind::Control => {
             let command = ControlMessage::decode(frame.payload())
@@ -487,6 +525,10 @@ fn handle_receive_event_task3(
         }
         ReceiveEvent::Acknowledged { sequence } => {
             println!("TASK2_ACK seq={}", sequence.get());
+            if control.pending_send {
+                control.pending_send = false;
+                control.send_next_or_defer(socket, peer, endpoint, outbound, now_ms)?;
+            }
         }
         ReceiveEvent::DuplicateAcknowledgement { sequence } => {
             println!("TASK2_DUPLICATE_ACK seq={}", sequence.get());
@@ -544,10 +586,8 @@ fn send_control(
             outbound,
         )
         .map_err(|_| "failed to queue control command")?;
-    if let Err(error) = socket.send_to(&outbound[..transmission.datagram_len()], peer) {
-        println!("TASK2_SEND_ERROR kind=control error={error:?}");
-        return Err("failed to send control command");
-    }
+    send_datagram(socket, peer, &outbound[..transmission.datagram_len()])
+        .map_err(|_| "failed to send control command")?;
     flush_network();
     println!(
         "TASK2_CONTROL_SENT seq={} request=1",
@@ -598,10 +638,8 @@ fn handle_receive_event(
                     outbound,
                 )
                 .map_err(|_| "failed to queue status")?;
-            if let Err(error) = socket.send_to(&outbound[..transmission.datagram_len()], peer) {
-                println!("TASK2_SEND_ERROR kind=status error={error:?}");
-                return Err("failed to send status");
-            }
+            send_datagram(socket, peer, &outbound[..transmission.datagram_len()])
+                .map_err(|_| "failed to send status")?;
             flush_network();
             println!("TASK2_STATUS_SENT seq={}", transmission.sequence().get());
         }
@@ -659,6 +697,31 @@ fn flush_network() {
     {
         ax_net::flush_egress();
         thread::yield_now();
+    }
+}
+
+/// Sends one datagram, tolerating transient WouldBlock backpressure.
+///
+/// The socket is nonblocking; under TCG emulation with a host-side relay the
+/// TX path can intermittently report WouldBlock.  Retry briefly instead of
+/// treating a transient backpressure signal as a fatal error.
+fn send_datagram(
+    socket: &UdpSocket,
+    destination: &SocketAddr,
+    datagram: &[u8],
+) -> Result<(), &'static str> {
+    let deadline = Instant::now() + Duration::from_millis(500);
+    loop {
+        match socket.send_to(datagram, destination) {
+            Ok(_) => return Ok(()),
+            Err(error) if is_would_block(&error) && Instant::now() < deadline => {
+                thread::sleep(Duration::from_millis(10));
+            }
+            Err(error) => {
+                println!("TASK2_SEND_ERROR kind=datagram error={error:?}");
+                return Err("UDP send failed");
+            }
+        }
     }
 }
 
