@@ -1,0 +1,30 @@
+/* The board's generic PCIe node is not part of this MMIO-only Guest.  Disable
+ * both the host controller and its E1000 child; this also prevents the board
+ * Kconfig from selecting PCIe support for the image. */
+&pcie {
+	status = "disabled";
+};
+
+&eth0 {
+	status = "disabled";
+};
+
+/* The board enables slot 3 for its ramfb/input demo; disable it so only the
+ * switch-port endpoint below is present. */
+&virtio_mmio3 {
+	status = "disabled";
+};
+
+/* Axvisor's generated guest FDT places the virtual virtio-mmio endpoint at
+ * 0x0a00_0000 with controller input 48, which is the same base/IRQ layout as
+ * the QEMU virt machine's slot 0 (GIC_SPI 16). */
+&virtio_mmio0 {
+	status = "okay";
+
+	virtio_net: virtio-net {
+		compatible = "virtio,net";
+		status = "okay";
+		/* Keep the Guest MAC identical to the switch-port configuration. */
+		local-mac-address = [52 54 00 12 34 02];
+	};
+};
