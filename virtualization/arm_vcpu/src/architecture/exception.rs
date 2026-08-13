@@ -325,7 +325,6 @@ fn handle_smc64_exception(
         ctx.set_exception_pc(elr + exception_next_instruction_step());
     }
 
-
     // Is this a psci call?
     // Keep virtual CPU lifecycle calls inside AxVisor, but expose the physical
     // firmware's PSCI version to SMC guests. Linux uses that version to decide
