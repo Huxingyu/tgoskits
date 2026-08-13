@@ -1,9 +1,7 @@
 # Task-3 AI 控制闭环设计文档
 
 > 分支：`openrace/task3-clean`（基于 Task-2 基线 `01f77307e`）
-> 状态：官方 5 项要求完成；另含"链路故障安全恢复"附加扩展（可选能力）
-
-## 1. 目标与边界
+> 状态：官方 5 项要求完成；另含"链路故障安全恢复"附加扩展（可选能力）## 1. 目标与边界
 
 Task-3 的目标是在既有 Task-2 双 Guest UDP/IP 链路上，实现一个**可复现、可量化、
 可演示**的 AI 控制闭环：
@@ -33,11 +31,18 @@ Zephyr 应用控制并更新虚拟对象
 | 项 | 值 |
 |---|---|
 | QEMU | 10.2.1，AArch64，`virt,virtualization=on,gic-version=3` |
-| 虚拟机监控 | AxVisor，VirtIO-MMIO 直通 |
+| 虚拟机监控 | AxVisor，虚拟 virtio-mmio 端点 + 内部 L2 软交换 |
 | Linux Guest | 控制器 + 模型推理（initramfs 静态加载，musl 用户态二进制） |
 | Zephyr Guest | 虚拟对象 + 执行器（board `qemu_cortex_a53`，Zephyr 4.4.99） |
-| 数据链路 | 两个独立 VirtIO-MMIO 端点，QEMU socket 点对点 |
+| 数据链路 | 两个独立 VirtIO-MMIO 端点，经 Axvisor 内部 L2 软交换互联 |
 | 端点 | Linux `10.0.42.15:4242` ↔ Zephyr `10.0.42.2:4242` |
+
+数据面全部在 AxVisor 内部完成：每个 guest 通过
+`[[devices.virtual]] model = "virtio-net"` 获得一个虚拟 virtio-mmio 端点
+（0x0a00_0000，wired IRQ 48），端口接入 hypervisor 内建 L2 软交换
+（SwitchPort + ingress 队列 + poll_dma + vIRQ）。guest 间流量不依赖任何
+QEMU 网卡、socket 对、抓包代理或外部物理链路；QEMU 仅承载宿主机运行环境。
+协议、模型、两端应用与传输介质解耦，同一套实现在开发板形态下无需改动。
 
 ### 2.2 协议与消息
 
@@ -127,8 +132,8 @@ Dense 32→1
 - `task3_metrics.py` 从 `TASK3_STATUS_RECEIVED`/`TASK3_INFER` 日志解析并汇总
   均值/p95。
 
-**周期级延迟的构成**：100 ms 限速睡眠 + 模型推理 + 网络传输（virtio + 代理/
-直连）+ RTOS 处理与 plant 更新 + STATUS 回传。因此 `rtt_ms` 是**整周期延迟**，
+**周期级延迟的构成**：100 ms 限速睡眠 + 模型推理 + 网络传输（软交换/直连）+
+RTOS 处理与 plant 更新 + STATUS 回传。因此 `rtt_ms` 是**整周期延迟**，
 不是纯网络往返；AI 模式比 baseline 多出的 ~13 ms 主要来自模型推理被计入窗口。
 
 **误差来源与精度范围**：
@@ -146,18 +151,22 @@ Dense 32→1
 
 ## 6. 附加扩展：链路故障安全恢复
 
-> 说明：本扩展不属于官方 5 项要求，作为可选能力保留（`scripts/task3/run-task3-fault.sh`、
-> `ack_drop_proxy.py --blackout-*`、恢复路径实现、`results/task3/fault/` 证据）。
+> 说明：本扩展不属于官方 5 项要求，作为可选能力保留（`scripts/task3/run-task3-switch-fault.sh`
+> 的 `virtnet drop` 黑障、恢复路径实现、`results/task3/switch/fault-*/` 证据）。
 
 ### 6.1 故障注入
 
-在真实 guest 链路中间（P3 代理）按时间窗口丢弃**全部帧**（双向），模拟运行中
-链路中断；窗口结束自动恢复转发：
+在 guest 链路按时间窗口丢弃**全部帧**（双向），模拟运行中链路中断；
+窗口结束自动恢复转发。hypervisor 级黑障门（`virtnet drop on/off`）直接
+作用于软交换的端口边界，两端协议栈照常运行：
 
 ```text
-黑障 25s→35s（丢 102 帧）→ 双方重传耗尽/心跳超时进入 Safe
+黑障 25s→~35s（双向全丢）→ 双方重传耗尽/心跳超时进入 Safe
 → 黑障结束 → heartbeat 恢复 → 可靠流重同步 → 控制环自动续跑
 ```
+
+（在 QEMU socket 直连环境下，等价故障由 `ack_drop_proxy.py --blackout-*`
+在链路上丢弃帧实现，见 `results/task3/fault/` 的早期证据。）
 
 ### 6.2 恢复路径实现
 
@@ -175,33 +184,50 @@ Dense 32→1
 
 ## 7. 实验证据
 
-### 7.1 AI/baseline 对比（3 AI + 3 baseline，各 ~39 s）
+### 7.1 AI/baseline 对比（软交换链路：2 AI + 3 baseline，各 ~35 s）
 
-| 指标 | AI (n=3) | baseline (n=3) |
+| 指标 | AI (n=2) | baseline (n=3) |
 |---|---|---|
-| 整体 RMSE | 29.2 / 29.3 / 29.3 | 190.6 / 191.3 / 190.7 |
-| t300 段 RMSE（0-5s） | 49.1 | 102.9 |
-| t800 段 RMSE（5-15s） | 40.8 | 217.0-219.3 |
-| t500 段 RMSE（15-25s） | 21.6 | 192.2 |
+| 整体 RMSE | 40.7 / 41.6 | 195.9 / 196.9 / 197.6 |
+| t300 段 RMSE（0-5s） | 66.7 / 69.7 | 79.7–81.3 |
+| t800 段 RMSE（5-15s） | 47.5 / 53.1 | 236.5–240.7 |
+| t500 段 RMSE（15-25s） | 30.4 / 29.6 | 192.4 |
 | t500 稳态误差 | ~2（498 vs 500） | ~192（308 vs 500） |
-| t500 调节时间（5% 带） | 739–831 ms | 未收敛 |
-| Guest 推理耗时 | 均值 11.3 ms，p95 14.6 ms | - |
-| 周期级延迟（整周期） | ~104 ms | ~91 ms |
+| t500 调节时间（5% 带） | 1371–1588 ms | 未收敛 |
+| Guest 推理耗时 | 均值 ~7.6 ms（QEMU TCG） | - |
+| 周期级延迟（整周期） | 均值 ~174 / ~192 ms | 均值 ~159–162 ms |
 
-原始数据：`results/task3/run-{1..3}.csv`（AI）、`run-{4..6}.csv`（baseline）、
-`summary.csv`、`comparison.png`。说明：t300/t800 段调节时间在 5% 带内未收敛，
-如引用请限定 t500 段。
+原始数据：`results/task3/switch/`（每 run 的 `run.log` + 双端 pcap +
+`summary.csv` + `comparison.png`）。双端 pcap 的 T2N1 帧账本完全一致
+（`verify_pcap.py` PASS：871 帧/端，CONTROL 204 + STATUS 205 + ACK 410 +
+HEARTBEAT 52）。
 
-### 7.2 故障安全恢复（附加扩展，2 次复现）
+**同一实验在 QEMU socket 直连环境下的验证**（更早的实验环境，传输层为
+QEMU socket 对 + filter-dump 抓包）：3 AI + 3 baseline 各 ~39 s，整体
+RMSE 29.2–29.3 vs 190.6–191.3，周期延迟 ~104 ms vs ~91 ms，数据见
+`results/task3/run-{1..6}.csv`。两组环境的 AI/baseline 结论一致；软交换
+链路的延迟更高、RMSE 更大（原因见 §9 的延迟特性说明）。
 
-| 事件 | 观测 |
+### 7.2 故障安全恢复（附加扩展）
+
+| 事件 | 观测（软交换链路） | 观测（QEMU socket 直连环境） |
+|---|---|---|
+| 黑障窗口 | 25s→~35s，`virtnet drop` 双向全丢 | 25s→35s，代理丢弃 102 帧（双向） |
+| Safe 进入 | 双方 RetryExhausted / HeartbeatTimeout 进入 Safe | 同左 |
+| 恢复 | `TASK2_RECOVERED` 后可靠流从序号 1 重同步 | 同左 |
+| 续跑 | 恢复后 29 个 STATUS 周期（4.8s，0 协议错误） | 恢复后 82 个 STATUS 周期，周期延迟 ~74–109 ms，0 协议错误 |
+
+证据：`results/task3/switch/fault-switch-fault-run1/`（guest 日志 + 双端
+pcap）与 `results/task3/fault/`（guest/proxy 日志 + 双端 pcap + SHA-256）。
+
+### 7.3 证据链工具
+
+| 能力 | 实现 |
 |---|---|
-| 黑障窗口 | 25s→35s，代理丢弃 102 帧（双向） |
-| Safe 进入 | 双方 RetryExhausted / HeartbeatTimeout 进入 Safe |
-| 恢复 | `TASK2_RECOVERED` 后可靠流从序号 1 重同步 |
-| 续跑 | final4 恢复后 82 个 STATUS 周期，周期延迟 ~74–109 ms，0 协议错误 |
-
-证据：`results/task3/fault/`（guest/proxy 日志 + 双端 pcap + SHA-256）。
+| 抓包 | `virtnet capture on/off/dump`：在端口边界记录每帧（时间戳+帧字节），shell 流式导出为经典 pcap（`switch.vm1.pcap` / `switch.vm2.pcap`） |
+| 故障注入 | `virtnet drop on/off`：双向丢弃全部帧的 hypervisor 级黑障门，两端协议栈照常运行 |
+| 端口审计 | `virtnet show`：端口表（VM/MAC/状态）+ 黑障/抓包开关 |
+| 自动化 | `serial_console.py` 通过 QEMU serial socket 全生命周期驱动（boot→抓包→黑障→恢复→pcap 导出→QMP 退出），`run-task3-switch.sh` / `run-task3-switch-fault.sh` 编排 |
 
 ## 8. 复现命令
 
@@ -218,15 +244,20 @@ TASK3_CONTROL_LOOP=1 TASK3_AI=1 bash scripts/test/net-dual-guest/build-linux-tas
 bash scripts/test/net-dual-guest/build-linux-initramfs.sh
 bash scripts/test/net-dual-guest/build-zephyr-task2.sh   # 需 Zephyr SDK 与源码
 
-# 实验（AI/baseline 对比；故障安全恢复为附加扩展）
+# 实验（AI/baseline 对比；故障安全恢复为附加扩展；软交换链路为当前数据面）
+bash scripts/task3/run-task3-switch.sh ai-runX ai
+bash scripts/task3/run-task3-switch.sh baseline-runX baseline
+bash scripts/task3/run-task3-switch-fault.sh fault-runX
+
+# QEMU socket 直连环境下的早期实验流程（数据见 results/task3/）
 bash scripts/task3/run-task3-experiment.sh ai-runX ai
 bash scripts/task3/run-task3-experiment.sh baseline-runX baseline
 bash scripts/task3/run-task3-fault.sh fault-runX
 
-# 指标
+# 指标（以软交换链路为例）
 python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
-  --out-dir results/task3 --label run --modes ai,ai,ai,baseline,baseline,baseline \
-  --plot results/task3/comparison.png
+  --out-dir results/task3/switch --label switch --modes ai,ai,baseline,baseline,baseline \
+  --plot results/task3/switch/comparison.png
 ```
 
 ## 9. 已知边界与诚实声明
@@ -239,7 +270,13 @@ python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
 - "3+3 组"是同冻结场景的重放（可复现性强，非统计显著性样本）；
 - 周期级延迟含限速与推理，不作为纯网络 RTT 解读（见 §5.2）；
 - 故障安全恢复为附加扩展，`set_link` 在本环境无效属平台边界，故障注入以
-  P3 代理黑障为准。
+  `virtnet drop` 黑障门（QEMU socket 直连环境为 P3 代理黑障）为准；
+- **软交换链路的 RX 交付特性**：交付依赖 vCPU 运行循环的 `poll_dma`，而非
+  直连设备的即时 IRQ。实测中位控制周期 ~130 ms（rtt 约束），存在周期性
+  ~300 ms 尖峰（约 2 次/s，与心跳送达时的 vCPU 唤醒竞争相关）；周期仍处于
+  5–10 Hz 设计范围。该尖峰使 AI 模型的时间窗采样不均匀，RMSE 由 socket
+  直连环境的 ~29 升至 ~41，但 AI/baseline 的 ~4.8 倍差距与全部结论保持成立；
+- 板上部署时物理网卡仅作外部管理，guest 间数据面不经物理链路。
 
 ## 10. 完成定义对照
 
