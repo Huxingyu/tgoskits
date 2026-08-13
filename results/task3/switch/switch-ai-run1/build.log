@@ -1,0 +1,188 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.21s
+     Running `target/debug/tg-xtask axvisor qemu --config scripts/test/net-dual-guest/axvisor-qemu-debug.toml --qemu-config scripts/test/net-dual-guest/qemu-aarch64-p2-switch.toml --vmconfigs scripts/test/net-dual-guest/vm-aarch64-p2-switch-linux.toml --vmconfigs scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml --rootfs /home/huhu/tgoskits-net-task3-clean/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img`
+[2026-08-13T05:59:03Z INFO  axbuild::context] Workspace root: /home/huhu/tgoskits-net-task3-clean
+[2026-08-13T05:59:03Z INFO  axbuild::context] Workspace member dir for axvisor: /home/huhu/tgoskits-net-task3-clean/os/axvisor
+Using build config: scripts/test/net-dual-guest/axvisor-qemu-debug.toml
+file already exists and passed checksum verification
+image archive verified at /home/huhu/tgoskits-net-task3-clean/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img.tar.xz
+image already extracted and up to date at /home/huhu/tgoskits-net-task3-clean/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img
+[2026-08-13T05:59:05Z INFO  ostool::run::qemu] Using QEMU config file: scripts/test/net-dual-guest/qemu-aarch64-p2-switch.toml
+[axbuild] qemu build+run package=axvisor target=scripts/targets/std/pie/aarch64-unknown-linux-musl.json config=scripts/test/net-dual-guest/axvisor-qemu-debug.toml ...
+sh -c /home/huhu/tgoskits-net-task3-clean/tmp/axbuild/std/prebuild/prebuild-aarch64-unknown-linux-musl-2e3a7e2ffac016cc.sh
+AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
+AXVISOR_VM_CONFIGS=/home/huhu/tgoskits-net-task3-clean/tmp/axbuild/axvisor/resolved-vm-configs/624104d5ef28a21dd64e54d15c9699dc970a9ae0d69a070fd75da3211aa04745.toml:/home/huhu/tgoskits-net-task3-clean/tmp/axbuild/axvisor/resolved-vm-configs/beede7c1e2c8193392b9c6a34c8924ee3c44d3fcf98666c339a5a7c589b99a58.toml
+AX_ARCH=aarch64
+AX_LOG=info
+AX_TARGET=aarch64-unknown-none-softfloat
+CARGO_UNSTABLE_JSON_TARGET_SPEC=true
+CC_aarch64_unknown_linux_musl=aarch64-linux-musl-cc
+CFLAGS_aarch64_unknown_linux_musl=-mgeneral-regs-only -fno-stack-protector
+CXXFLAGS_aarch64_unknown_linux_musl=-mgeneral-regs-only -fno-stack-protector
+cargo build --config /home/huhu/tgoskits-net-task3-clean/tmp/axbuild/std/config-aarch64-unknown-linux-musl-dynamic.toml -p axvisor --target scripts/targets/std/pie/aarch64-unknown-linux-musl.json -Z unstable-options --target-dir /home/huhu/tgoskits-net-task3-clean/target --features ax-std/fs,ax-std/nvme,fs,log/release_max_level_info -Z json-target-spec --bin axvisor --release --message-format json-render-diagnostics
+   Compiling ax-percpu v0.4.17 (/home/huhu/tgoskits-net-task3-clean/components/percpu/percpu)
+   Compiling ax-alloc v0.8.15 (/home/huhu/tgoskits-net-task3-clean/memory/ax-alloc)
+   Compiling ax-driver v0.12.3 (/home/huhu/tgoskits-net-task3-clean/drivers/ax-driver)
+   Compiling somehal v0.8.3 (/home/huhu/tgoskits-net-task3-clean/platforms/somehal)
+   Compiling ax-task v0.6.7 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axtask)
+   Compiling scope-local v0.4.5 (/home/huhu/tgoskits-net-task3-clean/components/scope-local)
+   Compiling ax-sync v0.5.31 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axsync)
+   Compiling ax-lazyinit v0.4.10 (/home/huhu/tgoskits-net-task3-clean/components/ax-lazyinit)
+   Compiling cpu-local v0.1.2 (/home/huhu/tgoskits-net-task3-clean/components/cpu-local)
+   Compiling someboot v0.3.8 (/home/huhu/tgoskits-net-task3-clean/platforms/someboot)
+   Compiling ax-runtime v0.10.7 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axruntime)
+   Compiling arm_vcpu v0.5.19 (/home/huhu/tgoskits-net-task3-clean/virtualization/arm_vcpu)
+   Compiling axvmconfig v0.8.4 (/home/huhu/tgoskits-net-task3-clean/virtualization/axvmconfig)
+   Compiling axvisor v0.5.24 (/home/huhu/tgoskits-net-task3-clean/os/axvisor)
+   Compiling axbacktrace v0.4.8 (/home/huhu/tgoskits-net-task3-clean/components/axbacktrace)
+   Compiling axaddrspace v0.5.19 (/home/huhu/tgoskits-net-task3-clean/virtualization/axaddrspace)
+   Compiling rdrive v0.23.9 (/home/huhu/tgoskits-net-task3-clean/drivers/rdrive)
+   Compiling dma-api v0.9.5 (/home/huhu/tgoskits-net-task3-clean/memory/dma-api)
+   Compiling buddy-slab-allocator v0.4.8 (/home/huhu/tgoskits-net-task3-clean/memory/buddy-slab-allocator)
+   Compiling axpoll v0.5.4 (/home/huhu/tgoskits-net-task3-clean/components/axpoll)
+   Compiling axfs-ng-vfs v0.5.8 (/home/huhu/tgoskits-net-task3-clean/fs/axfs-ng-vfs)
+   Compiling rsext4 v0.7.8 (/home/huhu/tgoskits-net-task3-clean/fs/rsext4)
+   Compiling axdevice v0.5.7 (/home/huhu/tgoskits-net-task3-clean/virtualization/axdevice)
+   Compiling arm_vgic v0.5.6 (/home/huhu/tgoskits-net-task3-clean/virtualization/arm_vgic)
+   Compiling ax-cpu v0.8.6 (/home/huhu/tgoskits-net-task3-clean/components/axcpu)
+   Compiling axvirtio-common v0.1.0 (/home/huhu/tgoskits-net-task3-clean/virtualization/axvirtio-common)
+   Compiling rdif-block v0.11.4 (/home/huhu/tgoskits-net-task3-clean/drivers/interface/rdif-block)
+   Compiling axvirtio-net v0.1.0 (/home/huhu/tgoskits-net-task3-clean/virtualization/axvirtio-net)
+   Compiling nvme-driver v0.7.5 (/home/huhu/tgoskits-net-task3-clean/drivers/blk/nvme-driver)
+   Compiling ax-plat v0.12.3 (/home/huhu/tgoskits-net-task3-clean/platforms/ax-plat)
+   Compiling axklib v0.7.8 (/home/huhu/tgoskits-net-task3-clean/components/axklib)
+   Compiling axplat-dyn v0.7.15 (/home/huhu/tgoskits-net-task3-clean/platforms/axplat-dyn)
+   Compiling ax-fs-ng v0.8.7 (/home/huhu/tgoskits-net-task3-clean/fs/ax-fs-ng)
+   Compiling ax-hal v0.5.31 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axhal)
+   Compiling ax-ipi v0.5.30 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axipi)
+   Compiling ax-mm v0.5.31 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axmm)
+   Compiling ax-log v0.5.20 (/home/huhu/tgoskits-net-task3-clean/os/arceos/modules/axlog)
+   Compiling ax-posix-api v0.5.32 (/home/huhu/tgoskits-net-task3-clean/os/arceos/api/arceos_posix_api)
+   Compiling ax-api v0.7.7 (/home/huhu/tgoskits-net-task3-clean/os/arceos/api/arceos_api)
+   Compiling ax-std v0.5.31 (/home/huhu/tgoskits-net-task3-clean/os/arceos/ulib/axstd)
+   Compiling axvm v0.5.26 (/home/huhu/tgoskits-net-task3-clean/virtualization/axvm)
+warning: associated function `after_external_interrupt` is never used
+   --> virtualization/axvm/src/architecture/ops.rs:121:8
+    |
+ 12 | pub(crate) trait ArchOps {
+    |                  ------- associated function in this trait
+...
+121 |     fn after_external_interrupt(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `host_console_irq` is never used
+  --> virtualization/axvm/src/host/arceos.rs:91:15
+   |
+91 | pub(crate) fn host_console_irq() -> Option<modules::ax_hal::irq::IrqId> {
+   |               ^^^^^^^^^^^^^^^^
+
+warning: function `dispatch_host_irq` is never used
+  --> virtualization/axvm/src/host/arceos.rs:95:15
+   |
+95 | pub(crate) fn dispatch_host_irq(vector: usize) {
+   |               ^^^^^^^^^^^^^^^^^
+
+warning: function `with_vm` is never used
+  --> virtualization/axvm/src/manager.rs:70:15
+   |
+70 | pub(crate) fn with_vm<F, R>(vm_id: VMId, f: F) -> Option<R>
+   |               ^^^^^^^
+
+warning: function `active_vcpu_mask` is never used
+  --> virtualization/axvm/src/manager.rs:79:15
+   |
+79 | pub(crate) fn active_vcpu_mask(vm_id: VMId) -> Option<usize> {
+   |               ^^^^^^^^^^^^^^^^
+
+warning: function `inject_interrupt` is never used
+  --> virtualization/axvm/src/manager.rs:91:15
+   |
+91 | pub(crate) fn inject_interrupt(vm_id: VMId, vcpu_id: usize, vector: usize) -> AxVmResult {
+   |               ^^^^^^^^^^^^^^^^
+
+warning: variant `Generic` is never constructed
+  --> virtualization/axvm/src/runtime/hvc.rs:26:5
+   |
+25 | pub(crate) enum HyperCallAbi {
+   |                 ------------ variant in this enum
+26 |     Generic,
+   |     ^^^^^^^
+   |
+   = note: `HyperCallAbi` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `handle` is never used
+   --> virtualization/axvm/src/timer.rs:158:8
+    |
+113 | impl TimerWheels {
+    | ---------------- method in this implementation
+...
+158 |     fn handle(&self, token: usize) -> Option<VmTimerHandle> {
+    |        ^^^^^^
+
+warning: function `cancel_timer` is never used
+   --> virtualization/axvm/src/timer.rs:236:15
+    |
+236 | pub(crate) fn cancel_timer(token: usize) {
+    |               ^^^^^^^^^^^^
+
+warning: associated items `with_planned_device_graph`, `try_handle_port_write`, `handle_nested_page_fault`, and `debug_nested_page_fault` are never used
+    --> virtualization/axvm/src/vm/mod.rs:1192:19
+     |
+1016 | impl AxVM {
+     | --------- associated items in this implementation
+...
+1192 |     pub(crate) fn with_planned_device_graph<F, R>(&self, f: F) -> AxVmResult<R>
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1497 |     pub(crate) fn try_handle_port_write(
+     |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+1510 |     pub(crate) fn handle_nested_page_fault(
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1525 |     fn debug_nested_page_fault(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `SimpleVmPlan` is never constructed
+  --> virtualization/axvm/src/vm/prepare/device_plan/mod.rs:60:19
+   |
+60 | pub(crate) struct SimpleVmPlan(VmDevicePlan);
+   |                   ^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> virtualization/axvm/src/vm/prepare/device_plan/mod.rs:63:25
+   |
+62 | impl SimpleVmPlan {
+   | ----------------- associated function in this implementation
+63 |     pub(crate) const fn new(devices: VmDevicePlan) -> Self {
+   |                         ^^^
+
+warning: `axvm` (lib) generated 12 warnings
+warning: field `outbound` is never read
+  --> os/axvisor/src/virtio_net.rs:44:5
+   |
+42 | struct CapturedFrame {
+   |        ------------- field in this struct
+43 |     vm_id: usize,
+44 |     outbound: bool,
+   |     ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: `axvisor` (bin "axvisor") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 13.83s
+warning: the following packages contain code that will be rejected by a future version of Rust: core v0.0.0 (/home/huhu/.rustup/toolchains/nightly-2026-07-15-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core), memchr v2.8.3
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+Converting ELF to BIN format...
+  elf: /home/huhu/tgoskits-net-task3-clean/target/aarch64-unknown-linux-musl/release/axvisor
+  bin: /home/huhu/tgoskits-net-task3-clean/target/aarch64-unknown-linux-musl/release/axvisor.bin
+/home/huhu/.rustup/toolchains/nightly-2026-07-15-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-objcopy --strip-all -O binary /home/huhu/tgoskits-net-task3-clean/target/aarch64-unknown-linux-musl/release/axvisor /home/huhu/tgoskits-net-task3-clean/target/aarch64-unknown-linux-musl/release/axvisor.bin
+qemu-system-aarch64 -display none -monitor none -serial unix:/home/huhu/tgoskits-net-task3-clean/tmp/net-dual-guest/serial-switch.sock,server,nowait -cpu cortex-a72 -machine virt,virtualization=on,gic-version=3 -smp 1 -m 8g -device nvme,drive=disk0,serial=tgoskits,max_ioqpairs=64,msix_qsize=65 -drive id=disk0,if=none,format=raw,file=/home/huhu/tgoskits-net-task3-clean/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img -append root=/dev/nvme0n1 rw init=/init -snapshot -qmp unix:/home/huhu/tgoskits-net-task3-clean/tmp/net-dual-guest/qmp-switch.sock,server,nowait -kernel /home/huhu/tgoskits-net-task3-clean/target/aarch64-unknown-linux-musl/release/axvisor.bin
+[axbuild] qemu build+run package=axvisor target=scripts/targets/std/pie/aarch64-unknown-linux-musl.json config=scripts/test/net-dual-guest/axvisor-qemu-debug.toml ... done (60.58s)
+1'
+warning: could not confirm attachment to VM 1
+[driver] step: 'expect 120 elapsed_ms=(3[5-9]|[4-9][0-9])[0-9]{3}'
+[driver] step: 'detach'
+[driver] step: 'dump-pcap /home/huhu/tgoskits-net-task3-clean/tmp/net-dual-guest/switch'
+[driver] step: 'qmp-quit /home/huhu/tgoskits-net-task3-clean/tmp/net-dual-guest/qmp-switch.sock'

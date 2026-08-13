@@ -132,9 +132,11 @@ host-DTB carveout exists in the data path.
 | IPv4 address | `10.0.42.15/24` | `10.0.42.2/24` |
 | UDP service | `4242` | `4242` |
 
-The Zephyr guest selects QEMU's `virtio_mmio0` slot in `zephyr-task2/app.overlay`,
-which is the same base address and GIC SPI (16) the hypervisor's generated
-FDT publishes.
+The Zephyr guest selects QEMU's `virtio_mmio0` slot via
+`zephyr-task2/app.overlay.switch`, which is the same base address and GIC SPI
+(16) the hypervisor's generated FDT publishes. Build it with
+`TASK2_ZEPHYR_VIRTIO_SLOT=0`; the default (`app.overlay`, slot 30) serves the
+QEMU socket-pair topology.
 
 Run one closed-loop experiment (driver-controlled lifecycle: boot, capture,
 fault, pcap streaming, QMP quit):

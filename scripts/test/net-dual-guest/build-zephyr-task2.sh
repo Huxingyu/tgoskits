@@ -10,6 +10,12 @@ build_dir="$out_dir/cargo-target"
 source_dir="$repo_root/scripts/test/net-dual-guest/zephyr-task2"
 memory_base="${TASK2_ZEPHYR_MEMORY_BASE:-0xA0000000}"
 memory_size="${TASK2_ZEPHYR_MEMORY_SIZE:-0x08000000}"
+virtio_slot="${TASK2_ZEPHYR_VIRTIO_SLOT:-30}"
+case "$virtio_slot" in
+    0)  device_overlay="$source_dir/app.overlay.switch" ;;
+    30) device_overlay="$source_dir/app.overlay" ;;
+    *)  printf 'error: TASK2_ZEPHYR_VIRTIO_SLOT must be 0 or 30\n' >&2; exit 1 ;;
+esac
 
 case "$memory_base" in
     0x*) ;;
@@ -46,7 +52,7 @@ ZEPHYR_SDK_INSTALL_DIR="$zephyr_sdk" \
     "$source_dir" \
     -d "$build_dir" \
     -- \
-    -DDTC_OVERLAY_FILE="$source_dir/app.overlay;$memory_overlay" \
+    -DDTC_OVERLAY_FILE="$device_overlay;$memory_overlay" \
     -DEXTRA_CFLAGS=-DCONFIG_MAX_IRQ_LINES=64
 
 elf="$out_dir/zephyr-task2.elf"
