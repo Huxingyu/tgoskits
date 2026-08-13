@@ -18,11 +18,13 @@ mod fs;
 mod history;
 mod virtnet;
 mod vm;
+mod vmexit;
 
 pub use base::*;
 pub use history::*;
 pub use virtnet::*;
 pub use vm::*;
+pub use vmexit::*;
 
 use std::io::prelude::*;
 use std::string::String;
@@ -378,6 +380,7 @@ fn build_command_tree() -> BTreeMap<String, CommandNode> {
     build_base_cmd(&mut tree);
     build_vm_cmd(&mut tree);
     build_virtnet_cmd(&mut tree);
+    build_vmexit_cmd(&mut tree);
 
     tree
 }

@@ -41,6 +41,7 @@ mod task;
 mod timer;
 mod vcpu;
 mod vm;
+mod vmexit_stats;
 
 #[cfg(all(test, not(target_arch = "aarch64")))]
 #[path = "arch/aarch64/shared_mmio.rs"]
@@ -80,6 +81,9 @@ pub use manager::{
 pub(crate) use task::{AsVCpuTask, VCpuTask};
 pub use vm::{
     AxVM, AxVMRef, FwCfgDeviceConfig, PreparedMemoryLayout, VMMemoryRegion, VcpuSnapshot,
+};
+pub use vmexit_stats::{
+    CpuExitCounts, ExitReason, MAX_TRACKED_CPUS, vmexit_stats_reset, vmexit_stats_snapshot,
 };
 
 /// The architecture-independent per-CPU type.

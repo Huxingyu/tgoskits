@@ -16,6 +16,7 @@ use crate::{
     AxVmResult,
     architecture::cpu_up::{self, CpuUpExit, CpuUpOps},
     ax_err,
+    host::HostCpu,
 };
 
 mod capabilities;
@@ -48,6 +49,28 @@ pub(crate) enum Aarch64DeferredRunWork {
 }
 
 impl CpuUpOps for Aarch64Arch {}
+
+/// Maps an AArch64 VM exit to a statistics category.
+///
+/// `ExternalInterrupt` is excluded on purpose: its timer/IRQ split is only
+/// known after the deferred host-IRQ acceptance step.
+fn classify_vm_exit(exit: &ArmVmExit) -> crate::ExitReason {
+    match exit {
+        ArmVmExit::Hypercall { .. } => crate::ExitReason::Hvc,
+        ArmVmExit::MmioRead { .. } | ArmVmExit::MmioWrite { .. } => crate::ExitReason::Mmio,
+        ArmVmExit::SysRegRead { .. } | ArmVmExit::SysRegWrite { .. } => crate::ExitReason::SysReg,
+        ArmVmExit::GicCpuInterfaceRead { .. } | ArmVmExit::GicCpuInterfaceWrite { .. } => {
+            crate::ExitReason::GicInterface
+        }
+        ArmVmExit::WaitForInterrupt | ArmVmExit::CpuDown { .. } => crate::ExitReason::Wfi,
+        ArmVmExit::CpuUp { .. } => crate::ExitReason::CpuUp,
+        ArmVmExit::SystemDown => crate::ExitReason::SystemDown,
+        ArmVmExit::SendIPI { .. } => crate::ExitReason::Sgi,
+        ArmVmExit::DeactivateInterrupt { .. } => crate::ExitReason::Irq,
+        ArmVmExit::Nothing => crate::ExitReason::Nothing,
+        _ => crate::ExitReason::Other,
+    }
+}
 
 impl ArchOps for Aarch64Arch {
     type VCpu = AxvmArmVcpu;
@@ -91,6 +114,14 @@ impl ArchOps for Aarch64Arch {
         vcpu: &crate::vm::AxVCpuRef<Self::VCpu>,
         exit: <Self::VCpu as VmArchVcpuOps>::Exit,
     ) -> AxVmResult<BoundVcpuExit<Self::DeferredRunWork>> {
+        // ExternalInterrupt is counted in `finish_deferred_run_work`, where the
+        // timer/IRQ split can be decided from the acknowledged token.
+        if !matches!(exit, ArmVmExit::ExternalInterrupt { .. }) {
+            crate::vmexit_stats::note_exit(
+                crate::host::default_host().this_cpu_id(),
+                classify_vm_exit(&exit),
+            );
+        }
         match exit {
             ArmVmExit::Hypercall { nr, args } => super::handle_hypercall(
                 vm,
@@ -234,13 +265,23 @@ impl ArchOps for Aarch64Arch {
     ) -> AxVmResult<VcpuRunAction> {
         match work {
             Aarch64DeferredRunWork::ExternalInterrupt { token } => {
-                if let Some(token) = token {
-                    if !vcpu.get_arch_vcpu().accept_host_timer_irq(token) {
-                        gic::route_acknowledged_host_irq(token).map_err(|error| {
-                            crate::AxVmError::interrupt("route acknowledged host IRQ", error)
-                        })?;
+                let exit_reason = match token {
+                    Some(token) => {
+                        if vcpu.get_arch_vcpu().accept_host_timer_irq(token) {
+                            crate::ExitReason::Timer
+                        } else {
+                            gic::route_acknowledged_host_irq(token).map_err(|error| {
+                                crate::AxVmError::interrupt("route acknowledged host IRQ", error)
+                            })?;
+                            crate::ExitReason::Irq
+                        }
                     }
-                }
+                    None => crate::ExitReason::Irq,
+                };
+                crate::vmexit_stats::note_exit(
+                    crate::host::default_host().this_cpu_id(),
+                    exit_reason,
+                );
                 crate::check_timer_events();
             }
         }

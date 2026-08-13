@@ -60,7 +60,52 @@
 
 ---
 
-## T0.2 per-CPU exit-reason 计数器【未开始】
+## T0.2 per-CPU exit-reason 计数器【已完成】
+
+### 实现
+
+1. 新模块 `virtualization/axvm/src/vmexit_stats.rs`：
+   - `ExitReason` 12 类：irq / timer / mmio / wfi / hvc-smc / sysreg / gic-if /
+     sgi / cpu-up / sys-down / nothing / other
+   - per-CPU 计数器槽 `#[repr(align(64))]`（cacheline 对齐防伪共享），
+     `MAX_TRACKED_CPUS = 64`，`Relaxed` 原子纯统计
+   - API：`note_exit(cpu, reason)`、`vmexit_stats_snapshot()`、
+     `vmexit_stats_reset(cpu)`；lib.rs 公开导出
+2. 接线 `virtualization/axvm/src/arch/aarch64/mod.rs`：
+   - `handle_vcpu_exit_bound` 入口对非 ExternalInterrupt 的 exit 计数，
+     分类函数 `classify_vm_exit`
+   - `finish_deferred_run_work` 里按 `accept_host_timer_irq(token)` 判定
+     Timer vs Irq（保持原有路由语义不变）
+3. shell 命令 `os/axvisor/src/shell/command/vmexit.rs`：`vmexit stat` 打印
+   每核×原因 累计值 + 自上次调用速率（次/秒），shell 侧存上次快照+时间
+   （`LAST_STAT: Mutex<Option<(Instant, Vec<CpuExitCounts>)>>`）
+
+### 遇到的问题
+
+1. **axvm 测试链接失败**：`cargo test -p axvm` 直接跑报
+   `__PERCPU_TEMPLATE_ALIGN_END` undefined（someboot 链接符号）。解决：按 CI 口径
+   `cargo test -p axvm --features axvm/host-test --no-default-features --lib`。
+2. **`self as usize < Self::COUNT` 解析歧义**：`<` 被当成泛型参数，需
+   `(self as usize) < Self::COUNT` 加括号。
+3. **并行测试污染共享 static**：`counters_are_isolated_per_cpu` 与
+   `note_exit_increments_...` 并行跑，共享全局计数器互相覆盖。
+   解决：tests 模块内加 `TEST_LOCK: Mutex<()>` 串行化。
+4. **非 aarch64 target dead_code**：note_exit/index 只在 aarch64 接线，host
+   clippy 报 never used。仿 vcpus.rs 模式加
+   `#[cfg_attr(not(target_arch="aarch64"), expect(dead_code, ...))]`。
+5. **`this_cpu_id()` trait 不在 scope**：aarch64/mod.rs 需 `use crate::host::HostCpu`。
+6. **xtask 命令形态**：`axvisor build qemu --arch` 是错的，正确为
+   `tg-xtask axvisor build --arch aarch64 --debug`（qemu 板型在 config 里）。
+
+### 验证
+
+- [x] 5 个 host 单测全过（计数/清零/跨核隔离/越界忽略/名称唯一）
+- [x] axvm 全量 `277 passed, 0 failed`（host-test feature，CI 口径）
+- [x] `cargo clippy -p axvm --features axvm/host-test --no-default-features --lib` 无新警告
+- [x] `cargo fmt -p axvm --check` 通过
+- [x] `tg-xtask axvisor build --arch aarch64 --debug` 构建成功
+- [ ] QEMU 实跑验证 `vmexit stat` 表格 + 空载 Zephyr ≈100/s 定时器 exit
+      （依赖实验资产，放实验阶段一起做）
 
 ## T0.3 vMPIDR 与物理放置解耦【未开始】
 
