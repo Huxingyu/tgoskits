@@ -223,24 +223,23 @@ exit and recovery after a link break:
 
 ## 7. Experimental Evidence
 
-### 7.1 AI/baseline comparison (software-switch link: 2 AI + 3 baseline, ~35 s each)
+### 7.1 AI/baseline comparison (software-switch link: 3 AI + 3 baseline, ~35 s each)
 
-| Metric | AI (n=2) | baseline (n=3) |
+| Metric | AI (n=3) | baseline (n=3) |
 |---|---|---|
-| Overall RMSE | 40.7 / 41.6 | 195.9 / 196.9 / 197.6 |
-| t300 segment RMSE (0-5s) | 66.7 / 69.7 | 79.7-81.3 |
-| t800 segment RMSE (5-15s) | 47.5 / 53.1 | 236.5-240.7 |
-| t500 segment RMSE (15-25s) | 30.4 / 29.6 | 192.4 |
+| Overall RMSE | 40.7 / 40.7 / 41.6 | 195.9 / 196.9 / 197.6 |
+| t300 segment RMSE (0-5s) | 66.7 / 66.7 / 69.7 | 79.7-81.3 |
+| t800 segment RMSE (5-15s) | 47.5 / 50.9 / 53.1 | 236.5-240.7 |
+| t500 segment RMSE (15-25s) | 29.6 / 30.2 / 30.4 | 192.4 |
 | t500 steady-state error | ~2 (498 vs 500) | ~192 (308 vs 500) |
-| t500 settling time (5% band) | 1371-1588 ms | never converges |
-| Guest inference time | mean ~7.6 ms (QEMU TCG) | - |
-| Cycle-level latency (whole cycle) | mean ~174 / ~192 ms | mean ~159-162 ms |
+| t500 settling time (5% band) | 1250-1588 ms | never converges |
+| Guest inference time | mean ~7.4-8.9 ms (QEMU TCG) | - |
+| Cycle-level latency (whole cycle) | mean ~167 / ~174 / ~192 ms | mean ~159-162 ms |
 
 Raw data: `results/task3/switch/` (per-run `run.log` + both pcaps +
 `summary.csv` + `comparison.png`). The T2N1 frame ledgers of the two
 captures are identical (`verify_pcap.py` PASS: 871 frames per side, CONTROL
 204 + STATUS 205 + ACK 410 + HEARTBEAT 52).
-
 **The same experiment on the QEMU socket direct-connect environment** (the
 earlier experiment environment; transport = QEMU socket pair + filter-dump
 capture): 3 AI + 3 baseline runs of ~39 s each, overall RMSE 29.2-29.3
@@ -283,7 +282,9 @@ python3 scripts/task3/export_golden.py && cargo test -p task3-model
 TASK3_CONTROL_LOOP=1 bash scripts/test/net-dual-guest/build-linux-task2.sh
 TASK3_CONTROL_LOOP=1 TASK3_AI=1 bash scripts/test/net-dual-guest/build-linux-task2.sh
 bash scripts/test/net-dual-guest/build-linux-initramfs.sh
-bash scripts/test/net-dual-guest/build-zephyr-task2.sh   # requires the Zephyr SDK and source
+# requires the Zephyr SDK and source; slot 0 = software-switch link,
+# slot 30 = QEMU socket-pair topology
+TASK2_ZEPHYR_VIRTIO_SLOT=0 bash scripts/test/net-dual-guest/build-zephyr-task2.sh
 
 # Experiments (AI/baseline comparison; safe recovery is an extension; the
 # software-switch link is the current data plane)
@@ -299,7 +300,7 @@ bash scripts/task3/run-task3-fault.sh fault-runX
 
 # Metrics (software-switch link example)
 python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
-  --out-dir results/task3/switch --label switch --modes ai,ai,baseline,baseline,baseline \
+  --out-dir results/task3/switch --label switch --modes ai,ai,ai,baseline,baseline,baseline \
   --plot results/task3/switch/comparison.png
 ```
 

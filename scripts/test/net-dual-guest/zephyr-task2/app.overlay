@@ -9,22 +9,19 @@
 	status = "disabled";
 };
 
-/* The board enables slot 3 for its ramfb/input demo; disable it so only the
- * switch-port endpoint below is present. */
+/* The board enables slot 3 for its ramfb/input demo; this Guest receives only
+ * the explicitly passed-through slot 30 endpoint. */
 &virtio_mmio3 {
 	status = "disabled";
 };
 
-/* Axvisor's generated guest FDT places the virtual virtio-mmio endpoint at
- * 0x0a00_0000 with controller input 48, which is the same base/IRQ layout as
- * the QEMU virt machine's slot 0 (GIC_SPI 16). */
-&virtio_mmio0 {
+&virtio_mmio30 {
 	status = "okay";
 
 	virtio_net: virtio-net {
 		compatible = "virtio,net";
 		status = "okay";
-		/* Keep the Guest MAC identical to the switch-port configuration. */
+		/* Keep the Guest MAC identical to QEMU's second endpoint. */
 		local-mac-address = [52 54 00 12 34 02];
 	};
 };
