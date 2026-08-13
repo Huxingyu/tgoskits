@@ -115,3 +115,58 @@ python3 scripts/test/net-dual-guest/qmp_link.py \
 Use `verify_fault_pcap.py` and the guest logs to confirm retransmission,
 safe-state entry, and recovery. Protocol injection tests additionally verify
 CRC errors, invalid parameters, duplicate frames, and out-of-order frames.
+
+## In-hypervisor virtio-net switch
+
+The dual-guest link runs over Axvisor's internal L2 switch
+(`[[devices.virtual]] model = "virtio-net"`). Each guest drives a
+hypervisor-emulated virtio-mmio endpoint at `0x0a00_0000` (wired IRQ 48,
+matching the QEMU virt machine slot-0 layout); frames are forwarded between
+the two ports inside the hypervisor, so no QEMU netdev, socket pair, or
+host-DTB carveout exists in the data path.
+
+| Item | Linux guest | RTOS guest |
+|---|---|---|
+| Endpoint | virtual `virtio_mmio@a000000` (IRQ 48) | virtual `virtio_mmio@a000000` (IRQ 48) |
+| MAC address | `52:54:00:12:34:01` | `52:54:00:12:34:02` |
+| IPv4 address | `10.0.42.15/24` | `10.0.42.2/24` |
+| UDP service | `4242` | `4242` |
+
+The Zephyr guest selects QEMU's `virtio_mmio0` slot in `zephyr-task2/app.overlay`,
+which is the same base address and GIC SPI (16) the hypervisor's generated
+FDT publishes.
+
+Run one closed-loop experiment (driver-controlled lifecycle: boot, capture,
+fault, pcap streaming, QMP quit):
+
+```bash
+bash scripts/task3/run-task3-switch.sh <label> ai          # or: baseline
+bash scripts/task3/run-task3-switch-fault.sh <label>       # blackout 25s..35s
+```
+
+The console driver (`serial_console.py`) owns the QEMU serial socket, executes
+the step script, and streams `virtnet capture dump` output back into per-VM
+pcap files (`switch.vm1.pcap` / `switch.vm2.pcap`). Hypervisor-side control
+commands:
+
+```text
+virtnet show                    switch state, port table, blackout/capture flags
+virtnet drop on|off             drop every frame in both directions (blackout)
+virtnet capture on|off          enable/disable per-frame capture at port boundary
+virtnet capture dump [PATH]     stream frames to the console (pcap), or write files
+```
+
+The same T2N1 frame ledger must appear in both captures; verify with:
+
+```bash
+python3 scripts/test/net-dual-guest/verify_pcap.py \
+  results/task3/switch/<label>/linux.pcap \
+  results/task3/switch/<label>/rtos.pcap \
+  --port 4242 --require-task2 --min-ack-rate 80
+```
+
+Evidence is archived per run under `results/task3/switch/<label>/` with
+`run.log`, `build.log`, both pcaps, and a run manifest. Known characteristics
+of the polling-based RX delivery: the median control period is ~130 ms with
+periodic ~300 ms spikes tied to heartbeat/wakeup races in the vCPU notify
+path; this is documented in the Task-3 design document rather than hidden.
