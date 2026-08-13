@@ -530,18 +530,18 @@ impl VmRuntimeHandle {
     /// Before the private queue is published by [`Self::add_vcpu_task`] the
     /// task waits on the legacy VM-wide queue; [`Self::notify_vcpu`] wakes
     /// whichever queue the waiter is on, so the two sides stay symmetric.
+    #[cfg_attr(
+        not(any(target_arch = "aarch64", test)),
+        expect(
+            dead_code,
+            reason = "directed vCPU wakeups are consumed by the AArch64 wait path"
+        )
+    )]
     pub(crate) fn wait_vcpu_until(&self, vcpu_id: usize, condition: impl Fn() -> bool) {
         let wait_queue = self.vcpu_wait_queues.lock().get(&vcpu_id).cloned();
         match wait_queue {
             Some(wait_queue) => wait_queue.wait_until(condition),
             None => self.wait_queue.wait_until(condition),
-        }
-    }
-        self.notification_generation.fetch_add(1, Ordering::Release);
-        self.wait_queue.notify_all(false);
-        let wait_queues: Vec<_> = self.vcpu_wait_queues.lock().values().cloned().collect();
-        for wait_queue in wait_queues {
-            wait_queue.notify_all(false);
         }
     }
 
