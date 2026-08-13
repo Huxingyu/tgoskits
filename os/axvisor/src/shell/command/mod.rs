@@ -16,10 +16,12 @@ mod base;
 #[cfg(feature = "fs")]
 mod fs;
 mod history;
+mod virtnet;
 mod vm;
 
 pub use base::*;
 pub use history::*;
+pub use virtnet::*;
 pub use vm::*;
 
 use std::io::prelude::*;
@@ -375,6 +377,7 @@ fn build_command_tree() -> BTreeMap<String, CommandNode> {
 
     build_base_cmd(&mut tree);
     build_vm_cmd(&mut tree);
+    build_virtnet_cmd(&mut tree);
 
     tree
 }
