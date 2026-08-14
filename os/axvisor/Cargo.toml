@@ -72,7 +72,6 @@ ax-std = { workspace = true, default-features = false, features = [
   "hv",
   "tls",
   "std-compat",
-  "sched-rr",
   "ipi",
 ] }
 # System dependent modules provided by ArceOS-Hypervisor (bare-metal only)
