@@ -157,7 +157,40 @@
 - [ ] QEMU 实跑：Zephyr/Linux SMP2 在 vCPU0/1→pCPU2/3 拓扑完整启动
       （依赖实验资产，放实验阶段）
 
-## T0.4 多核 Linux 客户机配置【未开始】
+
+
+## T0.4 多核 Linux 客户机配置【配置完成，QEMU 验证待实验阶段】
+
+### 实现
+
+1. `scripts/test/rt-partition/qemu-aarch64-rt.toml`：`-smp 4`、串口/QMP
+   UNIX socket、`success_regex = ["PERIODIC_LATENCY_COMPLETE"]`
+2. `scripts/test/rt-partition/vm-aarch64-rt-linux.toml`：Linux `cpu_num = 2`、
+   `phys_cpu_ids = [2, 3]`；cmdline 注入
+   `isolcpus=1 nohz_full=1 irqaffinity=0`（通过 `[kernel] cmdline`，
+   aarch64 FDT `patch_chosen` 覆盖 bootargs，代码位置
+   `boot/fdt/core/create.rs:354`）
+3. `scripts/test/rt-partition/vm-aarch64-rt-zephyr.toml`：Zephyr `cpu_num = 1`、
+   `phys_cpu_ids = [1]`（独占 pCPU1）
+4. `results/task1/allocation-table.md`：pCPU/内存/设备/中断分配表
+   （T4.1 素材）
+
+### 遇到的问题
+
+1. **guest bootargs 注入方式**：qemu toml 的 `-append` 不作用于 guest 内核
+   （axvisor 裸机场景）。正确路径是 vm toml `[kernel] cmdline` → FDT
+   `patch_chosen`。已用 xtask 加载验证字段合法。
+2. **kernel_path 占位**：`${workspace}/tmp/rt-partition/` 下镜像需实验阶段
+   从 `tgoskits-realtime/tmp/`（linux-qemu、zephyr-task2.bin、initramfs）
+   准备。
+
+### 验证
+
+- [x] 三个 toml 语法解析 OK；`tg-xtask axvisor build --vmconfigs ...` 正确
+      加载（报"镜像不存在"而非解析错误 = 字段全部合法）
+- [x] 分配表完成（allocation-table.md）
+- [ ] QEMU 实跑：双 Guest 稳定 ≥10 分钟；`/proc/cpuinfo` 2 处理器；
+      `SMP: ... CPU1` 日志（依赖实验资产）
 
 ## T0.5 Linux 侧测量流程（cyclictest + stress-ng）【未开始】
 
