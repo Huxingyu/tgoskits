@@ -31,7 +31,9 @@ fn vmexit_stat(_cmd: &ParsedCommand) {
     let now = Instant::now();
     let snapshot = vmexit_stats_snapshot();
 
-    let mut last = LAST_STAT.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+    let mut last = LAST_STAT
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
     let previous = last.take();
     let elapsed_secs = previous
         .as_ref()

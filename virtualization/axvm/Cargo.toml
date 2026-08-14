@@ -57,6 +57,7 @@ axdevice = { workspace = true }
 axdevice_base = { workspace = true }
 axvmconfig = { workspace = true, default-features = false }
 fdt-edit = { workspace = true }
+fdt-parser = "0.4"
 fdt-raw = { workspace = true }
 [target.'cfg(target_arch = "x86_64")'.dependencies]
 ax-driver = { workspace = true, optional = true, features = ["pci"] }

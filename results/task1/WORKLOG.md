@@ -235,7 +235,59 @@
 - [x] 脚本 bash -n / py_compile 语法全过
 - [ ] QEMU 实跑一条命令产出全套证据（依赖实验阶段）
 
-## T1.1 RT 核 tick 隔离【未开始】
+
+
+## T1.1 RT 核 tick 隔离【已完成】（核心改造）
+
+### 实现
+
+1. **axruntime**（`os/arceos/modules/axruntime/src/lib.rs`）：
+   - `DEDICATED_CPU_MASK` + `set_dedicated_cpus(mask)` / `dedicated_cpu_mask()`（opt-in，
+     默认空 mask 行为完全不变——StarryOS 共享无影响）
+   - `current_cpu_is_dedicated()`：mask 位判断（`ax_hal::percpu::this_cpu_id()`）
+   - `advance_periodic_timer`：dedicated 核直接返回 false，**不续期周期 deadline**
+   - `program_next_timer`：dedicated 核只走事件驱动——合并 axtask/VM 事件
+     deadline（axvm timer wheel），无事件则不编程定时器（无 tick 中断）
+   - `init_timer`：dedicated 核不写初始周期 deadline
+2. **axvm**：`arch/aarch64/capabilities.rs` 加 `host_bootargs()`（读 host FDT
+   chosen/bootargs，新增 `fdt-parser` 依赖），re-export 链补齐
+3. **axvisor**：
+   - `config.rs`：`dedicated_cpus_from_bootargs(bootargs) -> usize`（解析
+     `dedicated_cpus=1,3`）
+   - `main.rs`：aarch64 下读 host bootargs → `set_dedicated_cpus(mask)`（opt-in）
+   - 用法：qemu `-append` 加 `dedicated_cpus=1`（如 rt qemu toml）
+
+### 周期活动清单核查（dedicated 核上逐项确认）
+
+| 周期活动 | 判定 | 说明 |
+|---|---|---|
+| `advance_periodic_timer` 续期 | 已消除 | dedicated 核跳过 |
+| `scheduler_clock_tick` | 随动 | 仅 timer IRQ 时跑；无周期定时器则不跑 |
+| `program_next_timer` 周期重设 | 已消除 | dedicated 只按事件 deadline |
+| axlog 定时刷新 | 无 | axlog 无定时器驱动 |
+| IPI 广播 | 按需 | 无周期广播 |
+| axtask timer wheel | 保留 | 事件驱动 oneshot，VM 唤醒/注入定时器正常 |
+| vCPU 设备轮询（poll_primary_vcpu_devices） | 保留（待观察） | vCPU run loop 的 yield 轮询，非中断源，文档记录 |
+
+### 遇到的问题
+
+1. **axvisor 找不到 axruntime**：axvisor 未直接依赖 axruntime；通过
+   `ax_std::os::arceos::modules::ax_runtime`（ax_api re-export）调用。
+2. **host_bootargs 的 fdt API 版本差异**：axvm 用 fdt-edit，ax_hal 用 fdt-parser
+   0.4（`find_nodes("/chosen")` + `Chosen::bootargs()`），axvm 需新增
+   `fdt-parser = "0.4"` 依赖。
+3. **多架构编译**：`host_bootargs` 仅 aarch64 有，axvisor main 调用需
+   `#[cfg(target_arch = "aarch64")]`。
+
+### 验证
+
+- [x] axruntime host-test：5 测试过（3 个新：mask 选择/空 mask 保旧行为/越界防护）
+- [x] clippy ax-runtime 无新警告；fmt 通过
+- [x] axvm 277 全过；axvisor aarch64 构建成功
+- [x] axvisor config 单测（`dedicated_cpus_from_bootargs` 5 个）已写，跑法走
+      ktest（QEMU，实验阶段）
+- [ ] QEMU 实跑：`vmexit stat` 定时器 exit ≈100/s → ≈0（T0.2 基线对比，
+      实验阶段）
 
 ## T1.2 RT 分区配置档【未开始】
 

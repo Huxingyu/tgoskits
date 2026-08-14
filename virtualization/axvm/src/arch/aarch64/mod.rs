@@ -36,7 +36,7 @@ mod vm_plan;
 pub(crate) use vm_plan::Aarch64VmPlan;
 mod vtimer;
 
-pub use capabilities::{host_fdt_bootarg, host_phys_to_virt};
+pub use capabilities::{host_bootargs, host_fdt_bootarg, host_phys_to_virt};
 pub use images::ImageLoader;
 use sysreg::{SysRegReadExit, SysRegWriteExit};
 use vgic::Aarch64VgicRuntimeKey;

@@ -464,6 +464,38 @@ fn periodic_interval_nanos() -> u64 {
 #[ax_percpu::def_percpu]
 static NEXT_PERIODIC_DEADLINE_NANOS: u64 = 0;
 
+/// Bitmask of physical CPUs whose periodic scheduler tick is disabled.
+///
+/// Opt-in: the default empty mask keeps the legacy periodic timer behavior
+/// unchanged. Dedicated CPUs keep event-driven one-shot host timers through
+/// `program_next_timer`, so task and VM wakeups still arrive on time.
+static DEDICATED_CPU_MASK: AtomicUsize = AtomicUsize::new(0);
+
+/// Disables the periodic scheduler tick on the physical CPUs set in `mask`.
+///
+/// Intended for real-time partitions where one pCPU is exclusively owned by
+/// a guest vCPU: the tick would otherwise force a VM exit every `ticks_per_sec`
+/// and inject a constant latency source.
+pub fn set_dedicated_cpus(mask: usize) {
+    DEDICATED_CPU_MASK.store(mask, Ordering::Release);
+}
+
+/// Returns the bitmask passed to [`set_dedicated_cpus`].
+pub fn dedicated_cpu_mask() -> usize {
+    DEDICATED_CPU_MASK.load(Ordering::Acquire)
+}
+
+#[cfg(feature = "irq")]
+fn current_cpu_is_dedicated() -> bool {
+    let mask = DEDICATED_CPU_MASK.load(Ordering::Acquire);
+    cpu_in_dedicated_mask(mask, ax_hal::percpu::this_cpu_id())
+}
+
+/// Whether `cpu_id` is present in a dedicated-CPU bitmask.
+fn cpu_in_dedicated_mask(mask: usize, cpu_id: usize) -> bool {
+    cpu_id < usize::BITS as usize && mask & (1usize << cpu_id) != 0
+}
+
 #[cfg(feature = "irq")]
 fn with_periodic_deadline<R>(
     operation: impl for<'scope> FnOnce(&ax_percpu::CpuPin<'scope>) -> R,
@@ -478,16 +510,24 @@ fn with_periodic_deadline<R>(
 #[cfg(feature = "irq")]
 fn init_timer() {
     ax_hal::time::enable_timer_irq();
-    let now_ns = ax_hal::time::monotonic_time_nanos();
-    with_periodic_deadline(|pin| {
-        NEXT_PERIODIC_DEADLINE_NANOS
-            .write_current(pin, now_ns.saturating_add(periodic_interval_nanos()));
-    });
+    if !current_cpu_is_dedicated() {
+        let now_ns = ax_hal::time::monotonic_time_nanos();
+        with_periodic_deadline(|pin| {
+            NEXT_PERIODIC_DEADLINE_NANOS
+                .write_current(pin, now_ns.saturating_add(periodic_interval_nanos()));
+        });
+    }
     program_next_timer();
 }
 
 #[cfg(feature = "irq")]
 fn advance_periodic_timer(now_ns: u64) -> bool {
+    if current_cpu_is_dedicated() {
+        // Dedicated CPUs never renew the periodic deadline; the tick
+        // responsibility (timeslice rotation, busy statistics) does not
+        // exist on a core that runs a single vCPU task.
+        return false;
+    }
     let mut deadline = with_periodic_deadline(|pin| NEXT_PERIODIC_DEADLINE_NANOS.read_current(pin));
     if deadline == 0 {
         with_periodic_deadline(|pin| {
@@ -512,6 +552,18 @@ fn advance_periodic_timer(now_ns: u64) -> bool {
 
 #[cfg(feature = "irq")]
 fn program_next_timer() {
+    #[cfg(feature = "multitask")]
+    let task_deadline = ax_task::next_timer_deadline_nanos();
+    if current_cpu_is_dedicated() {
+        // Event-driven only: arm a one-shot timer for the nearest task/VM
+        // event and leave the timer unprogrammed when none is pending.
+        #[cfg(feature = "multitask")]
+        if let Some(task_deadline) = task_deadline {
+            ax_hal::time::set_oneshot_timer(task_deadline);
+            ax_task::note_programmed_timer_deadline_nanos(task_deadline);
+        }
+        return;
+    }
     let mut deadline = with_periodic_deadline(|pin| NEXT_PERIODIC_DEADLINE_NANOS.read_current(pin));
     if deadline == 0 {
         let now_ns = ax_hal::time::monotonic_time_nanos();
@@ -573,8 +625,33 @@ fn init_tls() {
 
 #[cfg(test)]
 mod tests {
+    use super::cpu_in_dedicated_mask;
+
     #[test]
     fn fs_init_accepts_bootargs_without_fs_feature() {
         crate::fs::init(Some("root=/dev/nvme0n1"));
+    }
+
+    #[test]
+    fn dedicated_mask_marks_only_selected_cpus() {
+        let mask = (1usize << 1) | (1usize << 3);
+        assert!(cpu_in_dedicated_mask(mask, 1));
+        assert!(cpu_in_dedicated_mask(mask, 3));
+        assert!(!cpu_in_dedicated_mask(mask, 0));
+        assert!(!cpu_in_dedicated_mask(mask, 2));
+        assert!(!cpu_in_dedicated_mask(mask, 4));
+    }
+
+    #[test]
+    fn empty_dedicated_mask_keeps_every_cpu_periodic() {
+        assert!(!cpu_in_dedicated_mask(0, 0));
+        assert!(!cpu_in_dedicated_mask(0, 15));
+    }
+
+    #[test]
+    fn out_of_range_cpu_id_is_never_dedicated() {
+        let all = usize::MAX;
+        assert!(!cpu_in_dedicated_mask(all, usize::BITS as usize));
+        assert!(!cpu_in_dedicated_mask(all, usize::BITS as usize + 1));
     }
 }

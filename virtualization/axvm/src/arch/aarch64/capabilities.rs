@@ -38,6 +38,18 @@ pub fn host_fdt_bootarg() -> usize {
     ax_std::os::arceos::modules::ax_hal::dtb::get_bootarg()
 }
 
+/// Returns the host `chosen` bootargs string, when the host FDT provides one.
+///
+/// The hypervisor uses this for opt-in runtime knobs (e.g.
+/// `dedicated_cpus=1,3` to silence the periodic tick on RT partition cores).
+pub fn host_bootargs() -> Option<std::string::String> {
+    let fdt = ax_std::os::arceos::modules::ax_hal::dtb::get_fdt()?;
+    let node = fdt.find_nodes("/chosen").next()?;
+    let chosen = fdt_parser::Chosen::new(node);
+    let bootargs = chosen.bootargs()?;
+    Some(bootargs.into())
+}
+
 pub fn host_phys_to_virt(paddr: ax_memory_addr::PhysAddr) -> ax_memory_addr::VirtAddr {
     ax_std::os::arceos::modules::ax_hal::mem::phys_to_virt(paddr)
 }

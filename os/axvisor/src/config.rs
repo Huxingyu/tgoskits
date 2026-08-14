@@ -74,6 +74,33 @@ pub mod vmcfg {
     include!(concat!(env!("OUT_DIR"), "/vm_configs.rs"));
 }
 
+/// Parses `dedicated_cpus=<list>` from the host bootargs into a CPU bitmask.
+///
+/// `<list>` is a comma-separated list of physical CPU numbers, e.g.
+/// `dedicated_cpus=1,3`. Returns 0 when the argument is absent; values outside
+/// the native `usize` width are ignored with a warning. Opt-in knob: the empty
+/// result keeps the periodic tick behavior completely unchanged.
+pub fn dedicated_cpus_from_bootargs(bootargs: &str) -> usize {
+    let mut mask = 0usize;
+    for argument in bootargs.split_ascii_whitespace() {
+        let Some(list) = argument.strip_prefix("dedicated_cpus=") else {
+            continue;
+        };
+        for part in list.split(',') {
+            let Ok(cpu) = part.trim().parse::<usize>() else {
+                warn!("dedicated_cpus: ignoring non-numeric entry `{part}`");
+                continue;
+            };
+            if cpu >= usize::BITS as usize {
+                warn!("dedicated_cpus: CPU {cpu} exceeds the host mask width");
+                continue;
+            }
+            mask |= 1usize << cpu;
+        }
+    }
+    mask
+}
+
 pub fn init_guest_vms() {
     init_guest_boot_resources();
 
@@ -358,5 +385,42 @@ mod tests {
         let vm_config = build_axvm_config(&crate_config);
 
         assert_eq!(vm_config.pass_through_irqs(), &vec![4, 17]);
+    }
+
+    #[test]
+    fn dedicated_cpus_parses_comma_separated_list() {
+        let mask =
+            dedicated_cpus_from_bootargs("root=/dev/nvme0n1 rw init=/init dedicated_cpus=1,3");
+        assert_eq!(mask, (1usize << 1) | (1usize << 3));
+    }
+
+    #[test]
+    fn dedicated_cpus_absent_returns_empty_mask() {
+        assert_eq!(
+            dedicated_cpus_from_bootargs("root=/dev/nvme0n1 rw init=/init"),
+            0
+        );
+        assert_eq!(dedicated_cpus_from_bootargs(""), 0);
+    }
+
+    #[test]
+    fn dedicated_cpus_ignores_malformed_and_out_of_range_entries() {
+        let mask = dedicated_cpus_from_bootargs("dedicated_cpus=2,abc,-1,5");
+        assert_eq!(mask, (1usize << 2) | (1usize << 5));
+    }
+
+    #[test]
+    fn dedicated_cpus_out_of_mask_width_is_dropped() {
+        let mask =
+            dedicated_cpus_from_bootargs(&format!("dedicated_cpus=0,{}", usize::BITS as usize));
+        assert_eq!(mask, 1usize);
+    }
+
+    #[test]
+    fn dedicated_cpus_single_entry_sets_one_bit() {
+        assert_eq!(
+            dedicated_cpus_from_bootargs("dedicated_cpus=1"),
+            1usize << 1
+        );
     }
 }

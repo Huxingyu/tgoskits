@@ -1595,6 +1595,7 @@ dependencies = [
  "cpu-local",
  "extern-trait",
  "fdt-edit",
+ "fdt-parser",
  "fdt-raw",
  "irq-framework",
  "log",

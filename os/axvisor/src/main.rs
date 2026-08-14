@@ -72,6 +72,19 @@ fn main() {
 
     banner::print_logo();
 
+    // Opt-in real-time partition knob: `dedicated_cpus=1,3` in the host
+    // bootargs silences the periodic scheduler tick on those physical CPUs.
+    // The tick is the constant VM-exit source for a vCPU that exclusively
+    // owns a pCPU; event-driven one-shot timers remain fully functional.
+    #[cfg(target_arch = "aarch64")]
+    if let Some(bootargs) = axvm::host_bootargs() {
+        let dedicated = crate::config::dedicated_cpus_from_bootargs(&bootargs);
+        if dedicated != 0 {
+            info!("Dedicated (no-tick) host CPUs: {dedicated:#b}");
+            ax_std::os::arceos::modules::ax_runtime::set_dedicated_cpus(dedicated);
+        }
+    }
+
     info!("Starting virtualization...");
     let manager = manager::AxvmManager::new()
         .unwrap_or_else(|error| panic!("failed to initialize AxVM manager: {error:#}"));
