@@ -31,6 +31,4 @@ memory_regions = [[0xA000_0000, 0x2000_0000, 0x7, 0]]
 
 [devices]
 passthrough = []
-disabled = [
-  { path = "/virtio_mmio@a000000" },
-]
+disabled = []
