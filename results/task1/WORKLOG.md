@@ -192,7 +192,48 @@
 - [ ] QEMU 实跑：双 Guest 稳定 ≥10 分钟；`/proc/cpuinfo` 2 处理器；
       `SMP: ... CPU1` 日志（依赖实验资产）
 
-## T0.5 Linux 侧测量流程（cyclictest + stress-ng）【未开始】
+
+
+## T0.5 Linux 侧测量流程（cyclictest + stress-ng）【脚本完成，QEMU 跑通待实验阶段】
+
+### 实现
+
+1. `scripts/test/rt-partition/build-rt-tools.sh`：一键交叉编译 cyclictest
+   （rt-tests）+ stress-ng（aarch64 musl 静态）+ 打包 initramfs
+2. `scripts/test/rt-partition/rt-linux-init.sh`：guest 内测量 init——解析
+   `rt_*` cmdline、taskset 绑测量核、cyclictest
+   `-m -p 90 -i 1000 -l 1800000 -h 400 -q`、stress-ng 场景开关、top -b 采样
+3. `scripts/test/rt-partition/cyclictest-hist-to-csv.py`：解析
+   `# Histogram Bucket Latencies (us)` → CSV
+4. `scripts/test/rt-partition/run-cyclictest.sh`：一条命令跑完
+   双 Guest 实验（QEMU 串口 socket + serial_console.py 驱动），产出
+   `results/task1/cyclictest/<scenario>/{run.log,cyclictest.csv,top.csv,
+   vmexit-stat.txt,meta.txt,sha256sums}`
+5. 产物：`tmp/rt-partition/{linux-qemu,zephyr-rt.bin,
+   rt-linux-initramfs.cpio.gz}` 已暂存（zephyr 用 zephyr-task2.bin）
+
+### 遇到的问题
+
+1. **rt-tests 硬依赖 libnuma**：新版（2.10）cyclictest 无条件链 `-lnuma`。
+   解决：交叉编译 numactl 2.0.18（release tarball，仓库源码缺 autoreconf 工具）
+   得到 `libnuma.a`。
+2. **旧版 rt-tests 不可用**：v1.8 用 glibc 私有 `struct sigevent::_sigev_un`，
+   musl 无此字段。
+3. **新版 cyclictest 的 glibc 宏泄漏**：`cyclictest.c:59`
+   `#define sigev_notify_thread_id _sigev_un._tid` 无条件定义，与 musl 自带
+   宏冲突。本地 patch 为 `#ifdef __GLIBC__` 包裹（记录在 WORKLOG；
+   上游未修，实验材料里注明）。
+4. **musl 需要 `-D_GNU_SOURCE`** 才有 cpu_set_t/sched_*。
+5. **CPPFLAGS 覆盖 Makefile 默认值**：必须显式带 `-Isrc/include`。
+
+### 验证
+
+- [x] `build-rt-tools.sh` 完整跑通，initramfs 含 cyclictest/stress-ng/init
+      （sha256=79bb5a44...）
+- [x] `qemu-aarch64` 直接执行两个静态二进制成功（cyclictest V 2.10、
+      stress-ng 0.21.04）
+- [x] 脚本 bash -n / py_compile 语法全过
+- [ ] QEMU 实跑一条命令产出全套证据（依赖实验阶段）
 
 ## T1.1 RT 核 tick 隔离【未开始】
 
