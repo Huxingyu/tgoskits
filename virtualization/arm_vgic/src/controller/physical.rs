@@ -91,10 +91,16 @@ impl GicV3Controller {
     ) -> VgicResult {
         let affinity = {
             let state = self.inner.state.lock_irqsave();
+            log::warn!(
+                "DBG bind target={:?} redistributor_count={} map addr {:p}",
+                target,
+                state.redistributors.len(),
+                &state.redistributors
+            );
             state
                 .redistributors
                 .get(&target)
-                .map(RedistributorState::affinity)
+                .map(RedistributorState::physical_affinity)
                 .ok_or_else(|| VgicError::ResourceNotFound {
                     resource: alloc::format!("vCPU {}", target.raw()),
                     operation: "bind physical SPI",
@@ -385,7 +391,7 @@ impl GicV3Controller {
             state
                 .redistributors
                 .get(&target)
-                .map(RedistributorState::affinity)
+                .map(RedistributorState::physical_affinity)
                 .ok_or_else(|| VgicError::ResourceNotFound {
                     resource: alloc::format!("vCPU {}", target.raw()),
                     operation: "bind physical MSI",

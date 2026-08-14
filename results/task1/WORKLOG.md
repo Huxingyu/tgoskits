@@ -107,7 +107,55 @@
 - [ ] QEMU 实跑验证 `vmexit stat` 表格 + 空载 Zephyr ≈100/s 定时器 exit
       （依赖实验资产，放实验阶段一起做）
 
-## T0.3 vMPIDR 与物理放置解耦【未开始】
+
+
+## T0.3 vMPIDR 与物理放置解耦【已完成】
+
+### 实现
+
+1. `virtualization/axvm/src/arch/aarch64/vm.rs`：`mpidr_el1: placement.phys_cpu_id`
+   → `placement.id`（vCPU 序号 0..n 独立编号，placement 只决定跑在哪个 pCPU）。
+2. **发现关键耦合点**：`vgic/plan.rs` 的 vCPU affinity 数组同时用于两处语义——
+   - **guest 视图**：SGI 匹配（`resolve_sgi_targets` 的 `affinities.contains(&redistributor.affinity())`）
+     和 GICD_IROUTER 路由匹配（`state.rs:67` `redistributor.affinity() == route`）
+   - **物理路由**：直通 SPI/MSI 的 `set_target_cpu` 目标（physical.rs binding affinity）
+   若只改 guest MPIDR 而数组保持物理编号，guest 用虚拟编号发 SGI → 匹配失败，
+   副核 IPI 全失效（旧实验 7.4 撞死原因）。
+3. **解耦方案（arm_vgic 共享 crate）**：
+   - `arm_config.rs`：`VgicV2Config`/`VgicV3Config` 新增 `vcpu_physical_affinities`
+     字段 + `with_vcpu_physical_affinities` builder（默认 = guest affinities，向后兼容）
+     + validate（长度一致、无重复）
+   - `redistributor/mod.rs`：`RedistributorState` 新增 `physical_affinity` 字段 +
+     `physical_affinity()` accessor（`affinity()` 语义保持 guest 视图）
+   - `controller/mod.rs`：`attach_vcpu` 从 config 取 physical affinity；
+     `ControllerConfig` 保存并暴露 `vcpu_physical_affinities()`
+   - `controller/physical.rs`：物理 SPI/MSI binding 用 `physical_affinity()`
+4. `vgic/plan.rs`：`affinities`（guest）用 vCPU id；新增 `physical_affinities`
+   （placement 物理 id）传给两个 config。
+
+### 遇到的问题
+
+1. **SGI/IROUTER 与物理路由共用 affinity 数组**（见上，本次最大发现）。
+2. **`AssignedSpiConfig` 要求 identity 映射**（guest INTID == host IRQ），回归测试
+   因此用 40/40 而非 1040。
+3. **`GicV3VcpuBinding` Drop 即 detach**：`Drop` 里 `state.redistributors.remove()`，
+   测试不保存 binding 会导致 redistributor 立即消失（调试定位：两次 attach 后
+   map 长度不增长、bind 时 redistributors=[]）。**回归测试必须持有 binding**。
+   （为定位此问题加了临时 DBG 打印并已全部清理。）
+4. **arm_vgic 是 no_std**，调试不能 eprintln；用 log + 测试内 logger。
+
+### 验证
+
+- [x] arm_vgic 全量 50 测试过（含 5 个新回归：
+      `assigned_spi_routes_to_the_physical_affinity_of_its_target_vcpu`、
+      `guest_affinities_stay_isolated_from_physical_routing_affinities`、
+      `physical_affinities_default_to_guest_affinities`、
+      `mismatched_physical_affinity_length_is_rejected`、
+      `duplicate_physical_affinity_is_rejected`）
+- [x] axvm 277 全过；clippy 无新警告；fmt 通过
+- [x] `tg-xtask axvisor build --arch aarch64 --debug` 成功
+- [ ] QEMU 实跑：Zephyr/Linux SMP2 在 vCPU0/1→pCPU2/3 拓扑完整启动
+      （依赖实验资产，放实验阶段）
 
 ## T0.4 多核 Linux 客户机配置【未开始】
 

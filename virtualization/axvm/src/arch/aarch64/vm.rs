@@ -49,8 +49,11 @@ impl Aarch64Arch {
                 .dtb_load_gpa
                 .unwrap_or_default();
             let vcpus = PreparedVcpus::create(vm.id(), &placements, |placement| {
+                // The guest-visible MPIDR is decoupled from the physical CPU
+                // placement: vCPU i always sees affinity i, no matter which
+                // pCPU it runs on. Placement only decides the pCPU.
                 Ok(ArmVcpuCreateConfig {
-                    mpidr_el1: placement.phys_cpu_id as _,
+                    mpidr_el1: placement.id as _,
                     dtb_addr: dtb_addr.as_usize(),
                     advance_hvc_smc_pc: resources.config().advance_hvc_smc_pc(),
                 })
