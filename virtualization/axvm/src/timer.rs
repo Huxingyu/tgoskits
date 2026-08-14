@@ -330,6 +330,7 @@ pub(crate) fn init_percpu() {
         std::format!("axvm-timer-{cpu_id}"),
         TIMER_WORKER_STACK_SIZE,
     );
+    worker.set_sched_priority(crate::runtime::RT_TASK_PRIORITY);
     let cpu_bit = 1usize
         .checked_shl(cpu_id as u32)
         .expect("AxVM timer worker CPU ID must fit the host CPU mask");

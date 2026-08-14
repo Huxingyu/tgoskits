@@ -33,6 +33,11 @@ use crate::{
 
 const KERNEL_STACK_SIZE: usize = 0x40000; // 256 KiB
 const PERIODIC_VIRQ_STACK_SIZE: usize = 0x10000;
+// Host scheduling priority of latency-critical hypervisor tasks (vCPU run
+// loops, the per-CPU timer worker, and the vIRQ injector). The RR scheduler
+// currently treats it as intent metadata; a fixed-priority scheduler would
+// order run queues by it.
+pub(crate) const RT_TASK_PRIORITY: i32 = 90;
 // `vm.running()` becomes true before the guest installs its ISR. Keep the
 // warm-up identical for every A/B variant so startup is excluded from samples.
 const PERIODIC_VIRQ_GUEST_WARMUP: Duration = Duration::from_secs(2);
@@ -92,6 +97,7 @@ pub(crate) fn spawn_periodic_virq_injector(
         format!("openrace-virq-injector-vcpu-{}", config.vcpu_id),
         PERIODIC_VIRQ_STACK_SIZE,
     );
+    task.set_sched_priority(RT_TASK_PRIORITY);
     if let Some(cpu_id) = config.injector_cpu_id {
         let bits = 1usize.checked_shl(cpu_id as u32).ok_or_else(|| {
             ax_err_type!(
@@ -579,6 +585,7 @@ pub(crate) fn build_vcpu_task(vm: &VMRef, vcpu: VCpuRef) -> crate::TaskInner {
         format!("VM[{}]-VCpu[{}]", vm.id(), vcpu.id()),
         KERNEL_STACK_SIZE,
     );
+    vcpu_task.set_sched_priority(RT_TASK_PRIORITY);
 
     if let Some(phys_cpu_set) = vcpu.phys_cpu_set() {
         vcpu_task.set_cpumask(crate::host::task::cpu_mask_from_raw_bits(

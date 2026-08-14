@@ -323,7 +323,40 @@
 - [x] axvisor aarch64 构建成功；新配置 toml 解析 OK
 - [ ] QEMU 实跑：RT 分区内 Zephyr 稳态 `vmexit stat` ≈0（实验阶段）
 
-## T2.1 调度抢占【未开始】
+
+
+## T2.1 调度抢占【轻量档完成；进阶档诚实声明为后续】
+
+### 实现（轻量档：接线不造轮子）
+
+1. **启用抢占调度**：axvisor 的 ax-std features 加 `sched-rr` + `ipi`
+   （`sched-rr` 隐含 `multitask + preempt`）：
+   - RR 时间片轮转 + preempt：IRQ 驱动的抢占检查
+   - ipi：跨核唤醒走 `kick_remote_cpu` → resched IPI →
+     `handle_ipi_reschedule` → `force_resched_from_irq`（**已核实 dev 分支
+     已修"跨核唤醒不触发 resched"**，run_queue.rs:731-732 无条件 kick）
+2. **关键任务高优先级**：`RT_TASK_PRIORITY = 90`（runtime/vcpus.rs，pub(crate)
+   导出），设置到：
+   - vCPU run 任务（`build_vcpu_task`）
+   - axvm-timer worker（timer.rs:325）
+   - vIRQ 注入器（`spawn_periodic_virq_injector`）
+   - 注：Fifo/RR 的 `set_priority` 是 no-op（axsched fifo.rs:65 /
+     round_robin.rs:119），当前作为意图元数据；固定优先级调度类列为后续。
+
+### 遇到的问题
+
+1. **Fifo/RR 不支持真实优先级**：axsched 的 `set_priority` 是 no-op。轻量档
+   收益来自 preempt 机制本身（唤醒即抢占 + IPI resched），优先级字段为
+   将来调度器预留。
+2. **跨核唤醒 resched 已存在**：todo 假设的 bug（run_queue 672 行附近）在
+   dev 分支已是 `kick_remote_cpu` 无条件调用——无需修改，记录核实结果。
+
+### 验证
+
+- [x] axvm 277 全过；clippy 干净；fmt 通过
+- [x] axvisor aarch64 构建成功（sched-rr + ipi 组合）
+- [ ] 实验：stress 场景下 vCPU 唤醒→运行延迟有界（无抢占无界→有抢占有界），
+      p99 对比（T2.2 第③组）
 
 ## T2.2 三组矩阵实验【未开始】
 

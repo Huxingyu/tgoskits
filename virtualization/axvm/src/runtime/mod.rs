@@ -32,6 +32,7 @@ pub(crate) use dispatcher::VcpuIrqDispatcher;
 pub(crate) use trace::VirqTraceKind;
 #[cfg(feature = "realtime-trace")]
 pub(crate) use trace::VirqTraceRing;
+pub(crate) use vcpus::RT_TASK_PRIORITY;
 
 use crate::{AxVmError, AxVmResult, StopReason, VmStatus, ax_err};
 
