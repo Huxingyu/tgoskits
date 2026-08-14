@@ -289,7 +289,39 @@
 - [ ] QEMU 实跑：`vmexit stat` 定时器 exit ≈100/s → ≈0（T0.2 基线对比，
       实验阶段）
 
-## T1.2 RT 分区配置档【未开始】
+
+
+## T1.2 RT 分区配置档【已完成】
+
+### 实现
+
+1. **per-VM WFI trap 开关**：
+   - `arm_vcpu`：`ArmVcpuSetupConfig` 加 `trap_wfi: bool`（默认 true，行为不变）
+     + `with_trap_wfi()`；`init_vm_context` 按它设 `HCR_EL2::TWI`
+   - `axvm`：`vm_placed_on_dedicated_cpus(&placements)`——VM 全部 vCPU 的
+     pCPU 都在 `ax_runtime::dedicated_cpu_mask()` 中 → `trap_wfi = false`
+     （独占核上 WFI 原地等待，零 exit、最低唤醒延迟；共享核保持 trap）
+2. **`scripts/test/rt-partition/rt-partition-zephyr.toml`**：一次配齐
+   - `guest_type = "passthrough"`（直通 GIC + 虚拟定时器）
+   - `phys_cpu_ids = [1]`（独占 pCPU1）
+   - dedicated tick：qemu `-append "dedicated_cpus=1"`（已更新
+     `qemu-aarch64-rt.toml`）
+   - TWI 不 trap：由 vm_placed_on_dedicated_cpus 自动判定
+3. Linux guest 保持 virtualized（virtio-net 等），pCPU 0 做 housekeeping。
+
+### 遇到的问题
+
+1. **`|=` 不适用于 tock_registers FieldValue**：HCR_EL2 组合用 `hcr_el2 = hcr_el2 + HCR_EL2::TWI::SET`。
+2. **axci_flow_test 环境失败**：worktree 缺 `.axci/` 目录（pre-existing，
+   与本次改动无关），arm_vcpu 单元测试 12 个全过。
+3. **SetupConfig 是 VM 级**（closure 无 per-vCPU 参数）：RT 分区场景
+   （guest 所有核独占）VM 级判定足够；混合拓扑留文档说明。
+
+### 验证
+
+- [x] arm_vcpu 12 单测过；axvm 277 过；clippy 干净；fmt 通过
+- [x] axvisor aarch64 构建成功；新配置 toml 解析 OK
+- [ ] QEMU 实跑：RT 分区内 Zephyr 稳态 `vmexit stat` ≈0（实验阶段）
 
 ## T2.1 调度抢占【未开始】
 

@@ -196,6 +196,7 @@ impl Default for ArmVcpuCreateConfig {
 pub struct ArmVcpuSetupConfig {
     timer: ArmTimerVmConfig,
     host_irq: ArmHostIrqConfig,
+    trap_wfi: bool,
 }
 
 impl ArmVcpuSetupConfig {
@@ -203,8 +204,25 @@ impl ArmVcpuSetupConfig {
     /// host interrupt-controller interface.
     ///
     /// Every vCPU in one VM must receive the same immutable configuration.
+    /// `trap_wfi` defaults to `true`; use [`Self::with_trap_wfi`] to opt a
+    /// dedicated vCPU out of WFI trapping.
     pub const fn new(timer: ArmTimerVmConfig, host_irq: ArmHostIrqConfig) -> Self {
-        Self { timer, host_irq }
+        Self {
+            timer,
+            host_irq,
+            trap_wfi: true,
+        }
+    }
+
+    /// Sets whether guest WFI instructions trap to EL2.
+    ///
+    /// A vCPU that exclusively owns a physical CPU keeps WFI untrapped so an
+    /// idle guest waits in place with the lowest possible wake latency and
+    /// without a per-WFI VM exit; shared cores must keep trapping so a
+    /// sleeping vCPU yields the physical CPU to other host tasks.
+    pub const fn with_trap_wfi(mut self, trap_wfi: bool) -> Self {
+        self.trap_wfi = trap_wfi;
+        self
     }
 
     /// Returns the VM-wide timer configuration.
@@ -215,6 +233,11 @@ impl ArmVcpuSetupConfig {
     /// Returns the host IRQ interface consumed by the world-switch assembly.
     pub const fn host_irq(self) -> ArmHostIrqConfig {
         self.host_irq
+    }
+
+    /// Returns whether guest WFI instructions trap to EL2.
+    pub const fn trap_wfi(self) -> bool {
+        self.trap_wfi
     }
 }
 
@@ -346,12 +369,14 @@ impl<H: ArmHostOps> ArmVcpu<H> {
             self.guest_system_regs.vtcr_el2 = vtcr_for_config(levels, gpa_bits, pa_bits);
         }
 
-        let hcr_el2 = HCR_EL2::VM::Enable
+        let mut hcr_el2 = HCR_EL2::VM::Enable
             + HCR_EL2::TSC::EnableTrapEl1SmcToEl2
-            + HCR_EL2::TWI::SET
             + HCR_EL2::RW::EL1IsAarch64
             + HCR_EL2::IMO::EnableVirtualIRQ
             + HCR_EL2::FMO::EnableVirtualFIQ;
+        if config.trap_wfi() {
+            hcr_el2 = hcr_el2 + HCR_EL2::TWI::SET;
+        }
 
         self.guest_system_regs.hcr_el2 = hcr_el2.into();
 

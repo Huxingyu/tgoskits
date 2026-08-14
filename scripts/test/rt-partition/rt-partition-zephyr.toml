@@ -1,0 +1,43 @@
+# RT-PARTITION Zephyr guest: real-time partition configuration.
+#
+# One shot, all four knobs (T1.2):
+#   1. Passthrough GIC and virtual timer (guest_type = "passthrough",
+#      machine profile passes the vGIC/vtimer through with split EOI).
+#   2. Dedicated pCPU: phys_cpu_ids = [1] exclusively owns physical CPU 1.
+#   3. Dedicated (no-tick) host CPU: launch with `dedicated_cpus=1` in the
+#      host bootargs so axruntime never programs a periodic timer on pCPU 1
+#      (T1.1). QEMU `-append` carries the knob, e.g.:
+#        -append "root=/dev/nvme0n1 rw init=/init dedicated_cpus=1"
+#   4. WFI untrapped: when every vCPU of a VM is placed on a dedicated host
+#      CPU, axvm builds the vCPU with HCR_EL2.TWI cleared, so an idle guest
+#      waits in place with the lowest wake latency and no per-WFI exit.
+#
+# Expected steady-state evidence: `vmexit stat` shows ~0 exits per second on
+# pCPU 1 for the idle periodic sampler.
+[base]
+id = 2
+name = "rt-partition-zephyr"
+guest_type = "passthrough"
+cpu_num = 1
+phys_cpu_ids = [1]
+
+[kernel]
+entry_point = 0xA000_117C
+image_location = "memory"
+kernel_path = "${workspace}/tmp/rt-partition/zephyr-rt.bin"
+kernel_load_addr = 0xA000_0000
+dtb_load_addr = 0xA7F0_0000
+memory_regions = [[0xA000_0000, 0x2000_0000, 0x7, 0]]
+
+[devices]
+passthrough = [
+  "/pl011@9000000",
+  "/intc@8000000",
+  "/timer",
+]
+disabled = []
+
+[[devices.virtual]]
+id = "virtnet0"
+model = "virtio-net"
+guest_mac = [0x52, 0x54, 0x00, 0x12, 0x34, 0x02]

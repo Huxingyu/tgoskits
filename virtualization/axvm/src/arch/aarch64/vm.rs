@@ -77,8 +77,9 @@ impl Aarch64Arch {
             }
 
             resources.prepare_guest_address_space(vm.id(), &[])?;
+            let trap_wfi = !vm_placed_on_dedicated_cpus(&placements);
             vcpus.setup(resources, move |_config, _memory_regions| {
-                Ok(ArmVcpuSetupConfig::new(timer_config, host_irq_config))
+                Ok(ArmVcpuSetupConfig::new(timer_config, host_irq_config).with_trap_wfi(trap_wfi))
             })?;
 
             let interrupt_controller: Arc<dyn axdevice_base::VirtualInterruptController> =
@@ -86,6 +87,19 @@ impl Aarch64Arch {
             Ok(PreparedVm::new(vcpus, devices, interrupt_controller))
         })
     }
+}
+
+/// Whether every vCPU placement of this VM lands on a host CPU whose periodic
+/// tick is silenced (`dedicated_cpus=` bootarg). Such a VM is a real-time
+/// partition: its vCPUs exclusively own the pCPUs, so guest WFI can stay
+/// untrapped and wait in place with the lowest wake latency.
+fn vm_placed_on_dedicated_cpus(placements: &[VcpuPlacement]) -> bool {
+    let dedicated = ax_std::os::arceos::modules::ax_runtime::dedicated_cpu_mask();
+    !placements.is_empty()
+        && placements.iter().all(|placement| {
+            placement.phys_cpu_id < usize::BITS as usize
+                && dedicated & (1usize << placement.phys_cpu_id) != 0
+        })
 }
 
 fn guest_page_table_levels(vcpu_mappings: &[(usize, Option<usize>, usize)]) -> AxVmResult<usize> {
