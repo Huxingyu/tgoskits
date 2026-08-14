@@ -1,0 +1,7 @@
+scenario=idle
+command: qemu-system-aarch64 -smp 4 -kernel axvisor(debug) -vmconfigs /home/huhu/tgoskits-rt/scripts/test/rt-partition/vm-aarch64-rt-linux.toml /home/huhu/tgoskits-rt/scripts/test/rt-partition/vm-aarch64-rt-zephyr.toml
+cmdline: init=/init isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=idle rt_cpu=0 rt_loops=300 rt_interval_us=1000 rt_maxlat_us=400 rt_priority=90
+elapsed_ms=173055
+qemu_pid=29078
+host_cpu_load: see top.csv
+sha256(initramfs)=79bb5a44ee3988b318866af8ca75a9f4eedfdf7573bd56f6ab4118bcbcbffddc

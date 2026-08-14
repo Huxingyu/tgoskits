@@ -54,8 +54,55 @@ pub fn create_guest_fdt(
             &machine_interrupt_providers,
         )
     })?;
+    renumber_guest_cpu_nodes(&mut guest_tree, crate_config.base.cpu_num)?;
     prune_dangling_interrupts_extended(fdt, &mut guest_tree)?;
     Ok(guest_tree.finish())
+}
+
+/// Rewrites the `reg` of every kept CPU node so the guest sees MPIDR
+/// 0..n in vCPU order instead of the host physical CPU IDs.
+///
+/// The guest-visible MPIDR is decoupled from the physical placement
+/// (vCPU i always sees affinity i, no matter which pCPU it runs on), so the
+/// FDT handed to the guest must follow the same numbering; otherwise the
+/// boot CPU and PSCI CPU_ON targets (which the guest derives from the FDT
+/// `reg` cells) never match the vCPUs that exist.
+fn renumber_guest_cpu_nodes(guest_tree: &mut FdtTree, cpu_count: usize) -> AxVmResult {
+    let mut kept_cpu_nodes = guest_tree
+        .inner()
+        .iter_node_ids()
+        .filter(|node_id| {
+            guest_tree
+                .inner()
+                .path_of(*node_id)
+                .starts_with("/cpus/cpu@")
+        })
+        .collect::<Vec<_>>();
+    if kept_cpu_nodes.len() > cpu_count {
+        warn!(
+            "guest FDT keeps {} CPU nodes for {} vCPUs; truncating",
+            kept_cpu_nodes.len(),
+            cpu_count
+        );
+        kept_cpu_nodes.truncate(cpu_count);
+    }
+    if kept_cpu_nodes.len() != cpu_count {
+        return Err(ax_err_type!(
+            InvalidData,
+            std::format!(
+                "guest FDT keeps {} CPU nodes but the VM has {cpu_count} vCPUs",
+                kept_cpu_nodes.len()
+            )
+        ));
+    }
+    for (index, node_id) in kept_cpu_nodes.into_iter().enumerate() {
+        guest_tree
+            .inner_mut()
+            .view_typed_mut(node_id)
+            .ok_or_else(|| ax_err_type!(InvalidData, "kept CPU node vanished while renumbering"))?
+            .set_regs(&[RegInfo::new(index as u64, None)]);
+    }
+    Ok(())
 }
 
 fn should_keep_generated_node(
@@ -506,7 +553,8 @@ mod tests {
             device::find_all_passthrough_devices,
             tree::{FdtTree, sanitize_bootargs},
         },
-        cpu_node_id, find_node_by_phandle, initrd_range_from_image_config, need_cpu_node,
+        cpu_node_id, create_guest_fdt, find_node_by_phandle, initrd_range_from_image_config,
+        need_cpu_node,
     };
     use crate::{
         GuestPhysAddr,
@@ -653,6 +701,32 @@ mod tests {
     #[test]
     fn cpu_node_id_parses_hex_unit_address() {
         assert_eq!(cpu_node_id("/cpus/cpu@100"), Some(0x100));
+    }
+
+    #[test]
+    fn guest_cpu_nodes_are_renumbered_to_vcpu_order() {
+        // Host FDT keeps cpu@2 and cpu@3 (physical IDs) for a 2-vCPU guest
+        // placed on pCPUs [2, 3]; the guest FDT must expose reg 0 and 1 so the
+        // guest MPIDR numbering (T0.3) matches the DTB the guest boots from.
+        let mut config = GuestConfig::default();
+        config.base.cpu_num = 2;
+        config.base.phys_cpu_ids = Some(vec![2, 3]);
+
+        let fdt = test_fdt("cpu@0=0\ncpu@1=1\ncpu@2=2\ncpu@3=3");
+        let guest_bytes = create_guest_fdt(&fdt, &[], &config).unwrap();
+        let guest = Fdt::from_bytes(&guest_bytes).unwrap();
+
+        let regs: std::vec::Vec<_> = guest
+            .iter_node_ids()
+            .map(|id| (id, guest.path_of(id)))
+            .filter(|(_, path)| path.starts_with("/cpus/cpu@"))
+            .filter_map(|(id, _)| {
+                guest
+                    .view_typed(id)
+                    .map(|view| view.regs().first().map(|reg| reg.address))
+            })
+            .collect();
+        assert_eq!(regs, [Some(0), Some(1)]);
     }
 
     #[test]

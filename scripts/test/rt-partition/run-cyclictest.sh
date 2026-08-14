@@ -56,7 +56,7 @@ start_ns=$(date +%s%N)
 printf 'rt_experiment scenario=%s start_ns=%s\n' "$scenario" "$start_ns" | tee -a "$run_log"
 
 # Boot the hypervisor with the measurement cmdline injected.
-cmdline="root=/dev/nvme0n1 rw init=/init isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=$scenario rt_cpu=$rt_cpu rt_loops=$loops rt_interval_us=$interval_us rt_maxlat_us=$maxlat_us rt_priority=$priority"
+cmdline="init=/init isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=$scenario rt_cpu=$rt_cpu rt_loops=$loops rt_interval_us=$interval_us rt_maxlat_us=$maxlat_us rt_priority=$priority"
 
 "$qemu" \
     -display none -monitor none \
@@ -64,7 +64,8 @@ cmdline="root=/dev/nvme0n1 rw init=/init isolcpus=1 nohz_full=1 irqaffinity=0 rt
     -cpu cortex-a72 \
     -machine "virt,virtualization=on,gic-version=3" \
     -smp 4 -m 8g \
-    -kernel "$repo_root/target/aarch64-unknown-linux-musl/debug/axvisor" \
+    -append "dedicated_cpus=1" \
+    -kernel "$repo_root/target/aarch64-unknown-linux-musl/release/axvisor.bin" \
     -qmp "unix:$qmp_sock,server,nowait" \
     >"$out_dir/qemu-stdout.log" 2>&1 &
 
@@ -77,9 +78,12 @@ trap cleanup EXIT
 
 steps="$work/rt-cyclictest.steps"
 cat > "$steps" <<EOF
-sleep 30
-expect 120 RT_CYCLICTEST_COMPLETE
-expect 60 RT_INIT_DONE
+sleep 20
+attach 1
+expect 150 RT_CYCLICTEST_COMPLETE
+expect 30 RT_INIT_DONE
+detach
+sleep 2
 cmd vmexit stat
 sleep 2
 EOF

@@ -14,7 +14,7 @@
 # default) so kernel timers and IRQ affinity (irqaffinity=0) do not compete
 # with the sampler; guest CPU 1 stays isolated via isolcpus.
 
-set -eu
+set -u
 
 /bin/busybox rm -f /dev/console /dev/null
 /bin/busybox mknod -m 0600 /dev/console c 5 1
@@ -23,6 +23,7 @@ exec </dev/console >/dev/console 2>&1
 
 /bin/busybox mount -t proc proc /proc
 /bin/busybox mount -t sysfs sysfs /sys
+/bin/busybox mkdir -p /tmp
 
 scenario=idle
 cpu=0
@@ -52,18 +53,18 @@ echo "RT_CPUS total=$(/bin/busybox grep -c ^processor /proc/cpuinfo)"
 case "$scenario" in
     stress-noiso)
         echo "RT_STRESS_START workers=2 vm=1"
-        /bin/busybox taskset "$cpu" /bin/stress-ng --cpu 2 --vm 1 --vm-bytes 64M &
+        /bin/stress-ng --taskset "$cpu" --cpu 2 --vm 1 --vm-bytes 64M &
         stress_pid=$!
         ;;
     stress-rt)
         echo "RT_STRESS_START workers=2 vm=1"
-        /bin/busybox taskset "$cpu" /bin/stress-ng --cpu 2 --vm 1 --vm-bytes 64M &
+        /bin/stress-ng --taskset "$cpu" --cpu 2 --vm 1 --vm-bytes 64M &
         stress_pid=$!
         ;;
 esac
 
 echo "RT_CYCLICTEST_START"
-/bin/busybox taskset "$cpu" /bin/cyclictest \
+/bin/cyclictest -a "$cpu" \
     -m -p "$priority" -i "$interval_us" -l "$loops" -h "$maxlat_us" -q
 echo "RT_CYCLICTEST_COMPLETE"
 

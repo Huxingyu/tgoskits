@@ -1,0 +1,265 @@
+rt_experiment scenario=idle start_ns=1786700658313887760
+dedicated_cpus=1
+VM Load @PA:0x40200000
+VM Load Offset: 0xffff0000c0200000
+Memory Map:
+  Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+  KImg   0x00000040200000 - 0x00000044a00000 (72 MiB)
+  Free   0x00000044a00000 - 0x00000240000000 (7.93 GiB)
+Initialize RAM allocator: 0x44a00000..0x240000000
+Reserving CPU-local areas
+CPU-local area stride: 0x44000 bytes
+Total CPU-local allocation: 0x110000 bytes (4 CPUs)
+Flushed RAM used range to memory map: 0x44a00000..0x44b00000, current: 0x44b00000
+Flushed RAM used range to memory map: 0x44b00000..0x44c10000, current: 0x44c10000
+CPU-local areas allocated at 0x44b00000 - 0x44c10000
+EL: 2
+Mapping early memory regions...
+Ram                 : [0x0000000040000000, 0x0000000240000000) -> [0x0000000040000000, 0x0000000240000000) (8 GiB)
+KImage              : [0x0000ffff80000000, 0x0000ffff84800000) -> [0x0000000040200000, 0x0000000044a00000) (72 MiB)
+PerCpu              : [0x0000ff0044b00000, 0x0000ff0044c10000) -> [0x0000000044b00000, 0x0000000044c10000) (1.06 MiB)
+Debug serial        : [0x0000000009000000, 0x0000000009001000) -> [0x0000000009000000, 0x0000000009001000) (4 KiB)
+Boot page table at physical address: PA:0x44c10000
+Setting up table registers...
+MMU Entry point at physical address: 0x403b73d4
+Trap vector at 0xffff801bb000
+Memory Map:
+  MMIO   0x00000009000000 - 0x00000009001000 (4 KiB)
+  Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+  KImg   0x00000040200000 - 0x00000044a00000 (72 MiB)
+  Rsv    0x00000044a00000 - 0x00000044b00000 (1 MiB)
+  PerCPU 0x00000044b00000 - 0x00000044c10000 (1.06 MiB)
+  Rsv    0x00000044c10000 - 0x00000044c1a000 (40 KiB)
+  Free   0x00000044c1a000 - 0x00000240000000 (7.93 GiB)
+Jumping to main entry point at 0xffff8019f354 with SP 0x0000ff0044b44000
+
+       d8888                            .d88888b.   .d8888b.
+      d88888                           d88P" "Y88b d88P  Y88b
+     d88P888                           888     888 Y88b.
+    d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+   d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+  d88P   888 888     888      88888888 888     888       "888
+ d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+
+arch = aarch64
+platform = linux,dummy-virt
+target = aarch64-unknown-none-softfloat
+build_mode = 
+log_level = info
+backtrace = false
+smp = 4
+
+[37m[  0.064969 ax_runtime:220] [32mLogging is enabled.[m
+[m[37m[  0.065372 ax_runtime:221] [32mPrimary CPU 0 started, arg = 0x44a00000.[m
+[m[37m[  0.065482 ax_runtime:223] [32mFound physcial memory regions:[m
+[m[37m[  0.066413 ax_runtime:225] [32m  [PA:0x9000000, PA:0x9001000) mmio (READ | WRITE | DEVICE | RESERVED)[m
+[m[37m[  0.066651 ax_runtime:225] [32m  [PA:0x40000000, PA:0x40200000) free memory (READ | WRITE | FREE)[m
+[m[37m[  0.066798 ax_runtime:225] [32m  [PA:0x40200000, PA:0x44a00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.066929 ax_runtime:225] [32m  [PA:0x44a00000, PA:0x44b00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.067058 ax_runtime:225] [32m  [PA:0x44b00000, PA:0x44c10000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.067189 ax_runtime:225] [32m  [PA:0x44c10000, PA:0x44c1a000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.067329 ax_runtime:225] [32m  [PA:0x44c1a000, PA:0x240000000) free memory (READ | WRITE | FREE)[m
+[m[37m[  0.067469 ax_runtime:373] [32mInitialize global memory allocator...[m
+[m[37m[  0.067580 ax_runtime:374] [32m  use buddy-slab-allocator allocator.[m
+[m[37m[  0.067778 ax_alloc::buddy_slab:158] [32mInitialize global memory allocator, start_vaddr: 0x44c1a000, size: 0x1fb3e6000[m
+[m[37m[  0.081677 ax_alloc::buddy_slab:424] [32mglobal allocator initialized[m
+[m[37m[  0.081969 ax_alloc::buddy_slab:168] [32mAdd memory region, start_vaddr: 0x40000000, size: 0x200000[m
+[m[37m[  0.082180 buddy_slab_allocator::global:151] [32mGlobalAllocator: skip region 0x40000000+0x200000, no allocator-visible memory after 2097152 alignment[m
+[m[37m[  0.082618 ax_runtime:260] [32mkernel aspace: [VA:0x0, VA:0xffffffffffffffff)[m
+[m[37m[  0.082775 ax_mm:103] [32mInitialize virtual memory management...[m
+[m[37m[  0.698944 ax_runtime:272] [32mInitialize platform devices...[m
+[m[37m[  0.705779 someboot::arch::power:23] [32mPower management method : SMC[m
+[m[37m[  0.705979 somehal::driver:5] [32mInitializing rdrive with FDT at 0x44a00000[m
+[m[37m[  0.719864 somehal::arch::gic::v3:274] [32mGICv3 CPU 0 EOI mode: two_step=true[m
+[m[37m[  0.896941 ax_task::api:137] [32mInitialize scheduling...[m
+[m[37m[  0.898320 ax_task::api:145] [32m  use FIFO scheduler.[m
+[m[37m[  0.898663 ax_runtime:298] [32mInitialize interrupt handlers...[m
+[m[37m[  0.900941 ax_runtime::devices:2] [32mProbe platform devices...[m
+[m[37m[  0.914363 somehal::arch::gic::v3:274] [32mGICv3 CPU 1 EOI mode: two_step=true[m
+[m[37m[  0.914929 ax_runtime::mp:79] [32mSecondary CPU 1 started.[m
+[m[37m[  0.915914 ax_runtime::mp:110] [32mSecondary CPU 1 init OK.[m
+[m[37m[  0.925060 somehal::arch::gic::v3:274] [32mGICv3 CPU 2 EOI mode: two_step=true[m
+[m[37m[  0.925227 ax_runtime::mp:79] [32mSecondary CPU 2 started.[m
+[m[37m[  0.925452 ax_runtime::mp:110] [32mSecondary CPU 2 init OK.[m
+[m[37m[  0.936128 somehal::arch::gic::v3:274] [32mGICv3 CPU 3 EOI mode: two_step=true[m
+[m[37m[  0.936388 ax_runtime::mp:79] [32mSecondary CPU 3 started.[m
+[m[37m[  0.936464 ax_runtime:346] [32mPrimary CPU 0 init OK.[m
+[m[37m[  0.936763 ax_runtime::mp:110] [32mSecondary CPU 3 init OK.[m
+[m
+
+       d8888            888     888  d8b
+      d88888            888     888  Y8P
+     d88P888            888     888
+    d88P 888  888  888  Y88b   d88P  888  .d8888b    .d88b.   888d888
+   d88P  888  `Y8bd8P'   Y88b d88P   888  88K       d88""88b  888P"
+  d88P   888    X88K      Y88o88P    888  "Y8888b.  888  888  888
+ d8888888888  .d8""8b.     Y888P     888       X88  Y88..88P  888
+d88P     888  888  888      Y8P      888   88888P'   "Y88P"   888
+
+
+by AxVisor Team
+
+[37m[  0.942119 0:2 axvisor:83] [32mDedicated (no-tick) host CPUs: 0b10[m
+[m[37m[  0.942323 0:2 axvisor:88] [32mStarting virtualization...[m
+[m[37m[  0.942500 0:2 axvm::host::arceos:349] [32mEnabling hardware virtualization support on all cores...[m
+[m[37m[  0.942687 0:2 axvm::host::arceos:355] [32mCore 0 is initializing hardware virtualization support...[m
+[m[37m[  0.942875 0:2 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.948707 0:2 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 0[m
+[m[37m[  0.949684 0:2 axvm::host::arceos:383] [32mWaiting for all cores to enable hardware virtualization...[m
+[m[37m[  0.950066 1:11 axvm::host::arceos:367] [32mCore 1 is initializing hardware virtualization support...[m
+[m[37m[  0.950086 2:12 axvm::host::arceos:367] [32mCore 2 is initializing hardware virtualization support...[m
+[m[37m[  0.950113 3:13 axvm::host::arceos:367] [32mCore 3 is initializing hardware virtualization support...[m
+[m[37m[  0.950421 2:12 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.950273 1:11 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.950756 3:13 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.951259 2:12 axvm::host::arceos:370] [32mHardware virtualization support enabled on core 2[m
+[m[37m[  0.951357 1:11 axvm::host::arceos:370] [32mHardware virtualization support enabled on core 1[m
+[m[37m[  0.951603 3:13 axvm::host::arceos:370] [32mHardware virtualization support enabled on core 3[m
+[m[37m[  0.952432 0:2 axvm::host::arceos:399] [32mAll cores have enabled hardware virtualization support.[m
+[m[37m[  0.952745 0:2 axvisor::config:117] [32mUsing static VM configs.[m
+[m[37m[  0.966736 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[2] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  0.969572 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[2] architectural timer follows host firmware PPIs[m
+[m[37m[  0.973933 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  0.974193 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[m[37m[  0.974381 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[m[37m[  0.974559 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[m[37m[  0.974785 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[m[37m[  0.975250 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[2] DTB not found, generating from the VM configuration[m
+[m[37m[  0.989319 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  0.989856 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /intc@8000000[m
+[m[37m[  0.990081 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /intc@8000000/its@8080000[m
+[m[37m[  0.990249 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /pl011@9000000[m
+[m[37m[  0.990383 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /timer[m
+[m[37m[  1.006075 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.006306 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /intc@8000000[m
+[m[37m[  1.006428 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /intc@8000000/its@8080000[m
+[m[37m[  1.013535 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.013757 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /intc@8000000[m
+[m[37m[  1.013874 0:2 axvm::arch::aarch64::fdt::core::device:107] [32mExcluding device: /intc@8000000/its@8080000[m
+[m[37m[  1.017905 0:2 axvisor::config:164] [32mCreating VM[2] "rt-partition-zephyr"[m
+[m[37m[  1.043120 0:2 axvm::vm:1038] [32mVM created: id=2[m
+[m[37m[  1.682939 0:2 axvisor::config:176] [32mVM[2] created success, loading images...[m
+[m[37m[  1.704502 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  1.705030 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  1.845341 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  1.851804 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  1.853712 0:2 arm_vgic::controller:345] [33mDBG attach vcpu GicVcpuId(0) now 1 redistributors, map addr 0x23eb12570[m
+[m[37m[  1.886969 0:2 axvm::vm::prepare:82] [32mVM setup: id=2[m
+[m[37m[  1.892569 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[1] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  1.893798 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[1] architectural timer follows host firmware PPIs[m
+[m[37m[  1.897288 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  1.897554 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[m[37m[  1.897802 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[m[37m[  1.898055 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[m[37m[  1.898323 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[m[37m[  1.898516 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[1] DTB not found, generating from the VM configuration[m
+[m[37m[  1.905970 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.911503 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.912527 0:2 axvisor::config:164] [32mCreating VM[1] "rt-partition-linux"[m
+[m[37m[  1.914981 0:2 axvm::vm:1038] [32mVM created: id=1[m
+[m[37m[  2.551145 0:2 axvisor::config:176] [32mVM[1] created success, loading images...[m
+[m[37m[  2.661328 0:2 axvm::boot::images:137] [32mLoading ramdisk image from memory (19619702 bytes) into GPA @0x9c000000[m
+[m[37m[  2.708646 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  2.716134 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  2.716359 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  2.716699 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  2.719593 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[m[37m[  2.720165 0:2 arm_vgic::controller:345] [33mDBG attach vcpu GicVcpuId(0) now 1 redistributors, map addr 0x23ebf5d70[m
+[m[37m[  2.720760 0:2 arm_vgic::controller:345] [33mDBG attach vcpu GicVcpuId(1) now 2 redistributors, map addr 0x23ebf5d70[m
+[m[37m[  2.721474 0:2 axvm::vm::prepare:82] [32mVM setup: id=1[m
+[m[37m[  2.721917 0:2 axvm::runtime:51] [32mInitializing VMM...[m
+[m[37m[  2.723074 0:2 axvm::runtime:62] [32mVMM starting, booting VMs...[m
+[m[37m[  2.723406 0:2 axvm::vm:1253] [32mStarting VM[1][m
+[m[37m[  2.723675 0:2 axvm::runtime::vcpus:582] [32mSpawning task for VM[1] VCpu[0][m
+[m[37m[  2.724310 0:2 axvm::runtime::vcpus:600] [32mVCpu task Task(17, "VM[1]-VCpu[0]") created cpumask: [2, ][m
+[m[37m[  2.728003 0:2 axvm::runtime:70] [32mVM[1] boot success[m
+[m[37m[  2.728121 2:17 axvm::runtime::vcpus:654] [32mVM[1] VCpu[0] waiting for running[m
+[m[37m[  2.728275 0:2 axvm::vm:1253] [32mStarting VM[2][m
+[m[37m[  2.728542 0:2 axvm::runtime::vcpus:582] [32mSpawning task for VM[2] VCpu[0][m
+[m[37m[  2.728862 0:2 axvm::runtime::vcpus:600] [32mVCpu task Task(19, "VM[2]-VCpu[0]") created cpumask: [1, ][m
+[m[37m[  2.728936 2:17 axvm::runtime::vcpus:692] [32mVM[1] VCpu[0] running...[m
+[m[37m[  2.729254 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.730673 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.731184 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.731486 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.731738 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.731988 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.732233 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.732474 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.732717 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.732964 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.733232 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.733672 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.734238 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.734528 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.734782 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.735030 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.735282 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.735551 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.735886 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.736275 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.736528 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.736802 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.737078 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.737339 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.737604 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.737852 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.738117 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.738380 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.738642 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.738893 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.739176 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.739439 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.739691 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.740037 0:2 arm_vgic::controller::physical:94] [33mDBG bind target=GicVcpuId(0) redistributor_count=1 map addr 0x23eb12570[m
+[m[37m[  2.740513 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=48 guest_intid=48[m
+[m[37m[  2.740807 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=49 guest_intid=49[m
+[m[37m[  2.741062 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=50 guest_intid=50[m
+[m[37m[  2.741320 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=51 guest_intid=51[m
+[m[37m[  2.741573 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=52 guest_intid=52[m
+[m[37m[  2.741834 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=53 guest_intid=53[m
+[m[37m[  2.742084 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=54 guest_intid=54[m
+[m[37m[  2.742340 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=55 guest_intid=55[m
+[m[37m[  2.742588 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=56 guest_intid=56[m
+[m[37m[  2.742848 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=57 guest_intid=57[m
+[m[37m[  2.743100 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=58 guest_intid=58[m
+[m[37m[  2.743352 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=59 guest_intid=59[m
+[m[37m[  2.743598 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=60 guest_intid=60[m
+[m[37m[  2.743837 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=61 guest_intid=61[m
+[m[37m[  2.744071 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=62 guest_intid=62[m
+[m[37m[  2.744309 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=63 guest_intid=63[m
+[m[37m[  2.744544 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=64 guest_intid=64[m
+[m[37m[  2.744781 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=65 guest_intid=65[m
+[m[37m[  2.745016 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=66 guest_intid=66[m
+[m[37m[  2.745243 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=67 guest_intid=67[m
+[m[37m[  2.745474 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=68 guest_intid=68[m
+[m[37m[  2.745752 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=69 guest_intid=69[m
+[m[37m[  2.746005 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=70 guest_intid=70[m
+[m[37m[  2.746240 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=71 guest_intid=71[m
+[m[37m[  2.746482 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=72 guest_intid=72[m
+[m[37m[  2.746741 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=73 guest_intid=73[m
+[m[37m[  2.747083 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=74 guest_intid=74[m
+[m[37m[  2.747325 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=75 guest_intid=75[m
+[m[37m[  2.747559 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=76 guest_intid=76[m
+[m[37m[  2.747801 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=77 guest_intid=77[m
+[m[37m[  2.748039 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=78 guest_intid=78[m
+[m[37m[  2.748272 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=79 guest_intid=79[m
+[m[37m[  2.748513 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=39 guest_intid=39[m
+[m[37m[  2.748750 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=34 guest_intid=34[m
+[m[37m[  2.749125 0:2 axvm::runtime:70] [32mVM[2] boot success[m
+[m[37m[  2.751348 0:2 axvisor:106] [32m[OK] Default guest initialized[m
+[m[37m[  2.769570 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0x80000000[m
+[m[37m[  2.771087 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000001[m
+[m[37m[  2.771521 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc400000e[m
+[m[37m[  2.771876 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000012[m
+[m[37m[  2.772197 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000015[m
+[m
+[Axvisor] attached VM[2] console; use Ctrl+X, then h to return to the shell
+
+[Axvisor] attached VM[1] console; use Ctrl+X, then h to return to the shell
+
+[Axvisor] attached VM[2] console; use Ctrl+X, then h to return to the shell
+
+[Axvisor] attached VM[1] console; use Ctrl+X, then h to return to the shell
+rt_experiment end_ns=1786700831369307894 elapsed_ms=173055
