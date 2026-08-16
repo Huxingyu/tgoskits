@@ -40,6 +40,7 @@ pub(crate) const CAPACITY_PER_CPU: usize = 4096;
     reason = "architecture-specific trace events are constructed only on target builds"
 )]
 pub(crate) enum VirqTraceKind {
+    EnqueueStart,
     Enqueue,
     Notify,
     Ipi,
@@ -55,6 +56,7 @@ impl VirqTraceKind {
     #[cfg(feature = "realtime-trace")]
     pub(crate) const fn as_str(self) -> &'static str {
         match self {
+            Self::EnqueueStart => "enqueue_start",
             Self::Enqueue => "enqueue",
             Self::Notify => "notify",
             Self::Ipi => "ipi",
@@ -173,6 +175,11 @@ impl VirqTraceRing {
 #[cfg(all(test, feature = "host-test", feature = "realtime-trace"))]
 mod tests {
     use super::*;
+
+    #[test]
+    fn enqueue_start_has_a_stable_trace_name() {
+        assert_eq!(VirqTraceKind::EnqueueStart.as_str(), "enqueue_start");
+    }
 
     #[test]
     fn ring_is_bounded_and_snapshot_is_sequence_ordered() {

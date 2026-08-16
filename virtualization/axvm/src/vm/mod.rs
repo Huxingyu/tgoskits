@@ -390,6 +390,12 @@ impl VmRuntimeHandle {
     ) -> AxVmResult {
         dispatch_vcpu_interrupt_with(
             || {
+                self.trace_virq_event(
+                    0,
+                    crate::runtime::VirqTraceKind::EnqueueStart,
+                    vcpu_id,
+                    interrupt.id.0,
+                );
                 let result = self.irq_dispatcher.enqueue(vcpu_id, interrupt);
                 match result {
                     Ok(cpu_id) => {

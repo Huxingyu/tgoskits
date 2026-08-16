@@ -59,11 +59,15 @@ impl VcpuInterruptQueue {
 
     /// Drains all pending interrupts for the given vCPU, leaving its
     /// queue empty.
+    #[expect(
+        clippy::drain_collect,
+        reason = "the IRQ-safe source queue must retain its preallocated capacity"
+    )]
     pub fn drain(&self, vcpu_id: usize) -> Vec<PendingVcpuInterrupt> {
         self.pending
             .lock()
             .get_mut(&vcpu_id)
-            .map(std::mem::take)
+            .map(|queue| queue.drain(..).collect())
             .unwrap_or_default()
     }
 
@@ -86,9 +90,6 @@ impl VcpuInterruptQueue {
             return None;
         }
         let interrupt = queue.remove(0);
-        if queue.is_empty() {
-            pending.remove(&vcpu_id);
-        }
         Some(interrupt)
     }
 
@@ -98,6 +99,11 @@ impl VcpuInterruptQueue {
             .lock()
             .get(&vcpu_id)
             .is_some_and(|queue| !queue.is_empty())
+    }
+
+    #[cfg(all(test, feature = "host-test"))]
+    fn allocated_capacity(&self, vcpu_id: usize) -> usize {
+        self.pending.lock().get(&vcpu_id).map_or(0, Vec::capacity)
     }
 }
 
@@ -229,5 +235,23 @@ mod tests {
         assert!(q.has_pending(0));
         q.drain(0);
         assert!(!q.has_pending(0));
+    }
+
+    #[test]
+    fn empty_queue_keeps_its_preallocated_capacity() {
+        let q = VcpuInterruptQueue::new();
+        q.try_push(0, edge(7)).unwrap();
+        assert_eq!(
+            q.allocated_capacity(0),
+            crate::runtime::VCPU_INTERRUPT_QUEUE_CAPACITY
+        );
+
+        assert_eq!(q.pop_if(0, |_| false), Some(edge(7)));
+
+        assert_eq!(
+            q.allocated_capacity(0),
+            crate::runtime::VCPU_INTERRUPT_QUEUE_CAPACITY,
+            "an IRQ-safe hot path must not allocate again after each empty transition",
+        );
     }
 }
