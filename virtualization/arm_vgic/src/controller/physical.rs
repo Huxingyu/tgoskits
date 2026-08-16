@@ -91,12 +91,6 @@ impl GicV3Controller {
     ) -> VgicResult {
         let affinity = {
             let state = self.inner.state.lock_irqsave();
-            log::warn!(
-                "DBG bind target={:?} redistributor_count={} map addr {:p}",
-                target,
-                state.redistributors.len(),
-                &state.redistributors
-            );
             state
                 .redistributors
                 .get(&target)

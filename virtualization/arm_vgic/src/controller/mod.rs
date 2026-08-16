@@ -342,12 +342,6 @@ impl GicV3Controller {
                 wake,
             )?,
         );
-        log::warn!(
-            "DBG attach vcpu {:?} now {} redistributors, map addr {:p}",
-            vcpu,
-            state.redistributors.len(),
-            &state.redistributors
-        );
         Ok(GicV3VcpuBinding::new(self.clone(), vcpu))
     }
 
