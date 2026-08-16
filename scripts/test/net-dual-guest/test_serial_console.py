@@ -67,6 +67,16 @@ class SerialConsoleTest(unittest.TestCase):
         self.assertEqual(status, 4)
         driver.collect_forensics.assert_called_once_with("qmp.sock", "artifacts")
 
+    def test_expectation_failure_collects_forensics_before_returning(self):
+        driver = object.__new__(MODULE.ConsoleDriver)
+        driver.collect_forensics = mock.Mock()
+        args = SimpleNamespace(qmp_sock="qmp.sock", forensics_dir="artifacts")
+
+        status = MODULE.report_expectation_failure(driver, args, "missing gate")
+
+        self.assertEqual(status, 2)
+        driver.collect_forensics.assert_called_once_with("qmp.sock", "artifacts")
+
     def test_qmp_forensics_persists_each_requested_snapshot(self):
         FakeQmpSession.commands = []
         with tempfile.TemporaryDirectory() as directory:

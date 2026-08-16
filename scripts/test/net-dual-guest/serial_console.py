@@ -373,6 +373,12 @@ def report_watchdog_failure(driver: ConsoleDriver, args) -> int:
     return 4
 
 
+def report_expectation_failure(driver: ConsoleDriver, args, message: str) -> int:
+    print(f"error: {message}", file=sys.stderr)
+    driver.collect_forensics(args.qmp_sock, args.forensics_dir)
+    return 2
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("sock", help="serial UNIX socket path")
@@ -438,11 +444,13 @@ def main() -> int:
                     status = report_watchdog_failure(driver, args)
                     driver.close()
                     return status
-                print(
-                    f"error: expected pattern {pattern!r} did not appear",
-                    file=sys.stderr,
+                status = report_expectation_failure(
+                    driver,
+                    args,
+                    f"expected pattern {pattern!r} did not appear",
                 )
-                return 2
+                driver.close()
+                return status
         elif step.startswith("send-until "):
             _, seconds, interval, payload, pattern = step.split(" ", 4)
             encoded = payload.encode().decode("unicode_escape").encode("latin-1")
@@ -453,11 +461,13 @@ def main() -> int:
                     status = report_watchdog_failure(driver, args)
                     driver.close()
                     return status
-                print(
-                    f"error: pattern {pattern!r} did not appear while resending input",
-                    file=sys.stderr,
+                status = report_expectation_failure(
+                    driver,
+                    args,
+                    f"pattern {pattern!r} did not appear while resending input",
                 )
-                return 2
+                driver.close()
+                return status
         elif step.startswith("attach "):
             driver.attach(int(step.split(" ", 1)[1]))
         elif step == "detach":
