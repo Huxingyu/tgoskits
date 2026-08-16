@@ -185,25 +185,6 @@ pub(crate) fn run_on_cpu_sync(
     unsafe { modules::ax_hal::irq::run_on_cpu_sync(modules::ax_hal::irq::CpuId(cpu_id), f, arg) }
 }
 
-fn send_ipi_to_all_except_current(cpu_num: usize) {
-    if cpu_num <= 1 {
-        return;
-    }
-    let cpu_id = modules::ax_hal::percpu::this_cpu_id();
-    for target_cpu in 0..cpu_num {
-        if target_cpu == cpu_id {
-            continue;
-        }
-        modules::ax_hal::irq::send_ipi(
-            modules::ax_hal::irq::ipi_irq(),
-            modules::ax_hal::irq::IpiTarget::Cpu(modules::ax_hal::irq::CpuId(target_cpu)),
-        )
-        .unwrap_or_else(|err| {
-            panic!("failed to deliver AxVM broadcast IPI to CPU {target_cpu}: {err:?}")
-        });
-    }
-}
-
 #[cfg(any(feature = "fs", feature = "host-fs"))]
 pub fn shutdown_host_filesystems() -> AxVmResult {
     modules::ax_fs_ng::shutdown_filesystems()
@@ -375,20 +356,12 @@ impl HostPlatform for ArceOsHost {
             );
             task.set_cpumask(<Self as HostCpu>::CpuMask::one_shot(cpu_id));
             modules::ax_task::spawn_task(task);
-            if cpu_id != self.this_cpu_id() {
-                send_ipi(cpu_id);
-            }
         }
 
         info!("Waiting for all cores to enable hardware virtualization...");
         let start = self.monotonic_time();
-        let mut wait_rounds = 0usize;
         while CORES.load(Ordering::Acquire) != cpu_count {
             thread::yield_now();
-            wait_rounds = wait_rounds.wrapping_add(1);
-            if wait_rounds.is_multiple_of(256) {
-                send_ipi_to_all_except_current(cpu_count);
-            }
             if self.monotonic_time().saturating_sub(start) >= CPU_ENABLE_WAIT_TIMEOUT {
                 break;
             }
@@ -398,11 +371,14 @@ impl HostPlatform for ArceOsHost {
         if enabled_count == cpu_count {
             info!("All cores have enabled hardware virtualization support.");
         } else {
-            warn!(
-                "Only {enabled_count}/{cpu_count} cores enabled hardware virtualization before \
-                 timeout; continuing with host CPU mask {:#x}",
-                crate::percpu::enabled_cpu_mask()
-            );
+            return Err(crate::AxVmError::host(
+                "enable hardware virtualization on all CPUs",
+                std::format!(
+                    "only {enabled_count}/{cpu_count} CPUs enabled before timeout; enabled mask \
+                     is {:#x}",
+                    crate::percpu::enabled_cpu_mask()
+                ),
+            ));
         }
         Ok(())
     }
