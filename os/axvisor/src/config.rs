@@ -22,6 +22,7 @@
 ))]
 use core::sync::atomic::{AtomicBool, Ordering};
 
+use alloc::collections::BTreeMap;
 use anyhow::{Context, Result, bail};
 #[cfg(feature = "fs")]
 use axvm::{AxVmError, AxVmResult};
@@ -74,33 +75,6 @@ pub mod vmcfg {
     include!(concat!(env!("OUT_DIR"), "/vm_configs.rs"));
 }
 
-/// Parses `dedicated_cpus=<list>` from the host bootargs into a CPU bitmask.
-///
-/// `<list>` is a comma-separated list of physical CPU numbers, e.g.
-/// `dedicated_cpus=1,3`. Returns 0 when the argument is absent; values outside
-/// the native `usize` width are ignored with a warning. Opt-in knob: the empty
-/// result keeps the periodic tick behavior completely unchanged.
-pub fn dedicated_cpus_from_bootargs(bootargs: &str) -> usize {
-    let mut mask = 0usize;
-    for argument in bootargs.split_ascii_whitespace() {
-        let Some(list) = argument.strip_prefix("dedicated_cpus=") else {
-            continue;
-        };
-        for part in list.split(',') {
-            let Ok(cpu) = part.trim().parse::<usize>() else {
-                warn!("dedicated_cpus: ignoring non-numeric entry `{part}`");
-                continue;
-            };
-            if cpu >= usize::BITS as usize {
-                warn!("dedicated_cpus: CPU {cpu} exceeds the host mask width");
-                continue;
-            }
-            mask |= 1usize << cpu;
-        }
-    }
-    mask
-}
-
 pub fn init_guest_vms() {
     init_guest_boot_resources();
 
@@ -120,12 +94,132 @@ pub fn init_guest_vms() {
         gvm_raw_configs.extend(static_configs.into_iter().map(|s| s.into()));
     }
 
+    let parsed_configs = gvm_raw_configs
+        .iter()
+        .map(|raw| GuestConfig::from_toml(raw).context("parse VM TOML configuration"))
+        .collect::<Result<alloc::vec::Vec<_>>>();
+    let parsed_configs = match parsed_configs {
+        Ok(configs) => configs,
+        Err(error) => {
+            error!("Refusing to create the default VM set: {error:#}");
+            return;
+        }
+    };
+    let dedicated_mask = ax_std::os::arceos::modules::ax_runtime::dedicated_cpu_mask();
+    let host_cpu_count = ax_std::os::arceos::modules::ax_runtime::hal::cpu_num();
+    if let Err(error) =
+        validate_dedicated_cpu_ownership(&parsed_configs, dedicated_mask, host_cpu_count)
+    {
+        error!("Refusing to create the default VM set: {error:#}");
+        return;
+    }
+
     for raw_cfg_str in gvm_raw_configs {
         debug!("Initializing guest VM with config: {:#?}", raw_cfg_str);
         if let Err(e) = init_guest_vm(&raw_cfg_str) {
             error!("Failed to initialize guest VM: {e:#}");
         }
     }
+}
+
+fn validate_dedicated_cpu_ownership(
+    configs: &[GuestConfig],
+    dedicated_mask: usize,
+    host_cpu_count: usize,
+) -> Result<()> {
+    let mut owners = BTreeMap::<usize, (usize, usize)>::new();
+
+    for config in configs {
+        if let Some(phys_cpu_ids) = config.base.phys_cpu_ids.as_deref() {
+            if phys_cpu_ids.len() != config.base.cpu_num {
+                bail!(
+                    "VM[{}] has {} vCPUs but {} phys_cpu_ids entries",
+                    config.base.id,
+                    config.base.cpu_num,
+                    phys_cpu_ids.len()
+                );
+            }
+            for (vcpu_id, &cpu_id) in phys_cpu_ids.iter().enumerate() {
+                record_dedicated_cpu_owner(
+                    &mut owners,
+                    dedicated_mask,
+                    host_cpu_count,
+                    config.base.id,
+                    vcpu_id,
+                    cpu_id,
+                )?;
+            }
+            continue;
+        }
+
+        if let Some(phys_cpu_sets) = config.base.phys_cpu_sets.as_deref() {
+            if phys_cpu_sets.len() != config.base.cpu_num {
+                bail!(
+                    "VM[{}] has {} vCPUs but {} phys_cpu_sets entries",
+                    config.base.id,
+                    config.base.cpu_num,
+                    phys_cpu_sets.len()
+                );
+            }
+            for (vcpu_id, &cpu_set) in phys_cpu_sets.iter().enumerate() {
+                let dedicated_candidates = cpu_set & dedicated_mask;
+                if dedicated_candidates == 0 {
+                    continue;
+                }
+                if cpu_set.count_ones() != 1 {
+                    bail!(
+                        "VM[{}] vCPU{} affinity {cpu_set:#b} mixes a dedicated CPU with other CPUs",
+                        config.base.id,
+                        vcpu_id
+                    );
+                }
+                record_dedicated_cpu_owner(
+                    &mut owners,
+                    dedicated_mask,
+                    host_cpu_count,
+                    config.base.id,
+                    vcpu_id,
+                    cpu_set.trailing_zeros() as usize,
+                )?;
+            }
+            continue;
+        }
+
+        for vcpu_id in 0..config.base.cpu_num {
+            record_dedicated_cpu_owner(
+                &mut owners,
+                dedicated_mask,
+                host_cpu_count,
+                config.base.id,
+                vcpu_id,
+                vcpu_id,
+            )?;
+        }
+    }
+
+    Ok(())
+}
+
+fn record_dedicated_cpu_owner(
+    owners: &mut BTreeMap<usize, (usize, usize)>,
+    dedicated_mask: usize,
+    host_cpu_count: usize,
+    vm_id: usize,
+    vcpu_id: usize,
+    cpu_id: usize,
+) -> Result<()> {
+    if cpu_id >= host_cpu_count {
+        bail!("VM[{vm_id}] vCPU{vcpu_id} targets offline physical CPU {cpu_id}");
+    }
+    if cpu_id >= usize::BITS as usize || dedicated_mask & (1usize << cpu_id) == 0 {
+        return Ok(());
+    }
+    if let Some((owner_vm, owner_vcpu)) = owners.insert(cpu_id, (vm_id, vcpu_id)) {
+        bail!(
+            "dedicated physical CPU {cpu_id} is assigned to both VM[{owner_vm}] vCPU{owner_vcpu} and VM[{vm_id}] vCPU{vcpu_id}"
+        );
+    }
+    Ok(())
 }
 
 pub fn init_guest_vm(raw_cfg: &str) -> Result<usize> {
@@ -212,6 +306,8 @@ pub(crate) fn build_axvm_config(cfg: &GuestConfig) -> AxVMConfig {
     let serial_profile = machine.serial;
     let mut passthrough_devices = cfg.devices.unresolved_host_devices();
     if cfg.base.guest_type == GuestType::Passthrough
+        && cfg.devices.passthrough.is_empty()
+        && cfg.devices.inherits_host_devices()
         && let Some(path) = machine.default_passthrough_device_path
     {
         passthrough_devices.insert(
@@ -388,39 +484,81 @@ mod tests {
     }
 
     #[test]
-    fn dedicated_cpus_parses_comma_separated_list() {
-        let mask =
-            dedicated_cpus_from_bootargs("root=/dev/nvme0n1 rw init=/init dedicated_cpus=1,3");
-        assert_eq!(mask, (1usize << 1) | (1usize << 3));
+    fn explicit_passthrough_selection_does_not_also_assign_host_root() {
+        let mut crate_config = GuestConfig::default();
+        crate_config.base.guest_type = GuestType::Passthrough;
+        crate_config.devices.passthrough = vec![axvmconfig::PhysicalDeviceRef {
+            path: "/virtio_mmio@a003c00".into(),
+        }];
+
+        let vm_config = build_axvm_config(&crate_config);
+        let names = vm_config
+            .pass_through_devices()
+            .iter()
+            .map(|device| device.name.as_str())
+            .collect::<Vec<_>>();
+
+        assert_eq!(names, ["/virtio_mmio@a003c00"]);
     }
 
     #[test]
-    fn dedicated_cpus_absent_returns_empty_mask() {
-        assert_eq!(
-            dedicated_cpus_from_bootargs("root=/dev/nvme0n1 rw init=/init"),
-            0
+    fn empty_passthrough_selection_keeps_legacy_root_assignment() {
+        let mut crate_config = GuestConfig::default();
+        crate_config.base.guest_type = GuestType::Passthrough;
+
+        let vm_config = build_axvm_config(&crate_config);
+
+        assert!(
+            vm_config
+                .pass_through_devices()
+                .iter()
+                .any(|device| device.name == "/")
         );
-        assert_eq!(dedicated_cpus_from_bootargs(""), 0);
     }
 
     #[test]
-    fn dedicated_cpus_ignores_malformed_and_out_of_range_entries() {
-        let mask = dedicated_cpus_from_bootargs("dedicated_cpus=2,abc,-1,5");
-        assert_eq!(mask, (1usize << 2) | (1usize << 5));
+    fn passthrough_guest_can_disable_legacy_root_assignment() {
+        let mut crate_config = GuestConfig::default();
+        crate_config.base.guest_type = GuestType::Passthrough;
+        crate_config.devices.inherit_host_devices = Some(false);
+
+        let vm_config = build_axvm_config(&crate_config);
+
+        assert!(vm_config.pass_through_devices().is_empty());
+    }
+
+    fn vm_config(id: usize, cpu_ids: &[usize]) -> GuestConfig {
+        let mut config = GuestConfig::default();
+        config.base.id = id;
+        config.base.cpu_num = cpu_ids.len();
+        config.base.phys_cpu_ids = Some(cpu_ids.to_vec());
+        config
     }
 
     #[test]
-    fn dedicated_cpus_out_of_mask_width_is_dropped() {
-        let mask =
-            dedicated_cpus_from_bootargs(&format!("dedicated_cpus=0,{}", usize::BITS as usize));
-        assert_eq!(mask, 1usize);
+    fn dedicated_cpu_has_exactly_one_vm_vcpu_owner() {
+        assert!(validate_dedicated_cpu_ownership(&[vm_config(1, &[1])], 0b10, 4).is_ok());
+
+        let error =
+            validate_dedicated_cpu_ownership(&[vm_config(1, &[1]), vm_config(2, &[1])], 0b10, 4)
+                .unwrap_err();
+        assert!(error.to_string().contains("assigned to both"));
     }
 
     #[test]
-    fn dedicated_cpus_single_entry_sets_one_bit() {
-        assert_eq!(
-            dedicated_cpus_from_bootargs("dedicated_cpus=1"),
-            1usize << 1
-        );
+    fn dedicated_cpu_rejects_migratable_affinity() {
+        let mut config = GuestConfig::default();
+        config.base.id = 3;
+        config.base.cpu_num = 1;
+        config.base.phys_cpu_sets = Some(vec![0b11]);
+
+        let error = validate_dedicated_cpu_ownership(&[config], 0b10, 4).unwrap_err();
+        assert!(error.to_string().contains("mixes a dedicated CPU"));
+    }
+
+    #[test]
+    fn vm_cpu_placement_rejects_offline_cpu() {
+        let error = validate_dedicated_cpu_ownership(&[vm_config(1, &[4])], 0, 4).unwrap_err();
+        assert!(error.to_string().contains("offline physical CPU 4"));
     }
 }

@@ -492,6 +492,9 @@ impl PhysicalDeviceRef {
 #[derive(Debug, Default, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(default, deny_unknown_fields)]
 pub struct GuestDevices {
+    /// Whether a passthrough guest with no explicit physical-device selection
+    /// inherits the host device-tree root. `None` preserves legacy behavior.
+    pub inherit_host_devices: Option<bool>,
     /// Physical devices explicitly assigned to the guest.
     pub passthrough: Vec<PhysicalDeviceRef>,
     /// Physical devices removed from a passthrough guest's default assignment.
@@ -506,6 +509,11 @@ pub struct GuestDevices {
 }
 
 impl GuestDevices {
+    /// Returns whether the compatibility root assignment should be added.
+    pub fn inherits_host_devices(&self) -> bool {
+        self.inherit_host_devices.unwrap_or(true)
+    }
+
     fn validate(&self) -> AxVmConfigResult {
         for device in self.passthrough.iter().chain(&self.disabled) {
             device.validate()?;
