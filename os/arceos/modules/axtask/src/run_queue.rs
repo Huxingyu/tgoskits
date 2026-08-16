@@ -1315,7 +1315,11 @@ fn gc_entry() {
         unsafe {
             ax_hal::percpu::with_cpu_pin(|pin| {
                 WAIT_FOR_EXIT.with_current(pin, |wait| {
-                    let _timeout = wait.wait_timeout(core::time::Duration::from_millis(100));
+                    if crate::api::current_cpu_is_dedicated() {
+                        wait.wait();
+                    } else {
+                        let _timeout = wait.wait_timeout(core::time::Duration::from_millis(100));
+                    }
                 })
             })
         }
@@ -1462,6 +1466,7 @@ pub(crate) fn init_secondary(stack_ptr: VirtAddr, stack_size: usize) {
         TaskStack::borrowed(stack_ptr, stack_size, TASK_STACK_ALIGN),
     )
     .into_arc();
+    idle_task.set_cpumask(AxCpuMask::one_shot(cpu_id));
     idle_task.set_state(TaskState::Running);
     // SAFETY: the secondary CPU remains offline and IRQ-disabled throughout
     // its scheduler initialization.

@@ -387,8 +387,9 @@ impl TaskInner {
             is_init: false,
             entry: Cell::new(None),
             state: AtomicU8::new(TaskState::Ready as u8),
-            // By default, the task is allowed to run on all CPUs.
-            cpumask: SpinLock::new(crate::api::cpu_mask_full()),
+            // Dedicated CPUs accept only tasks that opt in with an explicit
+            // affinity (vCPUs and required per-CPU runtime workers).
+            cpumask: SpinLock::new(crate::api::default_task_cpu_mask()),
             sched_policy: AtomicI32::new(0),
             sched_priority: AtomicI32::new(0),
             in_wait_queue: AtomicBool::new(false),
