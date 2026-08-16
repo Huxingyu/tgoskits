@@ -49,6 +49,9 @@ mod aarch64_shared_mmio_tests;
 #[cfg(all(test, not(target_arch = "aarch64")))]
 #[path = "arch/aarch64/vtimer/percpu.rs"]
 mod aarch64_timer_percpu_tests;
+#[cfg(all(test, not(target_arch = "aarch64")))]
+#[path = "arch/aarch64/wfi.rs"]
+mod aarch64_wfi_tests;
 
 use crate::arch::ArchOps;
 

@@ -35,6 +35,7 @@ mod vm;
 mod vm_plan;
 pub(crate) use vm_plan::Aarch64VmPlan;
 mod vtimer;
+mod wfi;
 
 pub use capabilities::{host_bootargs, host_fdt_bootarg, host_phys_to_virt};
 pub use images::ImageLoader;
