@@ -9,6 +9,10 @@
 #define PERIOD_MS 10
 #define SAMPLE_COUNT 300
 
+#ifndef RT_START_DELAY_MS
+#define RT_START_DELAY_MS 0
+#endif
+
 struct latency_sample {
 	int64_t timestamp_ns;
 	int64_t deadline_ns;
@@ -66,6 +70,10 @@ int main(void)
 #ifdef RT_START_GATED
 	wait_for_start();
 #endif
+	if (RT_START_DELAY_MS > 0) {
+		printk("PERIODIC LATENCY SETTLE delay_ms=%d\n", RT_START_DELAY_MS);
+		k_sleep(K_MSEC(RT_START_DELAY_MS));
+	}
 
 	base_ticks = k_uptime_ticks();
 

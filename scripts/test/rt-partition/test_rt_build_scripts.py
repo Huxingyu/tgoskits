@@ -20,8 +20,12 @@ class RtBuildScriptsTest(unittest.TestCase):
     def test_zephyr_build_records_the_uart_start_gate(self):
         self.assertIn('start_gated="${ZEPHYR_START_GATED:-1}"', BUILD_ZEPHYR)
         self.assertIn('-DRT_START_GATED="$start_gated"', BUILD_ZEPHYR)
+        self.assertIn('start_delay_ms="${ZEPHYR_START_DELAY_MS:-0}"', BUILD_ZEPHYR)
+        self.assertIn('-DRT_START_DELAY_MS="$start_delay_ms"', BUILD_ZEPHYR)
         self.assertIn("start_gated=%s", BUILD_ZEPHYR)
         self.assertIn("PERIODIC LATENCY READY", ZEPHYR_MAIN)
+        self.assertIn("k_sleep(K_MSEC(1));", ZEPHYR_MAIN)
+        self.assertIn("PERIODIC LATENCY SETTLE", ZEPHYR_MAIN)
         self.assertIn("uart_poll_in", ZEPHYR_MAIN)
 
     def test_native_zephyr_runner_archives_complete_evidence(self):

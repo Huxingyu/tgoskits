@@ -8,3 +8,5 @@ target_sources(app PRIVATE src/main.c)
 if(RT_START_GATED)
   target_compile_definitions(app PRIVATE RT_START_GATED=1)
 endif()
+
+target_compile_definitions(app PRIVATE RT_START_DELAY_MS=${RT_START_DELAY_MS})

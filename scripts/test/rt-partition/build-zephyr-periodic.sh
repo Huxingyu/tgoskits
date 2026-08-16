@@ -13,6 +13,7 @@ build_dir="${BUILD_DIR:-${out_dir}/zephyr-periodic-build}"
 memory_base="${ZEPHYR_MEMORY_BASE:-0xA0000000}"
 memory_size="${ZEPHYR_MEMORY_SIZE:-0x08000000}"
 start_gated="${ZEPHYR_START_GATED:-1}"
+start_delay_ms="${ZEPHYR_START_DELAY_MS:-0}"
 out_dir="$(realpath -m "$out_dir")"
 build_dir="$(realpath -m "$build_dir")"
 
@@ -27,6 +28,10 @@ done
     printf 'error: ZEPHYR_START_GATED must be 0 or 1\n' >&2
     exit 2
 }
+[[ "$start_delay_ms" =~ ^[0-9]+$ ]] || {
+    printf 'error: ZEPHYR_START_DELAY_MS must be a non-negative integer\n' >&2
+    exit 2
+}
 
 mkdir -p "$out_dir"
 overlay="${out_dir}/zephyr-periodic-memory.overlay"
@@ -38,6 +43,7 @@ ZEPHYR_BASE="$zephyr_base" cmake -S "$app_dir" -B "$build_dir" -G Ninja \
     -DZEPHYR_TOOLCHAIN_VARIANT=cross-compile \
     -DCROSS_COMPILE="$cross_prefix" \
     -DRT_START_GATED="$start_gated" \
+    -DRT_START_DELAY_MS="$start_delay_ms" \
     -DDTC_OVERLAY_FILE="$overlay"
 cmake --build "$build_dir" --clean-first
 
@@ -75,6 +81,7 @@ rg -a -F "PERIODIC LATENCY COMPLETE samples=%d" "$staged_bin" >/dev/null || {
     printf 'board=qemu_cortex_a53\n'
     printf 'sample_count=300\n'
     printf 'start_gated=%s\n' "$start_gated"
+    printf 'start_delay_ms=%s\n' "$start_delay_ms"
     printf 'toolchain=%s\n' "$("${cross_prefix}gcc" -dumpfullversion)"
     printf 'sha256=%s\n' "$(sha256sum "$staged_bin" | awk '{print $1}')"
 } > "$manifest"

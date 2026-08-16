@@ -3,18 +3,47 @@ set -euo pipefail
 
 # Build and run one Task1 matrix scenario with scenario-specific VM configs.
 # Evidence is accepted only when both guests complete, cyclictest emits a real
-# histogram, three vmexit/tick snapshots exist, and the requested duration is met.
+# histogram, and the requested duration is met. VM-exit/tick snapshots remain
+# mandatory when the selected source tree supports those diagnostics.
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
+source_root="${RT_SOURCE_ROOT:-$repo_root}"
 scenario="${RT_SCENARIO:-idle}"
 loops="${RT_LOOPS:-1800000}"
 duration_sec="${RT_DURATION_SEC:-0}"
 interval_us="${RT_INTERVAL_US:-1000}"
 maxlat_us="${RT_MAXLAT_US:-20000}"
+deadline_tolerance_ns="${RT_DEADLINE_TOLERANCE_NS:-1000000}"
 priority="${RT_PRIORITY:-90}"
 rt_cpu="${RT_CPU:-1}"
 start_delay_sec="${RT_START_DELAY_SEC:-25}"
 result_drain_timeout="${RT_RESULT_DRAIN_TIMEOUT_SEC:-180}"
+zephyr_timeout="${RT_ZEPHYR_TIMEOUT_SEC:-180}"
+burner_config="${RT_BURNER:-}"
+vmexit_diagnostics="${RT_VMEXIT_DIAGNOSTICS:-1}"
+rootfs_override="${RT_ROOTFS:-}"
+require_init_done="${RT_REQUIRE_INIT_DONE:-1}"
+
+git -C "$source_root" rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
+    printf 'error: RT_SOURCE_ROOT is not a git worktree: %s\n' "$source_root" >&2
+    exit 2
+}
+case "$vmexit_diagnostics" in
+    0|1) ;;
+    *) printf 'error: RT_VMEXIT_DIAGNOSTICS must be 0 or 1\n' >&2; exit 2 ;;
+esac
+case "$require_init_done" in
+    0|1) ;;
+    *) printf 'error: RT_REQUIRE_INIT_DONE must be 0 or 1\n' >&2; exit 2 ;;
+esac
+if [[ -n "$burner_config" && ! "$burner_config" =~ ^[0-9]+:[0-9]+:[0-9]+(:[0-9]+)?$ ]]; then
+    printf 'error: RT_BURNER must use <cpu>:<busy_ms>:<idle_ms>[:<start_delay_ms>]\n' >&2
+    exit 2
+fi
+if [[ -n "$rootfs_override" && ! -f "$rootfs_override" ]]; then
+    printf 'error: RT_ROOTFS does not exist: %s\n' "$rootfs_override" >&2
+    exit 2
+fi
 
 case "$scenario" in
     idle)
@@ -63,11 +92,11 @@ case "$scenario" in
         ;;
 esac
 
-for value in "$loops" "$duration_sec" "$interval_us" "$maxlat_us" "$priority" "$rt_cpu" "$start_delay_sec" "$runtime_scale" "$result_drain_timeout"; do
+for value in "$loops" "$duration_sec" "$interval_us" "$maxlat_us" "$deadline_tolerance_ns" "$priority" "$rt_cpu" "$start_delay_sec" "$runtime_scale" "$result_drain_timeout" "$zephyr_timeout"; do
     [[ "$value" =~ ^[0-9]+$ ]] || { printf 'error: numeric RT option is invalid: %s\n' "$value" >&2; exit 2; }
 done
-(( interval_us > 0 && runtime_scale > 0 && result_drain_timeout > 0 )) || {
-    printf 'error: interval, runtime scale, and result drain timeout must be positive\n' >&2
+(( interval_us > 0 && runtime_scale > 0 && result_drain_timeout > 0 && zephyr_timeout > 0 )) || {
+    printf 'error: interval, runtime scale, result drain timeout, and Zephyr timeout must be positive\n' >&2
     exit 2
 }
 (( rt_cpu <= 1 )) || { printf 'error: RT_CPU must be 0 or 1 for the two-vCPU Linux guest\n' >&2; exit 2; }
@@ -85,7 +114,6 @@ else
 fi
 expected_wall_runtime_sec=$((expected_runtime_sec * runtime_scale))
 experiment_timeout=$(( expected_wall_runtime_sec + 300 ))
-zephyr_timeout=180
 linux_start_timeout=300
 serial_socket_timeout=600
 progress_timeout="${RT_PROGRESS_TIMEOUT_SEC:-300}"
@@ -110,6 +138,7 @@ out_dir="${out_root}/${scenario}"
 board_toml="${repo_root}/scripts/test/rt-partition/board-qemu-aarch64-rt.toml"
 linux_template="${repo_root}/scripts/test/rt-partition/vm-aarch64-rt-linux.toml"
 zephyr_template="${repo_root}/scripts/test/rt-partition/rt-partition-zephyr.toml"
+zephyr_template="${RT_ZEPHYR_TEMPLATE:-$zephyr_template}"
 linux_config="${work}/generated-${scenario}-linux.toml"
 zephyr_config="${work}/generated-${scenario}-zephyr.toml"
 qemu_config="${work}/generated-${scenario}-qemu.toml"
@@ -141,6 +170,7 @@ fi
 zephyr_entry="$(sed -n 's/^entry_point=//p' "$work/zephyr-periodic.manifest")"
 zephyr_samples="$(sed -n 's/^sample_count=//p' "$work/zephyr-periodic.manifest")"
 zephyr_start_gated="$(sed -n 's/^start_gated=//p' "$work/zephyr-periodic.manifest")"
+zephyr_start_delay_ms="$(sed -n 's/^start_delay_ms=//p' "$work/zephyr-periodic.manifest")"
 [[ "$zephyr_entry" =~ ^0x[0-9a-fA-F]+$ ]] || {
     printf 'error: invalid Zephyr entry point in manifest: %s\n' "$zephyr_entry" >&2
     exit 1
@@ -151,6 +181,10 @@ zephyr_start_gated="$(sed -n 's/^start_gated=//p' "$work/zephyr-periodic.manifes
 }
 [[ "$zephyr_start_gated" == "1" ]] || {
     printf 'error: matrix Zephyr image must be built with ZEPHYR_START_GATED=1\n' >&2
+    exit 1
+}
+[[ "$zephyr_start_delay_ms" =~ ^[0-9]+$ ]] || {
+    printf 'error: invalid Zephyr start delay in manifest: %s\n' "$zephyr_start_delay_ms" >&2
     exit 1
 }
 rg -a -F "PERIODIC LATENCY READY" "$work/zephyr-periodic.bin" >/dev/null || {
@@ -225,9 +259,16 @@ if not found_entry_point:
 destination.write_text("\n".join(lines) + "\n")
 PY
 
-host_append_line=""
+host_bootargs=()
 if [[ -n "$dedicated_cpus" ]]; then
-    host_append_line="  \"-append\", \"dedicated_cpus=${dedicated_cpus}\","
+    host_bootargs+=("dedicated_cpus=${dedicated_cpus}")
+fi
+if [[ -n "$burner_config" ]]; then
+    host_bootargs+=("rt_burner=${burner_config}")
+fi
+host_append_line=""
+if (( ${#host_bootargs[@]} > 0 )); then
+    host_append_line="  \"-append\", \"${host_bootargs[*]}\","
 fi
 cat > "$qemu_config" <<EOF
 args = [
@@ -247,29 +288,43 @@ to_bin = true
 uefi = false
 EOF
 
+if (( vmexit_diagnostics == 1 )); then
+    vmexit_before_steps=$'cmd vmexit stat\nsleep 2'
+    vmexit_after_zephyr_steps=$'cmd vmexit stat\nsleep 2'
+    vmexit_final_steps=$'cmd vmexit stat\nsleep 2'
+else
+    vmexit_before_steps=""
+    vmexit_after_zephyr_steps=""
+    vmexit_final_steps=""
+fi
+if (( require_init_done == 1 )); then
+    init_done_step="expect ${result_drain_timeout} RT_INIT_DONE scenario=${scenario}"
+else
+    init_done_step=""
+fi
+
 cat > "$steps" <<EOF
 expect 120 Default guest initialized
 expect ${linux_start_timeout} RT_CYCLICTEST_START
 expect 60 RT_PROGRESS uptime_s=
 detach
 expect 10 \[Axvisor\] detached VM\[1\] console
-cmd vmexit stat
-sleep 2
+${vmexit_before_steps}
 cmd vm console 2
+expect 10 Attached VM\[2\] console
 expect 10 PERIODIC LATENCY READY
 send-until 60 0.5 g PERIODIC LATENCY START
 expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300
 detach
 expect 10 \[Axvisor\] detached VM\[2\] console
-cmd vmexit stat
-sleep 2
+${vmexit_after_zephyr_steps}
 cmd vm console 1
+expect 10 Attached VM\[1\] console
 sleep 1
 expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE
-expect ${result_drain_timeout} RT_INIT_DONE scenario=${scenario}
+${init_done_step}
 expect 30 \[Axvisor\] VM\[1\] stopped; returning to the management shell
-cmd vmexit stat
-sleep 2
+${vmexit_final_steps}
 qmp-quit ${qmp_sock}
 EOF
 
@@ -277,12 +332,18 @@ start_ns="$(date +%s%N)"
 printf 'rt_experiment scenario=%s mode=%s start_ns=%s expected_runtime_sec=%s\n' \
     "$scenario" "$run_mode" "$start_ns" "$expected_runtime_sec" | tee "$run_log"
 
-cd "$repo_root"
+rootfs_args=()
+if [[ -n "$rootfs_override" ]]; then
+    rootfs_args=(--rootfs "$rootfs_override")
+fi
+
+cd "$source_root"
 timeout "$timeout_sec" cargo xtask axvisor qemu \
     --config "$board_toml" \
     --qemu-config "$qemu_config" \
     --vmconfigs "$linux_config" \
     --vmconfigs "$zephyr_config" \
+    "${rootfs_args[@]}" \
     > "$build_log" 2>&1 &
 run_pid=$!
 
@@ -330,7 +391,7 @@ end_ns="$(date +%s%N)"
 elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
 printf 'rt_experiment end_ns=%s elapsed_ms=%s\n' "$end_ns" "$elapsed_ms" | tee -a "$run_log"
 
-python3 - "$run_log" "$out_dir" <<'PY'
+python3 - "$run_log" "$out_dir" "$vmexit_diagnostics" <<'PY'
 import csv
 import re
 import sys
@@ -338,6 +399,7 @@ from pathlib import Path
 
 log_path = Path(sys.argv[1])
 out = Path(sys.argv[2])
+vmexit_diagnostics = sys.argv[3] == "1"
 raw_log = log_path.read_text(errors="replace")
 progress = re.findall(
     r"^\[host_monotonic_s=([0-9.]+)\].*RT_PROGRESS uptime_s=([0-9.]+)",
@@ -358,26 +420,31 @@ else:
     (out / "progress.txt").write_text(f"markers={len(progress)}\n")
 log = re.sub(r"(?m)^\[host_monotonic_s=[0-9.]+\] ", "", raw_log)
 
-starts = [match.start() for match in re.finditer(r"VM-exit counters per physical CPU", log)]
-if len(starts) < 3:
-    raise SystemExit(f"expected at least three vmexit snapshots, found {len(starts)}")
-blocks = []
-for index, start in enumerate(starts):
-    end = starts[index + 1] if index + 1 < len(starts) else len(log)
-    block = log[start:end]
-    block = re.split(r"\n(?:\[Axvisor\]|\[driver\]|rt_experiment)", block, maxsplit=1)[0]
-    blocks.append(block.rstrip() + "\n")
-(out / "vmexit-before.txt").write_text(blocks[0])
-(out / "vmexit-zephyr-after.txt").write_text(blocks[1])
-(out / "vmexit-after.txt").write_text(blocks[-1])
-(out / "vmexit-stat.txt").write_text(
-    "\n--- before ---\n"
-    + blocks[0]
-    + "\n--- zephyr-after ---\n"
-    + blocks[1]
-    + "\n--- linux-final ---\n"
-    + blocks[-1]
-)
+if vmexit_diagnostics:
+    starts = [match.start() for match in re.finditer(r"VM-exit counters per physical CPU", log)]
+    if len(starts) < 3:
+        raise SystemExit(f"expected at least three vmexit snapshots, found {len(starts)}")
+    blocks = []
+    for index, start in enumerate(starts):
+        end = starts[index + 1] if index + 1 < len(starts) else len(log)
+        block = log[start:end]
+        block = re.split(r"\n(?:\[Axvisor\]|\[driver\]|rt_experiment)", block, maxsplit=1)[0]
+        blocks.append(block.rstrip() + "\n")
+    (out / "vmexit-before.txt").write_text(blocks[0])
+    (out / "vmexit-zephyr-after.txt").write_text(blocks[1])
+    (out / "vmexit-after.txt").write_text(blocks[-1])
+    (out / "vmexit-stat.txt").write_text(
+        "\n--- before ---\n"
+        + blocks[0]
+        + "\n--- zephyr-after ---\n"
+        + blocks[1]
+        + "\n--- linux-final ---\n"
+        + blocks[-1]
+    )
+else:
+    for name in ("vmexit-before.txt", "vmexit-zephyr-after.txt", "vmexit-after.txt"):
+        (out / name).write_text("diagnostics=disabled\n")
+    (out / "vmexit-stat.txt").write_text("diagnostics=disabled\n")
 
 header = "sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns"
 header_index = log.rfind(header)
@@ -417,12 +484,17 @@ PY
 
 python3 "$repo_root/scripts/test/rt-partition/cyclictest-hist-to-csv.py" \
     "$run_log" "$out_dir/cyclictest.csv" "$out_dir/cyclictest-summary.txt"
-python3 "$repo_root/scripts/test/rt-partition/host-periodic-ticks-to-csv.py" \
-    "$run_log" "$out_dir/host-periodic-ticks.csv" "${host_tick_args[@]}"
+if (( vmexit_diagnostics == 1 )); then
+    python3 "$repo_root/scripts/test/rt-partition/host-periodic-ticks-to-csv.py" \
+        "$run_log" "$out_dir/host-periodic-ticks.csv" "${host_tick_args[@]}"
+else
+    printf 'diagnostics=disabled\n' > "$out_dir/host-periodic-ticks.csv"
+fi
 python3 "$repo_root/scripts/test/rt_latency_stats.py" \
+    --tolerance-ns "$deadline_tolerance_ns" \
     "$out_dir/zephyr.csv" > "$out_dir/zephyr-stats.txt"
 
-axvisor_bin="$(find "$repo_root/target" -path '*/release/axvisor.bin' -type f -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
+axvisor_bin="$(find "$source_root/target" -path '*/release/axvisor.bin' -type f -printf '%T@ %p\n' | sort -nr | head -n1 | cut -d' ' -f2-)"
 [[ -n "$axvisor_bin" && -f "$axvisor_bin" ]] || { printf 'error: built axvisor.bin not found\n' >&2; exit 1; }
 strings "$axvisor_bin" | rg -F "$cmdline" >/dev/null || {
     printf 'error: generated guest cmdline is not embedded in axvisor.bin\n' >&2
@@ -430,7 +502,8 @@ strings "$axvisor_bin" | rg -F "$cmdline" >/dev/null || {
 }
 
 python3 - "$run_log" "$out_dir/cyclictest.csv" "$out_dir/cyclictest-summary.txt" \
-    "$scenario" "$run_mode" "$loops" "$duration_sec" "$elapsed_ms" <<'PY'
+    "$scenario" "$run_mode" "$loops" "$duration_sec" "$elapsed_ms" \
+    "$burner_config" "$require_init_done" <<'PY'
 import csv
 import re
 import sys
@@ -443,6 +516,8 @@ run_mode = sys.argv[5]
 loops = int(sys.argv[6])
 duration_sec = int(sys.argv[7])
 elapsed_ms = int(sys.argv[8])
+burner_config = sys.argv[9]
+require_init_done = sys.argv[10] == "1"
 log = re.sub(
     r"(?m)^\[host_monotonic_s=[0-9.]+\] ",
     "",
@@ -457,9 +532,12 @@ required = [
     "RT_CYCLICTEST_TIMING_END",
     "# Histogram",
     "RT_CYCLICTEST_COMPLETE",
-    f"RT_INIT_DONE scenario={scenario}",
     "PERIODIC LATENCY COMPLETE samples=300",
 ]
+if require_init_done:
+    required.append(f"RT_INIT_DONE scenario={scenario}")
+if burner_config:
+    required.append(f"RT_BURNER_READY cpu={burner_config.split(':', 1)[0]}")
 missing = [marker for marker in required if marker not in log]
 if missing:
     raise SystemExit("missing acceptance markers: " + ", ".join(missing))
@@ -515,20 +593,28 @@ PY
 
 {
     printf 'scenario=%s\n' "$scenario"
-    printf 'git_commit=%s\n' "$(git rev-parse HEAD)"
+    printf 'git_commit=%s\n' "$(git -C "$source_root" rev-parse HEAD)"
+    printf 'source_root=%s\n' "$source_root"
     printf 'run_mode=%s\n' "$run_mode"
     printf 'requested_loops=%s\n' "$loops"
     printf 'duration_sec=%s\n' "$duration_sec"
     printf 'cyclictest_loops=%s\n' "$cyclictest_loops"
     printf 'interval_us=%s\n' "$interval_us"
+    printf 'deadline_tolerance_ns=%s\n' "$deadline_tolerance_ns"
     printf 'expected_runtime_sec=%s\n' "$expected_runtime_sec"
     printf 'tcg_runtime_scale=%s\n' "$runtime_scale"
     printf 'runtime_scale_source=%s\n' "$runtime_scale_source"
     printf 'expected_wall_runtime_sec=%s\n' "$expected_wall_runtime_sec"
     printf 'elapsed_ms=%s\n' "$elapsed_ms"
     printf 'dedicated_cpus=%s\n' "${dedicated_cpus:-none}"
+    printf 'rt_burner=%s\n' "${burner_config:-disabled}"
+    printf 'vmexit_diagnostics=%s\n' "$vmexit_diagnostics"
+    printf 'require_init_done=%s\n' "$require_init_done"
+    printf 'rootfs_override=%s\n' "${rootfs_override:-none}"
     printf 'zephyr_guest_type=%s\n' "$zephyr_guest_type"
+    printf 'zephyr_start_delay_ms=%s\n' "$zephyr_start_delay_ms"
     printf 'progress_timeout_sec=%s\n' "$progress_timeout"
+    printf 'zephyr_timeout_sec=%s\n' "$zephyr_timeout"
     printf 'result_drain_timeout_sec=%s\n' "$result_drain_timeout"
     printf 'timestamp_format=host_monotonic_s=seconds\n'
     printf 'realtime_trace=disabled\n'
@@ -537,7 +623,8 @@ PY
     printf 'linux_load_cpu=%s\n' "$load_cpu"
     printf 'guest_cmdline=%s\n' "$cmdline"
     printf 'axvisor_bin=%s\n' "$axvisor_bin"
-    printf 'build_command=cargo xtask axvisor qemu --config %s --qemu-config %s --vmconfigs %s --vmconfigs %s\n' \
+    printf 'build_command=cd %s && cargo xtask axvisor qemu --config %s --qemu-config %s --vmconfigs %s --vmconfigs %s\n' \
+        "$source_root" \
         "$board_toml" "$qemu_config" "$linux_config" "$zephyr_config"
 } > "$out_dir/meta.txt"
 

@@ -9,9 +9,26 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[3]
 RUNNER = (ROOT / "scripts/test/rt-partition/run-cyclictest.sh").read_text()
 INIT = (ROOT / "scripts/test/rt-partition/rt-linux-init.sh").read_text()
+P1_RUNNER = (ROOT / "scripts/test/rt-partition/run-p1-comparison.sh").read_text()
 
 
 class RtLinuxAffinityTest(unittest.TestCase):
+    def test_p1_runner_interleaves_official_baseline_and_dedicated_runs(self):
+        baseline = P1_RUNNER.index("P1_RUN_START variant=baseline")
+        modified = P1_RUNNER.index("P1_RUN_START variant=modified")
+        self.assertLess(baseline, modified)
+        self.assertIn('RT_SOURCE_ROOT="$baseline_root"', P1_RUNNER)
+        self.assertIn("RT_SCENARIO=stress-noiso", P1_RUNNER)
+        self.assertIn("RT_SCENARIO=stress-dedicated", P1_RUNNER)
+        self.assertIn('RT_P1_REPEATS:-3', P1_RUNNER)
+        self.assertIn('RT_P1_MAX_ATTEMPTS:-3', P1_RUNNER)
+        self.assertIn("run_with_retries", P1_RUNNER)
+        self.assertIn('compare-rt-runs.py', P1_RUNNER)
+
+    def test_p1_runner_requires_identical_burner_implementations(self):
+        self.assertIn("cmp -s", P1_RUNNER)
+        self.assertIn("do not use the same RT burner implementation", P1_RUNNER)
+
     def test_rt_partition_only_silences_the_zephyr_host_cpu(self):
         stress_rt = RUNNER.split("stress-rt)", 1)[1].split(";;", 1)[0]
         self.assertIn('dedicated_cpus="1"', stress_rt)
@@ -23,7 +40,7 @@ class RtLinuxAffinityTest(unittest.TestCase):
         self.assertIn("stress-dedicated|stress-rt)", INIT)
 
     def test_runner_allows_tcg_time_for_zephyr_sampling(self):
-        self.assertIn("zephyr_timeout=180", RUNNER)
+        self.assertIn('zephyr_timeout="${RT_ZEPHYR_TIMEOUT_SEC:-180}"', RUNNER)
         self.assertIn("expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE", RUNNER)
 
     def test_all_formal_scenarios_budget_for_slow_tcg_guest_time(self):
@@ -109,12 +126,52 @@ class RtLinuxAffinityTest(unittest.TestCase):
     def test_default_histogram_bound_keeps_formal_samples_in_range(self):
         self.assertIn('maxlat_us="${RT_MAXLAT_US:-20000}"', RUNNER)
 
+    def test_deadline_tolerance_is_explicit_and_archived(self):
+        self.assertIn(
+            'deadline_tolerance_ns="${RT_DEADLINE_TOLERANCE_NS:-1000000}"',
+            RUNNER,
+        )
+        self.assertIn('--tolerance-ns "$deadline_tolerance_ns"', RUNNER)
+        self.assertIn("deadline_tolerance_ns=%s", RUNNER)
+
+    def test_runner_can_build_an_official_baseline_worktree(self):
+        self.assertIn('source_root="${RT_SOURCE_ROOT:-$repo_root}"', RUNNER)
+        self.assertIn('cd "$source_root"', RUNNER)
+        self.assertIn('find "$source_root/target"', RUNNER)
+        self.assertIn('git -C "$source_root" rev-parse HEAD', RUNNER)
+
+    def test_benchmark_burner_is_explicit_and_required_when_enabled(self):
+        self.assertIn('burner_config="${RT_BURNER:-}"', RUNNER)
+        self.assertIn('host_bootargs+=("rt_burner=${burner_config}")', RUNNER)
+        self.assertIn('required.append(f"RT_BURNER_READY cpu=', RUNNER)
+        self.assertIn("rt_burner=%s", RUNNER)
+
+    def test_vmexit_diagnostics_can_be_disabled_for_upstream_dev(self):
+        self.assertIn('vmexit_diagnostics="${RT_VMEXIT_DIAGNOSTICS:-1}"', RUNNER)
+        self.assertIn("if vmexit_diagnostics:", RUNNER)
+        self.assertIn('printf \'diagnostics=disabled\\n\'', RUNNER)
+
+    def test_runner_accepts_a_baseline_specific_zephyr_template(self):
+        self.assertIn('zephyr_template="${RT_ZEPHYR_TEMPLATE:-$zephyr_template}"', RUNNER)
+
+    def test_runner_can_reuse_a_local_rootfs_to_avoid_baseline_downloads(self):
+        self.assertIn('rootfs_override="${RT_ROOTFS:-}"', RUNNER)
+        self.assertIn('rootfs_args=(--rootfs "$rootfs_override")', RUNNER)
+        self.assertIn('"${rootfs_args[@]}"', RUNNER)
+
+    def test_upstream_console_can_use_vm_stop_as_the_final_guest_marker(self):
+        self.assertIn('require_init_done="${RT_REQUIRE_INIT_DONE:-1}"', RUNNER)
+        self.assertIn("if require_init_done:", RUNNER)
+        self.assertIn('init_done_step="expect ${result_drain_timeout} RT_INIT_DONE', RUNNER)
+        self.assertIn("require_init_done=%s", RUNNER)
+
     def test_outer_timeout_covers_boot_and_all_script_phases(self):
         self.assertIn("minimum_outer_timeout=$((", RUNNER)
         self.assertIn("timeout_sec >= minimum_outer_timeout", RUNNER)
 
     def test_zephyr_sampling_starts_inside_the_linux_workload_window(self):
         linux_start = RUNNER.index("expect ${linux_start_timeout} RT_CYCLICTEST_START")
+        zephyr_attach = RUNNER.index(r"expect 10 Attached VM\[2\] console")
         zephyr_gate = RUNNER.index("send-until 60 0.5 g PERIODIC LATENCY START")
         zephyr_complete = RUNNER.index(
             "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300"
@@ -123,11 +180,23 @@ class RtLinuxAffinityTest(unittest.TestCase):
             "expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE"
         )
         self.assertLess(linux_start, zephyr_gate)
+        self.assertLess(zephyr_attach, zephyr_gate)
         self.assertLess(zephyr_gate, zephyr_complete)
         self.assertLess(zephyr_complete, linux_complete)
         self.assertIn('zephyr_start_gated="$(sed -n', RUNNER)
         self.assertIn('[[ "$zephyr_start_gated" == "1" ]]', RUNNER)
         self.assertIn("send-until 60 0.5 g PERIODIC LATENCY START", RUNNER)
+
+    def test_runner_confirms_console_attachment_before_guest_input(self):
+        zephyr_command = RUNNER.index("cmd vm console 2")
+        zephyr_attached = RUNNER.index(r"expect 10 Attached VM\[2\] console")
+        zephyr_gate = RUNNER.index("send-until 60 0.5 g PERIODIC LATENCY START")
+        linux_command = RUNNER.index("cmd vm console 1")
+        linux_attached = RUNNER.index(r"expect 10 Attached VM\[1\] console")
+
+        self.assertLess(zephyr_command, zephyr_attached)
+        self.assertLess(zephyr_attached, zephyr_gate)
+        self.assertLess(linux_command, linux_attached)
 
     def test_vmexit_snapshots_bound_the_zephyr_sampling_window(self):
         self.assertIn('expected at least three vmexit snapshots', RUNNER)
@@ -135,7 +204,7 @@ class RtLinuxAffinityTest(unittest.TestCase):
         zephyr_complete = RUNNER.index(
             "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300"
         )
-        middle_snapshot = RUNNER.index("cmd vmexit stat", zephyr_complete)
+        middle_snapshot = RUNNER.index("${vmexit_after_zephyr_steps}", zephyr_complete)
         linux_attach = RUNNER.index("cmd vm console 1", middle_snapshot)
         self.assertLess(zephyr_complete, middle_snapshot)
         self.assertLess(middle_snapshot, linux_attach)

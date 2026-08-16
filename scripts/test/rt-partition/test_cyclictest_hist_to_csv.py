@@ -43,6 +43,10 @@ class CyclictestHistogramTest(unittest.TestCase):
             self.assertIn("overflow_samples=2\n", summary)
             self.assertIn("total_samples=5\n", summary)
             self.assertIn("max_latency_us=500\n", summary)
+            self.assertIn("p90_latency_us=3\n", summary)
+            self.assertIn("p90_latency_censored=1\n", summary)
+            self.assertIn("p99_latency_us=3\n", summary)
+            self.assertIn("p99_latency_censored=1\n", summary)
 
     def test_host_timestamp_prefix_does_not_hide_histogram_markers(self):
         log = """\
@@ -68,6 +72,39 @@ class CyclictestHistogramTest(unittest.TestCase):
 
             self.assertEqual(result.returncode, 0, result.stderr)
             self.assertEqual(csv_path.read_text(), "bucket_us,count\n1,2\n")
+
+    def test_percentiles_are_computed_from_histogram_counts(self):
+        log = """\
+[VM 1] # Histogram
+[VM 1] 000001 000050
+[VM 1] 000002 000040
+[VM 1] 000003 000009
+[VM 1] 000004 000001
+[VM 1] # Min Latencies: 00001
+[VM 1] # Avg Latencies: 00002
+[VM 1] # Max Latencies: 00004
+[VM 1] # Histogram Overflows: 00000
+"""
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp = Path(temp_dir)
+            log_path = temp / "run.log"
+            csv_path = temp / "histogram.csv"
+            summary_path = temp / "summary.txt"
+            log_path.write_text(log)
+
+            subprocess.run(
+                [sys.executable, str(SCRIPT), str(log_path), str(csv_path), str(summary_path)],
+                check=True,
+                text=True,
+                capture_output=True,
+            )
+
+            summary = summary_path.read_text()
+            self.assertIn("p90_latency_us=2\n", summary)
+            self.assertIn("p95_latency_us=3\n", summary)
+            self.assertIn("p99_latency_us=3\n", summary)
+            self.assertIn("p99_9_latency_us=4\n", summary)
+            self.assertIn("p99_9_latency_censored=0\n", summary)
 
 
 if __name__ == "__main__":

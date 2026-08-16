@@ -16,6 +16,7 @@ Usage: cyclictest-hist-to-csv.py <log> <out.csv> <summary.txt>
 from __future__ import annotations
 
 import argparse
+import math
 import re
 import sys
 from pathlib import Path
@@ -57,7 +58,25 @@ def extract_histogram(text: str) -> list[tuple[int, int]]:
     return buckets
 
 
-def extract_summary(text: str, bucket_samples: int) -> dict[str, int]:
+def histogram_percentile(
+    buckets: list[tuple[int, int]], overflow_samples: int, fraction: float
+) -> tuple[int, int]:
+    total_samples = sum(count for _, count in buckets) + overflow_samples
+    if total_samples == 0:
+        return 0, 0
+
+    rank = math.ceil(fraction * total_samples)
+    cumulative = 0
+    for bucket, count in buckets:
+        cumulative += count
+        if rank <= cumulative:
+            return bucket, 0
+
+    # Histogram overflow values are known only to exceed the last bucket.
+    return buckets[-1][0] + 1, 1
+
+
+def extract_summary(text: str, buckets: list[tuple[int, int]]) -> dict[str, int]:
     lines = [normalize_console_line(line) for line in text.splitlines()]
     marker_indexes = [index for index, line in enumerate(lines) if line == "# Histogram"]
     if not marker_indexes:
@@ -81,8 +100,19 @@ def extract_summary(text: str, bucket_samples: int) -> dict[str, int]:
     missing = [name for name in patterns if name not in metrics]
     if missing:
         raise ValueError("cyclictest summary is missing: " + ", ".join(missing))
-    metrics["bucket_samples"] = bucket_samples
-    metrics["total_samples"] = bucket_samples + metrics["overflow_samples"]
+    metrics["bucket_samples"] = sum(count for _, count in buckets)
+    metrics["total_samples"] = metrics["bucket_samples"] + metrics["overflow_samples"]
+    for name, fraction in (
+        ("p90", 0.90),
+        ("p95", 0.95),
+        ("p99", 0.99),
+        ("p99_9", 0.999),
+    ):
+        value, censored = histogram_percentile(
+            buckets, metrics["overflow_samples"], fraction
+        )
+        metrics[f"{name}_latency_us"] = value
+        metrics[f"{name}_latency_censored"] = censored
     return metrics
 
 
@@ -96,7 +126,7 @@ def main() -> int:
     try:
         text = args.log.read_text()
         buckets = extract_histogram(text)
-        summary = extract_summary(text, sum(count for _, count in buckets))
+        summary = extract_summary(text, buckets)
     except (OSError, ValueError) as error:
         print(f"error: {error}", file=sys.stderr)
         return 2
@@ -110,6 +140,14 @@ def main() -> int:
             "min_latency_us",
             "avg_latency_us",
             "max_latency_us",
+            "p90_latency_us",
+            "p90_latency_censored",
+            "p95_latency_us",
+            "p95_latency_censored",
+            "p99_latency_us",
+            "p99_latency_censored",
+            "p99_9_latency_us",
+            "p99_9_latency_censored",
             "bucket_samples",
             "overflow_samples",
             "total_samples",
