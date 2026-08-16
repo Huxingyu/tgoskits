@@ -8,6 +8,8 @@ stdout, and executes a small step script:
     raw <python-bytes>         write raw bytes (e.g. raw \\x18h for Ctrl+X h)
     cmd <text>                 write text followed by a newline (shell command)
     expect <seconds> <regex>   wait until the regex appears in the output
+    send-until <seconds> <interval> <python-bytes> <regex>
+                               resend bytes until the regex appears
     attach <vm_id>             switch the attached guest console to <vm_id>
     detach                     return from the guest console to the shell
     dump-pcap <prefix>         stream `virtnet capture dump` and write
@@ -19,11 +21,13 @@ Example:
 """
 
 import argparse
+import json
 import re
 import socket
 import struct
 import sys
 import time
+from pathlib import Path
 
 DUMP_BEGIN = "CAPDUMP_BEGIN"
 DUMP_END = "CAPDUMP_END"
@@ -38,8 +42,85 @@ PCAP_GLOBAL_HEADER = bytes.fromhex(
 )
 
 
+class QmpSession:
+    def __init__(self, sock_path: str):
+        self.conn = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        self.conn.settimeout(3)
+        self.conn.connect(sock_path)
+        self.stream = self.conn.makefile("rwb", buffering=0)
+        greeting = self._read_message()
+        if "QMP" not in greeting:
+            raise RuntimeError(f"invalid QMP greeting: {greeting!r}")
+        self.execute("qmp_capabilities")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, _exc_type, _exc, _traceback):
+        self.stream.close()
+        self.conn.close()
+        return False
+
+    def _read_message(self):
+        while True:
+            line = self.stream.readline()
+            if not line:
+                raise RuntimeError("QMP connection closed before a response arrived")
+            message = json.loads(line)
+            if "event" not in message:
+                return message
+
+    def execute(self, command, arguments=None):
+        request = {"execute": command}
+        if arguments is not None:
+            request["arguments"] = arguments
+        self.stream.write(json.dumps(request, separators=(",", ":")).encode() + b"\n")
+        return self._read_message()
+
+
+def collect_qmp_forensics(qmp_sock: str, artifact_dir: str) -> None:
+    destination = Path(artifact_dir)
+    destination.mkdir(parents=True, exist_ok=True)
+    requests = [
+        ("query-status.json", "query-status", None),
+        ("query-cpus-fast.json", "query-cpus-fast", None),
+        ("query-chardev.json", "query-chardev", None),
+        (
+            "info-registers-1.json",
+            "human-monitor-command",
+            {"command-line": "info registers -a"},
+        ),
+        (
+            "info-registers-2.json",
+            "human-monitor-command",
+            {"command-line": "info registers -a"},
+        ),
+    ]
+    try:
+        with QmpSession(qmp_sock) as qmp:
+            for index, (name, command, arguments) in enumerate(requests):
+                try:
+                    response = qmp.execute(command, arguments)
+                except Exception as error:  # Preserve the remaining best-effort snapshots.
+                    response = {"driver-error": str(error), "execute": command}
+                (destination / name).write_text(
+                    json.dumps(response, indent=2, sort_keys=True) + "\n"
+                )
+                if index == 3:
+                    time.sleep(0.5)
+    except Exception as error:
+        (destination / "qmp-error.txt").write_text(f"{type(error).__name__}: {error}\n")
+
+
 class ConsoleDriver:
-    def __init__(self, sock_path: str, log_path: str):
+    def __init__(
+        self,
+        sock_path: str,
+        log_path: str,
+        timestamp_lines: bool = False,
+        progress_regex: str | None = None,
+        progress_timeout: float | None = None,
+    ):
         deadline = time.time() + 120
         self.conn = None
         while time.time() < deadline:
@@ -50,16 +131,63 @@ class ConsoleDriver:
                 self.conn = conn
                 break
             except (FileNotFoundError, ConnectionRefusedError, OSError):
-                time.sleep(2)
+                time.sleep(0.05)
         if self.conn is None:
             raise SystemExit(f"error: serial socket {sock_path} never appeared")
         self.log_file = open(log_path, "a", encoding="utf-8", errors="replace")
+        self.timestamp_lines = timestamp_lines
+        self.log_pending = ""
+        self.progress_pattern = re.compile(progress_regex) if progress_regex else None
+        self.progress_timeout = progress_timeout
+        self.last_progress = None
+        self.progress_tail = ""
+        self.watchdog_error = None
         self.tail = b""
         self.dump_lines = []
         self.dumping = False
         self.last_vm = None
         self.attached = False
         self.closed = False
+
+    def write_log(self, text: str) -> None:
+        if not self.timestamp_lines:
+            self.log_file.write(text)
+            self.log_file.flush()
+            return
+        self.log_pending += text
+        while "\n" in self.log_pending:
+            line, self.log_pending = self.log_pending.split("\n", 1)
+            self.log_file.write(f"[host_monotonic_s={time.monotonic():.6f}] {line}\n")
+        self.log_file.flush()
+
+    def observe_progress(self, text: str) -> None:
+        if self.progress_pattern is None:
+            return
+        self.progress_tail = (self.progress_tail + text)[-4096:]
+        if self.progress_pattern.search(self.progress_tail):
+            self.last_progress = time.monotonic()
+            self.progress_tail = ""
+
+    def watchdog_expired(self) -> bool:
+        if self.last_progress is None or self.progress_timeout is None:
+            return False
+        stalled_for = time.monotonic() - self.last_progress
+        if stalled_for <= self.progress_timeout:
+            return False
+        self.watchdog_error = (
+            f"no serial progress matching {self.progress_pattern.pattern!r} "
+            f"for {stalled_for:.1f} seconds"
+        )
+        return True
+
+    def close(self) -> None:
+        if self.log_pending:
+            self.log_file.write(
+                f"[host_monotonic_s={time.monotonic():.6f}] {self.log_pending}"
+            )
+            self.log_pending = ""
+        self.conn.close()
+        self.log_file.close()
 
     def poll_reads(self) -> None:
         budget = time.monotonic() + 0.25
@@ -77,8 +205,8 @@ class ConsoleDriver:
             text = data.decode("utf-8", errors="replace")
             sys.stdout.write(text)
             sys.stdout.flush()
-            self.log_file.write(text)
-            self.log_file.flush()
+            self.write_log(text)
+            self.observe_progress(text)
             if self.dumping:
                 self.dump_lines.append(text)
             self.tail = (self.tail + data)[-1_000_000:]
@@ -93,6 +221,8 @@ class ConsoleDriver:
         end = time.time() + seconds
         while time.time() < end and not self.closed:
             self.poll_reads()
+            if self.watchdog_expired():
+                return False
             if re.search(pattern, self.tail.decode("utf-8", errors="replace")):
                 return True
             time.sleep(0.3)
@@ -102,7 +232,28 @@ class ConsoleDriver:
         end = time.time() + seconds
         while time.time() < end and not self.closed:
             self.poll_reads()
+            if self.watchdog_expired():
+                return
             time.sleep(0.3)
+
+    def hold_ignoring_watchdog(self, seconds: float) -> None:
+        end = time.monotonic() + seconds
+        while time.monotonic() < end and not self.closed:
+            self.poll_reads()
+            time.sleep(0.1)
+
+    def send_until(
+        self, payload: bytes, pattern: str, seconds: float, interval: float
+    ) -> bool:
+        deadline = time.monotonic() + seconds
+        while time.monotonic() < deadline and not self.closed:
+            self.conn.sendall(payload)
+            remaining = deadline - time.monotonic()
+            if self.wait_for(pattern, min(interval, max(0.0, remaining))):
+                return True
+            if self.watchdog_error:
+                return False
+        return False
 
     def attach(self, vm_id: int) -> None:
         for _ in range(4):
@@ -122,6 +273,37 @@ class ConsoleDriver:
 
     def dump_pcap(self, prefix: str) -> None:
         self.dump_lines = []
+
+    def collect_forensics(self, qmp_sock: str | None, artifact_dir: str | None) -> None:
+        if not artifact_dir:
+            return
+        destination = Path(artifact_dir)
+        destination.mkdir(parents=True, exist_ok=True)
+        self.write_log("\n[driver] progress watchdog fired; collecting post-stall forensics\n")
+
+        if qmp_sock:
+            collect_qmp_forensics(qmp_sock, artifact_dir)
+        else:
+            (destination / "qmp-error.txt").write_text("QMP socket was not configured\n")
+
+        actions = [
+            (b"\x18h", "detach to Axvisor shell"),
+            (b"rt stat\n", "RT snapshot 1"),
+            (b"vmexit stat\n", "VM-exit snapshot 1"),
+            (b"rt stat\n", "RT snapshot 2"),
+            (b"vmexit stat\n", "VM-exit snapshot 2"),
+            (b"vm console 1\n", "reattach Linux VM"),
+        ]
+        action_log = []
+        for payload, description in actions:
+            try:
+                self.conn.sendall(payload)
+                action_log.append(f"sent: {description}")
+            except OSError as error:
+                action_log.append(f"failed: {description}: {error}")
+            self.hold_ignoring_watchdog(1.0)
+        (destination / "serial-actions.txt").write_text("\n".join(action_log) + "\n")
+        (destination / "serial-tail.bin").write_bytes(self.tail)
         self.dumping = True
         self.conn.sendall(b"virtnet capture dump\n")
         deadline = time.time() + 60
@@ -185,15 +367,43 @@ class ConsoleDriver:
         print("warning: could not quit QEMU over QMP", file=sys.stderr)
 
 
+def report_watchdog_failure(driver: ConsoleDriver, args) -> int:
+    print(f"error: {driver.watchdog_error}", file=sys.stderr)
+    driver.collect_forensics(args.qmp_sock, args.forensics_dir)
+    return 4
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("sock", help="serial UNIX socket path")
     parser.add_argument("log", help="console log file to append to")
     parser.add_argument("--script", help="step script file")
     parser.add_argument("--verbose", action="store_true", help="log step progress to stderr")
+    parser.add_argument(
+        "--timestamp-lines",
+        action="store_true",
+        help="prefix persisted serial lines with the host monotonic timestamp",
+    )
+    parser.add_argument("--progress-regex", help="serial regex that resets the progress watchdog")
+    parser.add_argument(
+        "--progress-timeout",
+        type=float,
+        help="fail after this many host seconds without another progress marker",
+    )
+    parser.add_argument("--qmp-sock", help="QMP socket used for post-stall snapshots")
+    parser.add_argument(
+        "--forensics-dir",
+        help="directory for best-effort serial and QMP post-stall artifacts",
+    )
     args = parser.parse_args()
 
-    driver = ConsoleDriver(args.sock, args.log)
+    driver = ConsoleDriver(
+        args.sock,
+        args.log,
+        timestamp_lines=args.timestamp_lines,
+        progress_regex=args.progress_regex,
+        progress_timeout=args.progress_timeout,
+    )
 
     steps = []
     if args.script:
@@ -224,8 +434,27 @@ def main() -> int:
         elif step.startswith("expect "):
             _, seconds, pattern = step.split(" ", 2)
             if not driver.wait_for(pattern, float(seconds)):
+                if driver.watchdog_error:
+                    status = report_watchdog_failure(driver, args)
+                    driver.close()
+                    return status
                 print(
                     f"error: expected pattern {pattern!r} did not appear",
+                    file=sys.stderr,
+                )
+                return 2
+        elif step.startswith("send-until "):
+            _, seconds, interval, payload, pattern = step.split(" ", 4)
+            encoded = payload.encode().decode("unicode_escape").encode("latin-1")
+            if not driver.send_until(
+                encoded, pattern, float(seconds), float(interval)
+            ):
+                if driver.watchdog_error:
+                    status = report_watchdog_failure(driver, args)
+                    driver.close()
+                    return status
+                print(
+                    f"error: pattern {pattern!r} did not appear while resending input",
                     file=sys.stderr,
                 )
                 return 2
@@ -243,8 +472,7 @@ def main() -> int:
             return 3
 
     driver.hold(2)
-    driver.conn.close()
-    driver.log_file.close()
+    driver.close()
     return 0
 
 
