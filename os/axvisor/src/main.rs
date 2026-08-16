@@ -35,6 +35,7 @@ mod guest_console;
 mod manager;
 #[cfg(feature = "openrace-realtime")]
 mod realtime_probe;
+mod rt_burner;
 mod shell;
 mod virtio_net;
 
@@ -85,6 +86,7 @@ fn main() {
     let default_vms = manager::AxvmManager::vm_list();
     guest_console::configure_host_console_reader(&default_vms)
         .unwrap_or_else(|error| panic!("failed to configure host console input: {error:#}"));
+    rt_burner::start();
     let started_vms = manager.launch_default_vms();
     guest_console::attach_default(started_vms);
     #[cfg(feature = "openrace-realtime")]
