@@ -10,6 +10,7 @@
 | Item | Purpose | Data / status |
 |---|---|---|
 | `24h-exploration-retrospective.md` | full exploration, failures, fixes, experiments, scoring, and remaining work | current end-to-end retrospective |
+| `phase2-plan.md` | next-phase execution plan: statistics protocol, contention baseline, WFI fast path, timer-lock split, deferred preemption, board port | supersedes retrospective section 14 |
 | `SESSION-SUMMARY.md` | current implementation and remaining work | updated after code audit |
 | `WORKLOG.md` | chronological implementation/debug record | includes failed preempt/IPI paths |
 | `allocation-table.md` | CPU, memory, device, interrupt ownership | current measurement/load topology |
