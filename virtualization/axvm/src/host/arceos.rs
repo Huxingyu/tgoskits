@@ -25,6 +25,11 @@ const CPU_ENABLE_WAIT_TIMEOUT: Duration = Duration::from_secs(5);
 
 static ARCEOS_HOST: ArceOsHost = ArceOsHost;
 
+fn publish_cpu_enable_completion(completed: &AtomicUsize, after_publish: impl FnOnce(usize)) {
+    let completed = completed.fetch_add(1, Ordering::Release) + 1;
+    after_publish(completed);
+}
+
 pub(crate) fn arceos_host() -> &'static ArceOsHost {
     &ARCEOS_HOST
 }
@@ -348,8 +353,12 @@ impl HostPlatform for ArceOsHost {
                     info!("Core {cpu_id} is initializing hardware virtualization support...");
                     host.enable_virtualization_on_current_cpu()
                         .expect("failed to enable hardware virtualization");
-                    info!("Hardware virtualization support enabled on core {cpu_id}");
-                    let _ = CORES.fetch_add(1, Ordering::Release);
+                    publish_cpu_enable_completion(&CORES, |completed| {
+                        info!(
+                            "Hardware virtualization support enabled on core {cpu_id} \
+                             ({completed}/{cpu_count})"
+                        );
+                    });
                 },
                 std::format!("axvm-hv-init-{cpu_id}"),
                 modules::ax_task::default_task_stack_size(),
@@ -381,5 +390,35 @@ impl HostPlatform for ArceOsHost {
             ));
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::{Arc, Barrier};
+
+    use super::*;
+
+    #[test]
+    fn cpu_enable_completion_is_published_before_followup_work() {
+        let completed = Arc::new(AtomicUsize::new(0));
+        let callback_entered = Arc::new(Barrier::new(2));
+        let release_callback = Arc::new(Barrier::new(2));
+        let worker_completed = completed.clone();
+        let worker_entered = callback_entered.clone();
+        let worker_release = release_callback.clone();
+
+        let worker = std::thread::spawn(move || {
+            publish_cpu_enable_completion(&worker_completed, |published| {
+                assert_eq!(published, 1);
+                worker_entered.wait();
+                worker_release.wait();
+            });
+        });
+
+        callback_entered.wait();
+        assert_eq!(completed.load(Ordering::Acquire), 1);
+        release_callback.wait();
+        worker.join().unwrap();
     }
 }
