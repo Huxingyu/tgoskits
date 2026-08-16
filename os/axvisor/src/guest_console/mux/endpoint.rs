@@ -14,6 +14,9 @@ pub(super) struct GuestConsoleEndpoint {
     active: AtomicBool,
     input: IrqSafeMutex<ByteRing>,
     output: IrqSafeMutex<ByteRing>,
+    input_enqueued: AtomicUsize,
+    input_drained: AtomicUsize,
+    input_dropped: AtomicUsize,
     output_enqueued: AtomicUsize,
     output_drained: AtomicUsize,
     output_dropped: AtomicUsize,
@@ -22,6 +25,10 @@ pub(super) struct GuestConsoleEndpoint {
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub(super) struct EndpointSnapshot {
     pub(super) active: bool,
+    pub(super) input_enqueued: usize,
+    pub(super) input_drained: usize,
+    pub(super) input_dropped: usize,
+    pub(super) input_pending: usize,
     pub(super) output_enqueued: usize,
     pub(super) output_drained: usize,
     pub(super) output_dropped: usize,
@@ -34,6 +41,9 @@ impl GuestConsoleEndpoint {
             active: AtomicBool::new(true),
             input: IrqSafeMutex::new(ByteRing::new(INPUT_QUEUE_CAPACITY)),
             output: IrqSafeMutex::new(ByteRing::new(OUTPUT_QUEUE_CAPACITY)),
+            input_enqueued: AtomicUsize::new(0),
+            input_drained: AtomicUsize::new(0),
+            input_dropped: AtomicUsize::new(0),
             output_enqueued: AtomicUsize::new(0),
             output_drained: AtomicUsize::new(0),
             output_dropped: AtomicUsize::new(0),
@@ -41,8 +51,15 @@ impl GuestConsoleEndpoint {
     }
 
     pub(super) fn push_input(&self, bytes: &[u8]) {
+        if bytes.is_empty() || !self.active.load(Ordering::Acquire) {
+            return;
+        }
+        let mut input = self.input.lock();
         if self.active.load(Ordering::Acquire) {
-            self.input.lock().push(bytes);
+            let dropped = input.push(bytes);
+            self.input_enqueued
+                .fetch_add(bytes.len(), Ordering::Relaxed);
+            self.input_dropped.fetch_add(dropped, Ordering::Relaxed);
         }
     }
 
@@ -50,7 +67,9 @@ impl GuestConsoleEndpoint {
         if !self.active.load(Ordering::Acquire) {
             return 0;
         }
-        self.input.lock().read(buffer)
+        let count = self.input.lock().read(buffer);
+        self.input_drained.fetch_add(count, Ordering::Relaxed);
+        count
     }
 
     pub(super) fn write_output(&self, bytes: &[u8]) {
@@ -89,9 +108,14 @@ impl GuestConsoleEndpoint {
     }
 
     pub(super) fn snapshot(&self) -> EndpointSnapshot {
+        let input_pending = self.input.lock().pending.len();
         let output_pending = self.output.lock().pending.len();
         EndpointSnapshot {
             active: self.active.load(Ordering::Relaxed),
+            input_enqueued: self.input_enqueued.load(Ordering::Relaxed),
+            input_drained: self.input_drained.load(Ordering::Relaxed),
+            input_dropped: self.input_dropped.load(Ordering::Relaxed),
+            input_pending,
             output_enqueued: self.output_enqueued.load(Ordering::Relaxed),
             output_drained: self.output_drained.load(Ordering::Relaxed),
             output_dropped: self.output_dropped.load(Ordering::Relaxed),
@@ -240,5 +264,24 @@ mod tests {
         let drained = endpoint.snapshot();
         assert_eq!(drained.output_drained, 5);
         assert_eq!(drained.output_pending, 0);
+    }
+
+    #[cfg_attr(axtest, axtest::axtest)]
+    #[cfg_attr(not(axtest), test)]
+    fn input_snapshot_tracks_enqueue_drain_drop_and_pending_bytes() {
+        let endpoint = GuestConsoleEndpoint::new();
+        endpoint.push_input(&vec![b'a'; INPUT_QUEUE_CAPACITY]);
+        endpoint.push_input(b"tail");
+
+        let queued = endpoint.snapshot();
+        assert_eq!(queued.input_enqueued, INPUT_QUEUE_CAPACITY + 4);
+        assert_eq!(queued.input_dropped, 4);
+        assert_eq!(queued.input_pending, INPUT_QUEUE_CAPACITY);
+
+        let mut input = [0; 8];
+        assert_eq!(endpoint.read_input(&mut input), input.len());
+        let drained = endpoint.snapshot();
+        assert_eq!(drained.input_drained, input.len());
+        assert_eq!(drained.input_pending, INPUT_QUEUE_CAPACITY - input.len());
     }
 }

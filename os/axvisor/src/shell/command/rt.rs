@@ -31,6 +31,20 @@ fn rt_stat(_cmd: &ParsedCommand) {
     }
     println!("  lr_skips={}", runtime.lr_skips);
 
+    println!("RT device-poll counters:");
+    for vm in crate::manager::AxvmManager::vm_list() {
+        if let Ok(counts) = vm.device_poll_runtime_counts() {
+            println!(
+                "  vm={} published={} kicked={} consumed={} pending={}",
+                vm.id(),
+                counts.published,
+                counts.kicked,
+                counts.consumed,
+                counts.pending
+            );
+        }
+    }
+
     println!("RT AxVM timer counters:");
     for counts in runtime.timers {
         if counts.registered != 0
@@ -62,9 +76,15 @@ fn rt_stat(_cmd: &ParsedCommand) {
     );
     for counts in console.guests {
         println!(
-            "  vm={} active={} enqueued={} drained={} dropped={} pending={}",
+            "  vm={} active={} input_enqueued={} input_drained={} input_dropped={} \
+             input_pending={} output_enqueued={} output_drained={} output_dropped={} \
+             output_pending={}",
             counts.vm_id,
             counts.active,
+            counts.input_enqueued,
+            counts.input_drained,
+            counts.input_dropped,
+            counts.input_pending,
             counts.output_enqueued,
             counts.output_drained,
             counts.output_dropped,

@@ -51,6 +51,10 @@ pub enum ConsoleInputEvent {
 pub(crate) struct GuestConsoleCounts {
     pub vm_id: VMId,
     pub active: bool,
+    pub input_enqueued: usize,
+    pub input_drained: usize,
+    pub input_dropped: usize,
+    pub input_pending: usize,
     pub output_enqueued: usize,
     pub output_drained: usize,
     pub output_dropped: usize,
@@ -522,6 +526,10 @@ impl ConsoleCore {
                     GuestConsoleCounts {
                         vm_id,
                         active: snapshot.active,
+                        input_enqueued: snapshot.input_enqueued,
+                        input_drained: snapshot.input_drained,
+                        input_dropped: snapshot.input_dropped,
+                        input_pending: snapshot.input_pending,
                         output_enqueued: snapshot.output_enqueued,
                         output_drained: snapshot.output_drained,
                         output_dropped: snapshot.output_dropped,
