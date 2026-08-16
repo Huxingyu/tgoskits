@@ -1,0 +1,190 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+     Running `target/debug/tg-xtask axvisor qemu --config /home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rt.toml --qemu-config /home/huhu/tgoskits-rt/tmp/rt-partition/generated-idle-qemu.toml --vmconfigs /home/huhu/tgoskits-rt/tmp/rt-partition/generated-idle-linux.toml --vmconfigs /home/huhu/tgoskits-rt/tmp/rt-partition/generated-idle-zephyr.toml`
+[2026-08-15T00:15:47Z INFO  axbuild::context] Workspace root: /home/huhu/tgoskits-rt
+[2026-08-15T00:15:47Z INFO  axbuild::context] Workspace member dir for axvisor: /home/huhu/tgoskits-rt/os/axvisor
+Using build config: /home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rt.toml
+file already exists and passed checksum verification
+image archive verified at /home/huhu/tgoskits-rt/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img.tar.xz
+image already extracted and up to date at /home/huhu/tgoskits-rt/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img
+[2026-08-15T00:15:49Z INFO  ostool::run::qemu] Using QEMU config file: /home/huhu/tgoskits-rt/tmp/rt-partition/generated-idle-qemu.toml
+[axbuild] qemu build+run package=axvisor target=scripts/targets/std/pie/aarch64-unknown-linux-musl.json config=/home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rt.toml ...
+sh -c /home/huhu/tgoskits-rt/tmp/axbuild/std/prebuild/prebuild-aarch64-unknown-linux-musl-c49c0eb0dbb3d682.sh
+AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
+AXVISOR_VM_CONFIGS=/home/huhu/tgoskits-rt/tmp/axbuild/axvisor/resolved-vm-configs/100482639734a991999ba2be5388b4ff5bb103a7a2b4c764a6ea9db7ec2d0ab5.toml:/home/huhu/tgoskits-rt/tmp/axbuild/axvisor/resolved-vm-configs/cf5cdfec7bd7e75d5205fba510a1ffb7f9b94a33179156de5c4597a3525de0ef.toml
+AX_ARCH=aarch64
+AX_LOG=info
+AX_TARGET=aarch64-unknown-none-softfloat
+CARGO_UNSTABLE_JSON_TARGET_SPEC=true
+CC_aarch64_unknown_linux_musl=aarch64-linux-musl-cc
+CFLAGS_aarch64_unknown_linux_musl=-mgeneral-regs-only -fno-stack-protector
+CXXFLAGS_aarch64_unknown_linux_musl=-mgeneral-regs-only -fno-stack-protector
+cargo build --config /home/huhu/tgoskits-rt/tmp/axbuild/std/config-aarch64-unknown-linux-musl-dynamic.toml -p axvisor --target scripts/targets/std/pie/aarch64-unknown-linux-musl.json -Z unstable-options --target-dir /home/huhu/tgoskits-rt/target --features log/release_max_level_info -Z json-target-spec --bin axvisor --release --message-format json-render-diagnostics
+   Compiling axvisor v0.5.24 (/home/huhu/tgoskits-rt/os/axvisor)
+warning: associated function `after_external_interrupt` is never used
+   --> virtualization/axvm/src/architecture/ops.rs:121:8
+    |
+ 12 | pub(crate) trait ArchOps {
+    |                  ------- associated function in this trait
+...
+121 |     fn after_external_interrupt(
+    |        ^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `host_console_irq` is never used
+  --> virtualization/axvm/src/host/arceos.rs:91:15
+   |
+91 | pub(crate) fn host_console_irq() -> Option<modules::ax_hal::irq::IrqId> {
+   |               ^^^^^^^^^^^^^^^^
+
+warning: function `dispatch_host_irq` is never used
+  --> virtualization/axvm/src/host/arceos.rs:95:15
+   |
+95 | pub(crate) fn dispatch_host_irq(vector: usize) {
+   |               ^^^^^^^^^^^^^^^^^
+
+warning: function `with_vm` is never used
+  --> virtualization/axvm/src/manager.rs:70:15
+   |
+70 | pub(crate) fn with_vm<F, R>(vm_id: VMId, f: F) -> Option<R>
+   |               ^^^^^^^
+
+warning: function `active_vcpu_mask` is never used
+  --> virtualization/axvm/src/manager.rs:79:15
+   |
+79 | pub(crate) fn active_vcpu_mask(vm_id: VMId) -> Option<usize> {
+   |               ^^^^^^^^^^^^^^^^
+
+warning: function `inject_interrupt` is never used
+  --> virtualization/axvm/src/manager.rs:91:15
+   |
+91 | pub(crate) fn inject_interrupt(vm_id: VMId, vcpu_id: usize, vector: usize) -> AxVmResult {
+   |               ^^^^^^^^^^^^^^^^
+
+warning: variant `Generic` is never constructed
+  --> virtualization/axvm/src/runtime/hvc.rs:26:5
+   |
+25 | pub(crate) enum HyperCallAbi {
+   |                 ------------ variant in this enum
+26 |     Generic,
+   |     ^^^^^^^
+   |
+   = note: `HyperCallAbi` has derived impls for the traits `Debug` and `Clone`, but these are intentionally ignored during dead code analysis
+
+warning: method `handle` is never used
+   --> virtualization/axvm/src/timer.rs:158:8
+    |
+113 | impl TimerWheels {
+    | ---------------- method in this implementation
+...
+158 |     fn handle(&self, token: usize) -> Option<VmTimerHandle> {
+    |        ^^^^^^
+
+warning: function `cancel_timer` is never used
+   --> virtualization/axvm/src/timer.rs:236:15
+    |
+236 | pub(crate) fn cancel_timer(token: usize) {
+    |               ^^^^^^^^^^^^
+
+warning: associated items `with_planned_device_graph`, `try_handle_port_write`, `handle_nested_page_fault`, and `debug_nested_page_fault` are never used
+    --> virtualization/axvm/src/vm/mod.rs:1198:19
+     |
+1022 | impl AxVM {
+     | --------- associated items in this implementation
+...
+1198 |     pub(crate) fn with_planned_device_graph<F, R>(&self, f: F) -> AxVmResult<R>
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1503 |     pub(crate) fn try_handle_port_write(
+     |                   ^^^^^^^^^^^^^^^^^^^^^
+...
+1516 |     pub(crate) fn handle_nested_page_fault(
+     |                   ^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1531 |     fn debug_nested_page_fault(
+     |        ^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: struct `SimpleVmPlan` is never constructed
+  --> virtualization/axvm/src/vm/prepare/device_plan/mod.rs:60:19
+   |
+60 | pub(crate) struct SimpleVmPlan(VmDevicePlan);
+   |                   ^^^^^^^^^^^^
+
+warning: associated function `new` is never used
+  --> virtualization/axvm/src/vm/prepare/device_plan/mod.rs:63:25
+   |
+62 | impl SimpleVmPlan {
+   | ----------------- associated function in this implementation
+63 |     pub(crate) const fn new(devices: VmDevicePlan) -> Self {
+   |                         ^^^
+
+warning: `axvm` (lib) generated 12 warnings
+warning: associated functions `create_vm_from_toml` and `start_vm` are never used
+  --> os/axvisor/src/manager.rs:50:12
+   |
+24 | impl AxvmManager {
+   | ---------------- associated functions in this implementation
+...
+50 |     pub fn create_vm_from_toml(raw_cfg: &str) -> Result<VMId> {
+   |            ^^^^^^^^^^^^^^^^^^^
+...
+55 |     pub fn start_vm(vm_id: VMId) -> Result<()> {
+   |            ^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
+
+warning: function `can_start_vm` is never used
+  --> os/axvisor/src/shell/command/vm.rs:32:4
+   |
+32 | fn can_start_vm(status: VmStatus) -> Result<(), &'static str> {
+   |    ^^^^^^^^^^^^
+
+warning: function `start_single_vm` is never used
+   --> os/axvisor/src/shell/command/vm.rs:243:4
+    |
+243 | fn start_single_vm(vm: axvm::AxVMRef) -> anyhow::Result<()> {
+    |    ^^^^^^^^^^^^^^^
+
+warning: function `start_vm_by_id` is never used
+   --> os/axvisor/src/shell/command/vm.rs:254:4
+    |
+254 | fn start_vm_by_id(vm_id: usize, attach_console: bool) {
+    |    ^^^^^^^^^^^^^^
+
+warning: field `outbound` is never read
+  --> os/axvisor/src/virtio_net.rs:44:5
+   |
+42 | struct CapturedFrame {
+   |        ------------- field in this struct
+43 |     vm_id: usize,
+44 |     outbound: bool,
+   |     ^^^^^^^^
+
+warning: `axvisor` (bin "axvisor") generated 5 warnings
+    Finished `release` profile [optimized] target(s) in 2.15s
+warning: the following packages contain code that will be rejected by a future version of Rust: core v0.0.0 (/home/huhu/.rustup/toolchains/nightly-2026-07-15-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core), memchr v2.8.3
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+Converting ELF to BIN format...
+  elf: /home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor
+  bin: /home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor.bin
+/home/huhu/.rustup/toolchains/nightly-2026-07-15-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-objcopy --strip-all -O binary /home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor /home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor.bin
+qemu-system-aarch64 -display none -monitor none -serial unix:/home/huhu/tgoskits-rt/tmp/rt-partition/serial-idle.sock,server,nowait -cpu cortex-a72 -machine virt,virtualization=on,gic-version=3 -smp 4 -m 8g -qmp unix:/home/huhu/tgoskits-rt/tmp/rt-partition/qmp-idle.sock,server,nowait -kernel /home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor.bin
+[driver] step: 'expect 120 Default guest initialized'
+[driver] step: 'expect 300 RT_CYCLICTEST_START'
+[driver] step: 'detach'
+[driver] step: 'expect 10 \\[Axvisor\\] detached VM\\[1\\] console'
+[driver] step: 'cmd vmexit stat'
+[driver] step: 'sleep 2'
+[driver] step: 'cmd vm console 2'
+[driver] step: 'expect 10 PERIODIC LATENCY READY'
+[driver] step: 'raw g'
+[driver] step: 'expect 10 PERIODIC LATENCY START'
+[driver] step: 'expect 180 PERIODIC LATENCY COMPLETE samples=300'
+[driver] step: 'detach'
+[driver] step: 'expect 10 \\[Axvisor\\] detached VM\\[2\\] console'
+[driver] step: 'cmd vmexit stat'
+[driver] step: 'sleep 2'
+[driver] step: 'cmd vm console 1'
+[driver] step: 'sleep 1'
+[driver] step: 'expect 3900 RT_CYCLICTEST_COMPLETE'
+error: expected pattern 'RT_CYCLICTEST_COMPLETE' did not appear

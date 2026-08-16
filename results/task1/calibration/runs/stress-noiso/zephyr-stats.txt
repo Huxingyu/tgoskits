@@ -1,0 +1,6 @@
+samples=300
+mean_jitter_ns=718792.05
+p99_jitter_ns=885200
+p99_9_jitter_ns=909568
+max_jitter_ns=909568
+deadline_misses=300

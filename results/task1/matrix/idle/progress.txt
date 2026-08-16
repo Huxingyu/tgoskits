@@ -1,0 +1,4 @@
+markers=184
+host_elapsed_s=1832.493602
+guest_elapsed_s=1832.210000
+guest_wall_ratio=0.999845237

@@ -1,0 +1,6 @@
+min_latency_us=159
+avg_latency_us=544
+max_latency_us=303985
+bucket_samples=883245
+overflow_samples=13
+total_samples=883258

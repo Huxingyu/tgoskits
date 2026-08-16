@@ -1,0 +1,8 @@
+git_commit=a2b11542b3841975d03bf0e3abde16ab3e05ad60
+baseline_rev=f298ee57b^
+queue_capacity=64
+arrival_interval_us=50
+service_interval_us=1000
+arrival_duration_us=100000
+method=deterministic source-contract replay
+claim_scope=queue growth and overflow semantics only; not QEMU or hardware WCET

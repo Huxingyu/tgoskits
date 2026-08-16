@@ -1,0 +1,24 @@
+scenario=stress-noiso
+git_commit=a2b11542b3841975d03bf0e3abde16ab3e05ad60
+run_mode=duration
+requested_loops=1800000
+duration_sec=1800
+cyclictest_loops=0
+interval_us=1000
+expected_runtime_sec=1800
+tcg_runtime_scale=2
+runtime_scale_source=/home/huhu/tgoskits-rt/results/task1/calibration/runtime-scales.env
+expected_wall_runtime_sec=3600
+elapsed_ms=1977514
+dedicated_cpus=none
+zephyr_guest_type=virtualized
+progress_timeout_sec=300
+result_drain_timeout_sec=180
+timestamp_format=host_monotonic_s=seconds
+realtime_trace=disabled
+host_periodic_tick_policy=record-only
+linux_rt_cpu=1
+linux_load_cpu=0
+guest_cmdline=console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=stress-noiso rt_cpu=1 rt_load_cpu=0 rt_loops=0 rt_duration_sec=1800 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_start_delay_sec=25
+axvisor_bin=/home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor.bin
+build_command=cargo xtask axvisor qemu --config /home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rt.toml --qemu-config /home/huhu/tgoskits-rt/tmp/rt-partition/generated-stress-noiso-qemu.toml --vmconfigs /home/huhu/tgoskits-rt/tmp/rt-partition/generated-stress-noiso-linux.toml --vmconfigs /home/huhu/tgoskits-rt/tmp/rt-partition/generated-stress-noiso-zephyr.toml

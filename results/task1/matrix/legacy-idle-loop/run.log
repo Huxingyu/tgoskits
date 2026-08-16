@@ -1,0 +1,1744 @@
+rt_experiment scenario=idle start_ns=1786739031585205518 expected_runtime_sec=1800
+VM Load @PA:0x40200000
+VM Load Offset: 0xffff0000c0200000
+Memory Map:
+  Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+  KImg   0x00000040200000 - 0x00000044c00000 (74 MiB)
+  Free   0x00000044c00000 - 0x00000240000000 (7.93 GiB)
+Initialize RAM allocator: 0x44c00000..0x240000000
+Reserving CPU-local areas
+CPU-local area stride: 0x45000 bytes
+Total CPU-local allocation: 0x114000 bytes (4 CPUs)
+Flushed RAM used range to memory map: 0x44c00000..0x44d00000, current: 0x44d00000
+Flushed RAM used range to memory map: 0x44d00000..0x44e14000, current: 0x44e14000
+CPU-local areas allocated at 0x44d00000 - 0x44e14000
+EL: 2
+Mapping early memory regions...
+Ram                 : [0x0000000040000000, 0x0000000240000000) -> [0x0000000040000000, 0x0000000240000000) (8 GiB)
+KImage              : [0x0000ffff80000000, 0x0000ffff84a00000) -> [0x0000000040200000, 0x0000000044c00000) (74 MiB)
+PerCpu              : [0x0000ff0044d00000, 0x0000ff0044e14000) -> [0x0000000044d00000, 0x0000000044e14000) (1.08 MiB)
+Debug serial        : [0x0000000009000000, 0x0000000009001000) -> [0x0000000009000000, 0x0000000009001000) (4 KiB)
+Boot page table at physical address: PA:0x44e14000
+Setting up table registers...
+MMU Entry point at physical address: 0x403ba608
+Trap vector at 0xffff801be000
+Memory Map:
+  MMIO   0x00000009000000 - 0x00000009001000 (4 KiB)
+  Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+  KImg   0x00000040200000 - 0x00000044c00000 (74 MiB)
+  Rsv    0x00000044c00000 - 0x00000044d00000 (1 MiB)
+  PerCPU 0x00000044d00000 - 0x00000044e14000 (1.08 MiB)
+  Rsv    0x00000044e14000 - 0x00000044e1e000 (40 KiB)
+  Free   0x00000044e1e000 - 0x00000240000000 (7.92 GiB)
+Jumping to main entry point at 0xffff801a2588 with SP 0x0000ff0044d45000
+
+       d8888                            .d88888b.   .d8888b.
+      d88888                           d88P" "Y88b d88P  Y88b
+     d88P888                           888     888 Y88b.
+    d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+   d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+  d88P   888 888     888      88888888 888     888       "888
+ d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+
+arch = aarch64
+platform = linux,dummy-virt
+target = aarch64-unknown-none-softfloat
+build_mode = 
+log_level = info
+backtrace = false
+smp = 4
+
+[37m[  0.061132 ax_runtime:220] [32mLogging is enabled.[m
+[m[37m[  0.061532 ax_runtime:221] [32mPrimary CPU 0 started, arg = 0x44c00000.[m
+[m[37m[  0.061650 ax_runtime:223] [32mFound physcial memory regions:[m
+[m[37m[  0.062607 ax_runtime:225] [32m  [PA:0x9000000, PA:0x9001000) mmio (READ | WRITE | DEVICE | RESERVED)[m
+[m[37m[  0.062976 ax_runtime:225] [32m  [PA:0x40000000, PA:0x40200000) free memory (READ | WRITE | FREE)[m
+[m[37m[  0.063138 ax_runtime:225] [32m  [PA:0x40200000, PA:0x44c00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.063292 ax_runtime:225] [32m  [PA:0x44c00000, PA:0x44d00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.063446 ax_runtime:225] [32m  [PA:0x44d00000, PA:0x44e14000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.063598 ax_runtime:225] [32m  [PA:0x44e14000, PA:0x44e1e000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.063747 ax_runtime:225] [32m  [PA:0x44e1e000, PA:0x240000000) free memory (READ | WRITE | FREE)[m
+[m[37m[  0.063913 ax_runtime:375] [32mInitialize global memory allocator...[m
+[m[37m[  0.064040 ax_runtime:376] [32m  use buddy-slab-allocator allocator.[m
+[m[37m[  0.064273 ax_alloc::buddy_slab:158] [32mInitialize global memory allocator, start_vaddr: 0x44e1e000, size: 0x1fb1e2000[m
+[m[37m[  0.071853 ax_alloc::buddy_slab:424] [32mglobal allocator initialized[m
+[m[37m[  0.072054 ax_alloc::buddy_slab:168] [32mAdd memory region, start_vaddr: 0x40000000, size: 0x200000[m
+[m[37m[  0.072282 buddy_slab_allocator::global:151] [32mGlobalAllocator: skip region 0x40000000+0x200000, no allocator-visible memory after 2097152 alignment[m
+[m[37m[  0.072763 ax_runtime:260] [32mkernel aspace: [VA:0x0, VA:0xffffffffffffffff)[m
+[m[37m[  0.072955 ax_mm:103] [32mInitialize virtual memory management...[m
+[m[37m[  0.728698 ax_runtime:272] [32mInitialize platform devices...[m
+[m[37m[  0.735394 someboot::arch::power:23] [32mPower management method : SMC[m
+[m[37m[  0.735628 somehal::driver:5] [32mInitializing rdrive with FDT at 0x44c00000[m
+[m[37m[  0.748612 somehal::arch::gic::v3:274] [32mGICv3 CPU 0 EOI mode: two_step=true[m
+[m[37m[  0.888443 ax_task::api:157] [32mInitialize scheduling...[m
+[m[37m[  0.889808 ax_task::api:165] [32m  use FIFO scheduler.[m
+[m[37m[  0.890144 ax_runtime:300] [32mInitialize interrupt handlers...[m
+[m[37m[  0.892456 ax_runtime::devices:2] [32mProbe platform devices...[m
+[m[37m[  0.905675 somehal::arch::gic::v3:274] [32mGICv3 CPU 1 EOI mode: two_step=true[m
+[m[37m[  0.906000 ax_runtime::mp:79] [32mSecondary CPU 1 started.[m
+[m[37m[  0.906677 ax_runtime::mp:110] [32mSecondary CPU 1 init OK.[m
+[m[37m[  0.916910 somehal::arch::gic::v3:274] [32mGICv3 CPU 2 EOI mode: two_step=true[m
+[m[37m[  0.917182 ax_runtime::mp:79] [32mSecondary CPU 2 started.[m
+[m[37m[  0.917517 ax_runtime::mp:110] [32mSecondary CPU 2 init OK.[m
+[m[37m[  0.928228 somehal::arch::gic::v3:274] [32mGICv3 CPU 3 EOI mode: two_step=true[m
+[m[37m[  0.928479 ax_runtime::mp:79] [32mSecondary CPU 3 started.[m
+[m[37m[  0.928542 ax_runtime:348] [32mPrimary CPU 0 init OK.[m
+[m[37m[  0.929011 ax_runtime::mp:110] [32mSecondary CPU 3 init OK.[m
+[m
+
+       d8888            888     888  d8b
+      d88888            888     888  Y8P
+     d88P888            888     888
+    d88P 888  888  888  Y88b   d88P  888  .d8888b    .d88b.   888d888
+   d88P  888  `Y8bd8P'   Y88b d88P   888  88K       d88""88b  888P"
+  d88P   888    X88K      Y88o88P    888  "Y8888b.  888  888  888
+ d8888888888  .d8""8b.     Y888P     888       X88  Y88..88P  888
+d88P     888  888  888      Y8P      888   88888P'   "Y88P"   888
+
+
+by AxVisor Team
+
+[37m[  0.932281 0:2 axvisor:80] [32mStarting virtualization...[m
+[m[37m[  0.932494 0:2 axvm::host::arceos:330] [32mEnabling hardware virtualization support on all cores...[m
+[m[37m[  0.932687 0:2 axvm::host::arceos:336] [32mCore 0 is initializing hardware virtualization support...[m
+[m[37m[  0.932871 0:2 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.938319 0:2 axvm::host::arceos:338] [32mHardware virtualization support enabled on core 0[m
+[m[37m[  0.939112 0:2 axvm::host::arceos:361] [32mWaiting for all cores to enable hardware virtualization...[m
+[m[37m[  0.939738 2:12 axvm::host::arceos:348] [32mCore 2 is initializing hardware virtualization support...[m
+[m[37m[  0.939782 3:13 axvm::host::arceos:348] [32mCore 3 is initializing hardware virtualization support...[m
+[m[37m[  0.939954 2:12 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.939757 1:11 axvm::host::arceos:348] [32mCore 1 is initializing hardware virtualization support...[m
+[m[37m[  0.940139 3:13 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.940461 1:11 axvm::timer:318] [32mInitializing AxVM timer wheel...[m
+[m[37m[  0.940687 3:13 axvm::host::arceos:351] [32mHardware virtualization support enabled on core 3[m
+[m[37m[  0.940695 2:12 axvm::host::arceos:351] [32mHardware virtualization support enabled on core 2[m
+[m[37m[  0.940909 1:11 axvm::host::arceos:351] [32mHardware virtualization support enabled on core 1[m
+[m[37m[  0.941292 0:2 axvm::host::arceos:372] [32mAll cores have enabled hardware virtualization support.[m
+[m[37m[  0.941540 0:2 axvisor::config:91] [32mUsing static VM configs.[m
+[m[37m[  0.959106 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[1] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  0.962135 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[1] architectural timer follows host firmware PPIs[m
+[m[37m[  0.966619 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  0.966927 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[m[37m[  0.967143 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[m[37m[  0.967333 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[m[37m[  0.967592 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[m[37m[  0.968126 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[1] DTB not found, generating from the VM configuration[m
+[m[37m[  0.979802 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  0.990032 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  0.991051 0:2 axvisor::config:258] [32mCreating VM[1] "rt-partition-linux"[m
+[m[37m[  1.007722 0:2 axvm::vm:1044] [32mVM created: id=1[m
+[m[37m[  2.065331 0:2 axvisor::config:270] [32mVM[1] created success, loading images...[m
+[m[37m[  2.173756 0:2 axvm::boot::images:137] [32mLoading ramdisk image from memory (19620417 bytes) into GPA @0x84000000[m
+[m[37m[  2.229868 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  2.230301 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  2.367367 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  2.373152 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  2.377644 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[m[37m[  2.379203 0:2 arm_vgic::controller:345] [33mDBG attach vcpu GicVcpuId(0) now 1 redistributors, map addr 0x23ee46570[m
+[m[37m[  2.380228 0:2 arm_vgic::controller:345] [33mDBG attach vcpu GicVcpuId(1) now 2 redistributors, map addr 0x23ee46570[m
+[m[37m[  2.382444 0:2 axvm::vm::prepare:82] [32mVM setup: id=1[m
+[m[37m[  2.385009 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[2] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  2.385810 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[2] architectural timer follows host firmware PPIs[m
+[m[37m[  2.389012 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  2.389219 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[m[37m[  2.389392 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[m[37m[  2.389551 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[m[37m[  2.389739 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[m[37m[  2.389866 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[2] DTB not found, generating from the VM configuration[m
+[m[37m[  2.396661 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  2.401036 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  2.401513 0:2 axvisor::config:258] [32mCreating VM[2] "rt-partition-zephyr"[m
+[m[37m[  2.402660 0:2 axvm::vm:1044] [32mVM created: id=2[m
+[m[37m[  3.054695 0:2 axvisor::config:270] [32mVM[2] created success, loading images...[m
+[m[37m[  3.058708 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  3.058852 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  3.203995 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  3.206736 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  3.207955 0:2 arm_vgic::controller:345] [33mDBG attach vcpu GicVcpuId(0) now 1 redistributors, map addr 0x23ee8f570[m
+[m[37m[  3.208964 0:2 axvm::vm::prepare:82] [32mVM setup: id=2[m
+[m[37m[  3.211281 0:2 axvm::runtime:51] [32mInitializing VMM...[m
+[m[37m[  3.212288 0:2 axvm::runtime:62] [32mVMM starting, booting VMs...[m
+[m[37m[  3.212608 0:2 axvm::vm:1259] [32mStarting VM[1][m
+[m[37m[  3.212809 0:2 axvm::runtime::vcpus:582] [32mSpawning task for VM[1] VCpu[0][m
+[m[37m[  3.213346 0:2 axvm::runtime::vcpus:600] [32mVCpu task Task(17, "VM[1]-VCpu[0]") created cpumask: [2, ][m
+[m[37m[  3.219011 0:2 axvm::runtime:70] [32mVM[1] boot success[m
+[m[37m[  3.219037 2:17 axvm::runtime::vcpus:654] [32mVM[1] VCpu[0] waiting for running[m
+[m[37m[  3.219149 0:2 axvm::vm:1259] [32mStarting VM[2][m
+[m[37m[  3.219386 0:2 axvm::runtime::vcpus:582] [32mSpawning task for VM[2] VCpu[0][m
+[m[37m[  3.219528 0:2 axvm::runtime::vcpus:600] [32mVCpu task Task(19, "VM[2]-VCpu[0]") created cpumask: [1, ][m
+[m[37m[  3.219657 2:17 axvm::runtime::vcpus:692] [32mVM[1] VCpu[0] running...[m
+[m[37m[  3.219768 0:2 axvm::runtime:70] [32mVM[2] boot success[m
+[m[37m[  3.219810 1:19 axvm::runtime::vcpus:654] [32mVM[2] VCpu[0] waiting for running[m
+[m[37m[  3.220132 1:19 axvm::runtime::vcpus:692] [32mVM[2] VCpu[0] running...[m
+[m[37m[  3.223332 0:2 axvisor:98] [32m[OK] Default guest initialized[m
+[m[VM 2] *** Booting Zephyr OS build v3.7.0 ***
+[37m[  3.261286 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0x80000000[m
+[m[37m[  3.262270 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000001[m
+[m[37m[  3.262701 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc400000e[m
+[m[37m[  3.263042 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000012[m
+[m[37m[  3.263376 2:17 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000015[m
+[m[VM 2] sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns
+[VM 2] 0,12319264,211008016,213327280,2319264
+[VM 2] 1,20669440,221008016,221677456,669440
+[VM 2] 2,30558736,231008016,231566752,558736
+[VM 2] 3,40562368,241008016,241570384,562368
+[VM 2] 4,50509840,251008016,251517856,509840
+[VM 2] 5,60473856,261008016,261481872,473856
+[VM 2] 6,70572960,271008016,271580976,572960
+[VM 2] 7,80569792,281008016,281577808,569792
+[VM 2] 8,90581840,291008016,291589856,581840
+[VM 2] 9,100687136,301008016,301695152,687136
+[VM 2] 10,110523152,311008016,311531168,523152
+[VM 2] 11,120488240,321008016,321496256,488240
+[VM 2] 12,130530032,331008016,331538048,530032
+[VM 2] 13,140571168,341008016,341579184,571168
+[VM 2] 14,150757264,351008016,351765280,757264
+[VM 2] 15,160599264,361008016,361607280,599264
+[VM 2] 16,170761280,371008016,371769296,761280
+[VM 2] 17,180520928,381008016,381528944,520928
+[37m[  3.446019 2:17 axvm::runtime::hvc:272] [32mVM[1] PSCI_CPU_ON target=0x1 entry=0x8228158c context=0x0[m
+[m[37m[  3.446810 2:17 axvm::runtime::vcpus:582] [32mSpawning task for VM[1] VCpu[1][m
+[m[37m[  3.446975 2:17 axvm::runtime::vcpus:600] [32mVCpu task Task(22, "VM[1]-VCpu[1]") created cpumask: [3, ][m
+[m[37m[  3.447534 3:22 axvm::runtime::vcpus:654] [32mVM[1] VCpu[1] waiting for running[m
+[m[37m[  3.448250 3:22 axvm::runtime::vcpus:692] [32mVM[1] VCpu[1] running...[m
+[m[VM 2] 18,190557792,391008016,391565808,557792
+[VM 2] 19,200526784,401008016,401534800,526784
+[VM 2] 20,210515824,411008016,411523840,515824
+[VM 2] 21,220601616,421008016,421609632,601616
+[VM 2] 22,230534080,431008016,431542096,534080
+[VM 2] 23,240469104,441008016,441477120,469104
+[VM 2] 24,250471968,451008016,451479984,471968
+[VM 2] 25,260549664,461008016,461557680,549664
+[VM 2] 26,270487584,471008016,471495600,487584
+[VM 2] 27,280525216,481008016,481533232,525216
+[VM 2] 28,290708608,491008016,491716624,708608
+[VM 2] 29,300522096,501008016,501530112,522096
+[VM 2] 30,310595200,511008016,511603216,595200
+[VM 2] 31,320555776,521008016,521563792,555776
+[VM 2] 32,330329520,531008016,531337536,329520
+[VM 2] 33,340483376,541008016,541491392,483376
+[VM 2] 34,350466672,551008016,551474688,466672
+[VM 2] 35,360535520,561008016,561543536,535520
+[VM 2] 36,370506752,571008016,571514768,506752
+[VM 2] 37,380518112,581008016,581526128,518112
+[VM 2] 38,390583136,591008016,591591152,583136
+[VM 2] 39,400490768,601008016,601498784,490768
+[VM 1] [    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd083]
+[VM 2] 40,410514928,611008016,611522944,514928
+[VM 2] 41,420526704,621008016,621534720,526704
+[VM 2] 42,430556176,631008016,631564192,556176
+[VM 2] 43,440539872,641008016,641547888,539872
+[VM 1] [    0.000000] Linux version 7.1.0-rc2-g74fe02ce122a (runner@s1lqc) (aarch64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #2 SMP PREEMPT Mon Jun  8 08:07:46 UTC 2026
+[VM 2] 44,450501008,651008016,651509024,501008
+[VM 1] [    0.000000] KASLR disabled due to lack of seed
+[VM 2] 45,460511456,661008016,661519472,511456
+[VM 2] 46,762357552,671008016,963365568,292357552
+[VM 2] 47,769721968,681008016,970729984,289721968
+[VM 1] [    0.000000] Machine model: linux,dummy-virt
+[VM 2] 48,776572176,691008016,977580192,286572176
+[VM 1] [    0.000000] efi: UEFI not found.
+[VM 2] 49,783855888,701008016,984863904,283855888
+[VM 2] 50,790958976,711008016,991966992,280958976
+[VM 1] [    0.000000] OF: reserved mem: Reserved memory: No reserved-memory node in the DT
+[VM 2] 51,798206400,721008016,999214416,278206400
+[VM 2] 52,805272112,731008016,1006280128,275272112
+[VM 1] [    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x00000000bfffffff]
+[VM 2] 53,812424256,741008016,1013432272,272424256
+[VM 2] 54,819840128,751008016,1020848144,269840128
+[VM 1] [    0.000000] NODE_DATA(0) allocated [mem 0xbfe08940-0xbfe0b03f]
+[VM 2] 55,826886192,761008016,1027894208,266886192
+[VM 2] 56,834315984,771008016,1035324000,264315984
+[VM 1] [    0.000000] cma: Reserved 32 MiB at 0x00000000bde00000
+[VM 2] 57,841512624,781008016,1042520640,261512624
+[VM 1] [    0.000000] psci: probing for conduit method from DT.
+[VM 2] 58,848770128,791008016,1049778144,258770128
+[VM 2] 59,855854272,801008016,1056862288,255854272
+[VM 1] [    0.000000] psci: PSCIv1.1 detected in firmware.
+[VM 2] 60,863194304,811008016,1064202320,253194304
+[VM 1] [    0.000000] psci: Using standard PSCI v0.2 function IDs
+[VM 2] 61,870366464,821008016,1071374480,250366464
+[VM 2] 62,877458672,831008016,1078466688,247458672
+[VM 1] [    0.000000] psci: Trusted OS migration not required
+[VM 2] 63,884513280,841008016,1085521296,244513280
+[VM 1] [    0.000000] psci: SMC Calling Convention v65535.65535
+[VM 2] 64,891644384,851008016,1092652400,241644384
+[VM 1] [    0.000000] Zone ranges:
+[VM 2] 65,898879680,861008016,1099887696,238879680
+[VM 2] 66,906123616,871008016,1107131632,236123616
+[VM 1] [    0.000000]   DMA      [mem 0x0000000080000000-0x00000000bfffffff]
+[VM 2] 67,913420848,881008016,1114428864,233420848
+[VM 1] [    0.000000]   DMA32    empty
+[VM 2] 68,921035392,891008016,1122043408,231035392
+[VM 1] [    0.000000]   Normal   empty
+[VM 2] 69,928377280,901008016,1129385296,228377280
+[VM 1] [    0.000000] Movable zone start for each node
+[VM 2] 70,935542480,911008016,1136550496,225542480
+[VM 1] [    0.000000] Early memory node ranges
+[VM 2] 71,942774928,921008016,1143782944,222774928
+[VM 2] 72,950710800,931008016,1151718816,220710800
+[VM 1] [    0.000000]   node   0: [mem 0x0000000080000000-0x00000000bfffffff]
+[VM 2] 73,958088624,941008016,1159096640,218088624
+[VM 2] 74,966580720,951008016,1167588736,216580720
+[VM 1] [    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x00000000bfffffff]
+[VM 2] 75,973783200,961008016,1174791216,213783200
+[VM 2] 76,981328192,971008016,1182336208,211328192
+[VM 1] [    0.000000] percpu: Embedded 26 pages/cpu s66584 r8192 d31720 u106496
+[VM 2] 77,988607776,981008016,1189615792,208607776
+[VM 1] [    0.000000] Detected PIPT I-cache on CPU0
+[VM 2] 78,995908720,991008016,1196916736,205908720
+[VM 2] 79,1003092432,1001008016,1204100448,203092432
+[VM 1] [    0.000000] CPU features: detected: GICv3 CPU interface
+[VM 2] 80,1010684064,1011008016,1211692080,200684064
+[VM 1] [    0.000000] CPU features: detected: Spectre-v2
+[VM 2] 81,1018257216,1021008016,1219265232,198257216
+[VM 1] [    0.000000] CPU features: detected: Spectre-v3a
+[VM 2] 82,1025822864,1031008016,1226830880,195822864
+[VM 2] 83,1320102704,1041008016,1521110720,480102704
+[VM 1] [    0.000000] CPU features: detected: Spectre-v4
+[VM 2] 84,1327949248,1051008016,1528957264,477949248
+[VM 1] [    0.000000] CPU features: detected: Spectre-BHB
+[VM 2] 85,1335658896,1061008016,1536666912,475658896
+[VM 2] 86,1343266992,1071008016,1544275008,473266992
+[VM 1] [    0.000000] CPU features: detected: ARM erratum 1742098
+[VM 2] 87,1351066624,1081008016,1552074640,471066624
+[VM 2] 88,1358723856,1091008016,1559731872,468723856
+[VM 1] [    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[VM 2] 89,1366218064,1101008016,1567226080,466218064
+[VM 1] [    0.000000] alternatives: applying boot alternatives
+[VM 2] 90,1374010016,1111008016,1575018032,464010016
+[VM 2] 91,1381500416,1121008016,1582508432,461500416
+[VM 2] 92,1389085264,1131008016,1590093280,459085264
+[VM 2] 93,1396966608,1141008016,1597974624,456966608
+[VM 2] 94,1404536240,1151008016,1605544256,454536240
+[VM 2] 95,1411987344,1161008016,1612995360,451987344
+[VM 1] [    0.000000] Kernel command line: console=ttyAMA0 devtmpfs.mount=1 loglevel=7 isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=idle rt_cpu=1 rt_load_cpu=0 rt_loops=1800000 rt_interval_us=1000 rt_maxlat_us=400 rt_priority=90 rt_start_delay_sec=25
+[VM 2] 96,1419476528,1171008016,1620484544,449476528
+[VM 2] 97,1427105264,1181008016,1628113280,447105264
+[VM 1] [    0.000000] Housekeeping: nohz unsupported. Build with CONFIG_NO_HZ_FULL
+[VM 2] 98,1434565584,1191008016,1635573600,444565584
+[VM 2] 99,1442144656,1201008016,1643152672,442144656
+[VM 2] 100,1449549696,1211008016,1650557712,439549696
+[VM 2] 101,1457038208,1221008016,1658046224,437038208
+[VM 2] 102,1464485552,1231008016,1665493568,434485552
+[VM 2] 103,1472169680,1241008016,1673177696,432169680
+[VM 1] [    0.000000] Unknown kernel command line parameters "nohz_full=1 rt_scenario=idle rt_cpu=1 rt_load_cpu=0 rt_loops=1800000 rt_interval_us=1000 rt_maxlat_us=400 rt_priority=90 rt_start_delay_sec=25", will be passed to user space.
+[VM 2] 104,1479693600,1251008016,1680701616,429693600
+[VM 2] 105,1487443648,1261008016,1688451664,427443648
+[VM 1] [    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[VM 2] 106,1495028512,1271008016,1696036528,425028512
+[VM 2] 107,1502873184,1281008016,1703881200,422873184
+[VM 1] [    0.000000] Dentry cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[VM 2] 108,1510463232,1291008016,1711471248,420463232
+[VM 2] 109,1518242800,1301008016,1719250816,418242800
+[VM 1] [    0.000000] Inode-cache hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[VM 2] 110,1525778656,1311008016,1726786672,415778656
+[VM 2] 111,1533480000,1321008016,1734488016,413480000
+[VM 1] [    0.000000] software IO TLB: SWIOTLB bounce buffer size adjusted to 1MB
+[VM 2] 112,1541120944,1331008016,1742128960,411120944
+[VM 2] 113,1548577056,1341008016,1749585072,408577056
+[VM 1] [    0.000000] software IO TLB: area num 2.
+[VM 2] 114,1556119504,1351008016,1757127520,406119504
+[VM 2] 115,1563708624,1361008016,1764716640,403708624
+[VM 1] [    0.000000] software IO TLB: mapped [mem 0x00000000bcb00000-0x00000000bcc00000] (1MB)
+[VM 2] 116,1571445072,1371008016,1772453088,401445072
+[VM 1] [    0.000000] Fallback order for Node 0: 0 
+[VM 2] 117,1579381600,1381008016,1780389616,399381600
+[VM 2] 118,1866091952,1391008016,2067099968,676091952
+[VM 1] [    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 262144
+[VM 2] 119,1877001936,1401008016,2078009952,677001936
+[VM 1] [    0.000000] Policy zone: DMA
+[VM 2] 120,1884879792,1411008016,2085887808,674879792
+[VM 2] 121,1892867952,1421008016,2093875968,672867952
+[VM 1] [    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[VM 2] 122,1900805856,1431008016,2101813872,670805856
+[VM 2] 123,1908491312,1441008016,2109499328,668491312
+[VM 1] [    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[VM 2] 124,1916084320,1451008016,2117092336,666084320
+[VM 2] 125,1923929856,1461008016,2124937872,663929856
+[VM 1] [    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[VM 2] 126,1931578448,1471008016,2132586464,661578448
+[VM 1] [    0.000000] rcu: 	RCU event tracing is enabled.
+[VM 2] 127,1939256912,1481008016,2140264928,659256912
+[VM 2] 128,1946947872,1491008016,2147955888,656947872
+[VM 1] [    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=512 to nr_cpu_ids=2.
+[VM 2] 129,1955030544,1501008016,2156038560,655030544
+[VM 2] 130,1962861504,1511008016,2163869520,652861504
+[VM 1] [    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[VM 2] 131,1971003024,1521008016,2172011040,651003024
+[VM 1] [    0.000000] 	Tracing variant of Tasks RCU enabled.
+[VM 2] 132,1979683648,1531008016,2180691664,649683648
+[VM 2] 133,1987961168,1541008016,2188969184,647961168
+[VM 1] [    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[VM 2] 134,1995573648,1551008016,2196581664,645573648
+[VM 2] 135,2004337328,1561008016,2205345344,644337328
+[VM 1] [    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[VM 2] 136,2012227632,1571008016,2213235648,642227632
+[VM 2] 137,2020593248,1581008016,2221601264,640593248
+[VM 1] [    0.000000] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[VM 2] 138,2028320816,1591008016,2229328832,638320816
+[VM 2] 139,2036289152,1601008016,2237297168,636289152
+[VM 1] [    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[VM 2] 140,2044905408,1611008016,2245913424,634905408
+[VM 1] [    0.000000] GICv3: 256 SPIs implemented
+[VM 2] 141,2053263744,1621008016,2254271760,633263744
+[VM 1] [    0.000000] GICv3: 0 Extended SPIs implemented
+[VM 2] 142,2061904400,1631008016,2262912416,631904400
+[VM 2] 143,2069989904,1641008016,2270997920,629989904
+[VM 1] [    0.000000] Root IRQ handler: gic_handle_irq
+[VM 2] 144,2078307920,1651008016,2279315936,628307920
+[VM 1] [    0.000000] GICv3: GICv3 features: 16 PPIs, RSS
+[VM 2] 145,2086543344,1661008016,2287551360,626543344
+[VM 1] [    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=0
+[VM 2] 146,2095365728,1671008016,2296373744,625365728
+[VM 2] 147,2103548832,1681008016,2304556848,623548832
+[VM 1] [    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[VM 2] 148,2111895008,1691008016,2312903024,621895008
+[VM 1] [    0.000000] ITS [mem 0x08080000-0x0809ffff]
+[VM 2] 149,2119939504,1701008016,2320947520,619939504
+[VM 2] 150,2128539776,1711008016,2329547792,618539776
+[VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Devices @83860000 (indirect, esz 8, psz 64K, shr 1)
+[VM 2] 151,2136818656,1721008016,2337826672,616818656
+[VM 2] 152,2422623184,1731008016,2623631200,892623184
+[VM 2] 153,2431884960,1741008016,2632892976,891884960
+[VM 2] 154,2439417632,1751008016,2640425648,889417632
+[VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Interrupt Collections @83870000 (flat, esz 8, psz 64K, shr 1)
+[VM 2] 155,2446737888,1761008016,2647745904,886737888
+[VM 2] 156,2454959152,1771008016,2655967168,884959152
+[VM 1] [    0.000000] GICv3: using LPI property table @0x0000000083880000
+[VM 2] 157,2462764288,1781008016,2663772304,882764288
+[VM 2] 158,2470496128,1791008016,2671504144,880496128
+[VM 2] 159,2477766544,1801008016,2678774560,877766544
+[VM 1] [    0.000000] GICv3: CPU0: using allocated LPI pending table @0x0000000083890000
+[VM 2] 160,2485419296,1811008016,2686427312,875419296
+[VM 2] 161,2493355040,1821008016,2694363056,873355040
+[VM 1] [    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[VM 2] 162,2501542992,1831008016,2702551008,871542992
+[VM 1] [    0.000000] arch_timer: cp15 timer running at 62.50MHz (virt).
+[VM 2] 163,2509899568,1841008016,2710907584,869899568
+[VM 2] 164,2519025216,1851008016,2720033232,869025216
+[VM 2] 165,2526758576,1861008016,2727766592,866758576
+[VM 1] [    0.000000] clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[VM 2] 166,2534860800,1871008016,2735868816,864860800
+[VM 2] 167,2542978064,1881008016,2743986080,862978064
+[VM 1] [    0.000060] sched_clock: 57 bits at 63MHz, resolution 16ns, wraps every 4398046511096ns
+[VM 2] 168,2551204304,1891008016,2752212320,861204304
+[VM 2] 169,2559042464,1901008016,2760050480,859042464
+[VM 1] [    0.009594] Console: colour dummy device 80x25
+[VM 2] 170,2567122640,1911008016,2768130656,857122640
+[VM 2] 171,2575157264,1921008016,2776165280,855157264
+[VM 1] [    0.012776] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[VM 2] 172,2583418832,1931008016,2784426848,853418832
+[VM 2] 173,2591140432,1941008016,2792148448,851140432
+[VM 1] [    0.012873] pid_max: default: 32768 minimum: 301
+[VM 2] 174,2598620480,1951008016,2799628496,848620480
+[VM 2] 175,2606243808,1961008016,2807251824,846243808
+[VM 1] [    0.017085] Mount-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[VM 2] 176,2614187824,1971008016,2815195840,844187824
+[VM 2] 177,2621926912,1981008016,2822934928,841926912
+[VM 1] [    0.017124] Mountpoint-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[VM 2] 178,2629351024,1991008016,2830359040,839351024
+[VM 1] [    0.025580] VFS: Finished mounting rootfs on nullfs
+[VM 2] 179,2637743280,2001008016,2838751296,837743280
+[VM 2] 180,2645753424,2011008016,2846761440,835753424
+[VM 1] [    0.048636] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[VM 2] 181,2653486304,2021008016,2854494320,833486304
+[VM 1] [    0.061306] rcu: Hierarchical SRCU implementation.
+[VM 2] 182,2663018432,2031008016,2864026448,833018432
+[VM 1] [    0.061356] rcu: 	Max phase no-delay instances is 1000.
+[VM 2] 183,2671945104,2041008016,2872953120,831945104
+[VM 2] 184,2680186896,2051008016,2881194912,830186896
+[VM 1] [    0.062915] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[VM 2] 185,2688398784,2061008016,2889406800,828398784
+[VM 2] 186,2970951264,2071008016,3171959280,1100951264
+[VM 1] [    0.065380] fsl-mc MSI: its@8080000 domain created
+[VM 2] 187,2980546768,2081008016,3181554784,1100546768
+[VM 1] [    0.066819] EFI services will not be available.
+[VM 2] 188,2988601888,2091008016,3189609904,1098601888
+[VM 1] [    0.067668] smp: Bringing up secondary CPUs ...
+[VM 2] 189,2996240784,2101008016,3197248800,1096240784
+[VM 2] 190,3004018352,2111008016,3205026368,1094018352
+[VM 1] [    0.075613] Detected PIPT I-cache on CPU1
+[VM 2] 191,3011950496,2121008016,3212958512,1091950496
+[VM 1] [    0.077192] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[VM 2] 192,3019969808,2131008016,3220977824,1089969808
+[VM 2] 193,3027760016,2141008016,3228768032,1087760016
+[VM 1] [    0.079342] GICv3: CPU1: using allocated LPI pending table @0x00000000838a0000
+[VM 2] 194,3035427808,2151008016,3236435824,1085427808
+[VM 2] 195,3043433632,2161008016,3244441648,1083433632
+[VM 1] [    0.081720] CPU1: Booted secondary processor 0x0000000001 [0x410fd083]
+[VM 2] 196,3051620352,2171008016,3252628368,1081620352
+[VM 1] [    0.088646] smp: Brought up 1 node, 2 CPUs
+[VM 2] 197,3059308944,2181008016,3260316960,1079308944
+[VM 2] 198,3067171856,2191008016,3268179872,1077171856
+[VM 1] [    0.088678] SMP: Total of 2 processors activated.
+[VM 2] 199,3075226752,2201008016,3276234768,1075226752
+[VM 1] [    0.088705] CPU: All CPU(s) started at EL1
+[VM 2] 200,3083124880,2211008016,3284132896,1073124880
+[VM 2] 201,3091149968,2221008016,3292157984,1071149968
+[VM 1] [    0.088970] CPU features: detected: 32-bit EL0 Support
+[VM 2] 202,3098974432,2231008016,3299982448,1068974432
+[VM 1] [    0.088982] CPU features: detected: 32-bit EL1 Support
+[VM 2] 203,3106902192,2241008016,3307910208,1066902192
+[VM 2] 204,3114948480,2251008016,3315956496,1064948480
+[VM 1] [    0.089032] CPU features: detected: CRC32 instructions
+[VM 2] 205,3122702720,2261008016,3323710736,1062702720
+[VM 1] [    0.089187] CPU features: detected: PMUv3
+[VM 2] 206,3130906912,2271008016,3331914928,1060906912
+[VM 1] [    0.104701] alternatives: applying system-wide alternatives
+[VM 2] 207,3138799872,2281008016,3339807888,1058799872
+[VM 2] 208,3146663232,2291008016,3347671248,1056663232
+[VM 2] 209,3154907552,2301008016,3355915568,1054907552
+[VM 2] 210,3162974832,2311008016,3363982848,1052974832
+[VM 1] [    0.131142] Memory: 919888K/1048576K available (18688K kernel code, 5242K rwdata, 14480K rodata, 12672K init, 718K bss, 92528K reserved, 32768K cma-reserved)
+[VM 2] 211,3170951904,2321008016,3371959920,1050951904
+[VM 1] [    0.157471] devtmpfs: initialized
+[VM 2] 212,3179008208,2331008016,3380016224,1049008208
+[VM 2] 213,3186851280,2341008016,3387859296,1046851280
+[VM 2] 214,3194803776,2351008016,3395811792,1044803776
+[VM 1] [    0.175878] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[VM 2] 215,3202798352,2361008016,3403806368,1042798352
+[VM 2] 216,3211165888,2371008016,3412173904,1041165888
+[VM 1] [    0.176372] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[VM 2] 217,3218914896,2381008016,3419922912,1038914896
+[VM 2] 218,3226656944,2391008016,3427664960,1036656944
+[VM 1] [    0.176597] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[VM 2] 219,3234482496,2401008016,3435490512,1034482496
+[VM 1] [    0.179479] 19744 pages in range for non-PLT usage
+[VM 2] 220,3530226752,2411008016,3731234768,1320226752
+[VM 2] 221,3538926128,2421008016,3739934144,1318926128
+[VM 1] [    0.179518] 511264 pages in range for PLT usage
+[VM 2] 222,3546934576,2431008016,3747942592,1316934576
+[VM 1] [    0.193817] DMI: not present or invalid.
+[VM 2] 223,3555707984,2441008016,3756716000,1315707984
+[VM 1] [    0.220640] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[VM 2] 224,3564253072,2451008016,3765261088,1314253072
+[VM 2] 225,3572814960,2461008016,3773822976,1312814960
+[VM 1] [    0.235143] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[VM 2] 226,3581716976,2471008016,3782724992,1311716976
+[VM 1] [    0.235462] audit: initializing netlink subsys (disabled)
+[VM 2] 227,3589680400,2481008016,3790688416,1309680400
+[VM 2] 228,3597956144,2491008016,3798964160,1307956144
+[VM 2] 229,3606500784,2501008016,3807508800,1306500784
+[VM 1] [    0.241915] audit: type=2000 audit(0.204:1): state=initialized audit_enabled=0 res=1
+[VM 2] 230,3614429840,2511008016,3815437856,1304429840
+[VM 1] [    0.242249] thermal_sys: Registered thermal governor 'step_wise'
+[VM 2] 231,3623061120,2521008016,3824069136,1303061120
+[VM 2] 232,3631612272,2531008016,3832620288,1301612272
+[VM 1] [    0.242275] thermal_sys: Registered thermal governor 'power_allocator'
+[VM 2] 233,3639259024,2541008016,3840267040,1299259024
+[VM 1] [    0.242761] cpuidle: using governor menu
+[VM 2] 234,3647979248,2551008016,3848987264,1297979248
+[VM 1] [    0.243937] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[VM 2] 235,3656510016,2561008016,3857518032,1296510016
+[VM 2] 236,3664583728,2571008016,3865591744,1294583728
+[VM 1] [    0.246040] ASID allocator initialised with 65536 entries
+[VM 2] 237,3673141936,2581008016,3874149952,1293141936
+[VM 1] [    0.252453] Serial: AMBA PL011 UART driver
+[VM 2] 238,3681790800,2591008016,3882798816,1291790800
+[VM 2] 239,3689842176,2601008016,3890850192,1289842176
+[VM 1] [    0.277023] 9000000.pl011: ttyAMA0 at MMIO 0x9000000 (irq = 13, base_baud = 0) is a PL011 rev1
+[VM 2] 240,3698314720,2611008016,3899322736,1288314720
+[VM 1] [    0.281443] printk: console [ttyAMA0] enabled
+[VM 2] 241,3706964000,2621008016,3907972016,1286964000
+[VM 2] 242,3715307232,2631008016,3916315248,1285307232
+[VM 1] [    1.432438] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[VM 2] 243,3723724352,2641008016,3924732368,1283724352
+[VM 2] 244,3731941296,2651008016,3932949312,1281941296
+[VM 2] 245,3739377024,2661008016,3940385040,1279377024
+[VM 1] [    1.432467] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[VM 2] 246,3746784672,2671008016,3947792688,1276784672
+[VM 2] 247,3754508352,2681008016,3955516368,1274508352
+[VM 1] [    1.432489] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[VM 2] 248,3762302480,2691008016,3963310496,1272302480
+[VM 2] 249,3770098096,2701008016,3971106112,1270098096
+[VM 1] [    1.432494] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[VM 2] 250,3777768640,2711008016,3978776656,1267768640
+[VM 2] 251,3785584160,2721008016,3986592176,1265584160
+[VM 1] [    1.432500] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[VM 2] 252,3793644384,2731008016,3994652400,1263644384
+[VM 2] 253,4082403696,2741008016,4283411712,1542403696
+[VM 1] [    1.432503] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[VM 2] 254,4090340784,2751008016,4291348800,1540340784
+[VM 2] 255,4098310896,2761008016,4299318912,1538310896
+[VM 1] [    1.432508] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[VM 2] 256,4106216448,2771008016,4307224464,1536216448
+[VM 2] 257,4115027136,2781008016,4316035152,1535027136
+[VM 1] [    1.432511] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[VM 2] 258,4122825232,2791008016,4323833248,1532825232
+[VM 1] [    2.965254] ACPI: Interpreter disabled.
+[VM 2] 259,4130708640,2801008016,4331716656,1530708640
+[VM 2] 260,4139157984,2811008016,4340166000,1529157984
+[VM 1] [    4.024032] iommu: Default domain type: Translated
+[VM 2] 261,4146902736,2821008016,4347910752,1526902736
+[VM 2] 262,4154850864,2831008016,4355858880,1524850864
+[VM 1] [    4.036415] iommu: DMA domain TLB invalidation policy: strict mode
+[VM 2] 263,4162411504,2841008016,4363419520,1522411504
+[VM 2] 264,4170014304,2851008016,4371022320,1520014304
+[VM 1] [    4.055146] SCSI subsystem initialized
+[VM 2] 265,4177678448,2861008016,4378686464,1517678448
+[VM 2] 266,4185231920,2871008016,4386239936,1515231920
+[VM 2] 267,4192974784,2881008016,4393982800,1512974784
+[VM 1] [    4.073822] usbcore: registered new interface driver usbfs
+[VM 2] 268,4200733072,2891008016,4401741088,1510733072
+[VM 2] 269,4208462480,2901008016,4409470496,1508462480
+[VM 1] [    4.088692] usbcore: registered new interface driver hub
+[VM 2] 270,4216108304,2911008016,4417116320,1506108304
+[VM 1] [    4.088866] usbcore: registered new device driver usb
+[VM 2] 271,4223992240,2921008016,4425000256,1503992240
+[VM 2] 272,4231742272,2931008016,4432750288,1501742272
+[VM 1] [    4.089835] pps_core: LinuxPPS API ver. 1 registered
+[VM 2] 273,4239555152,2941008016,4440563168,1499555152
+[VM 1] [    4.089849] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[VM 2] 274,4253395872,2951008016,4454403888,1503395872
+[VM 1] [    4.089892] PTP clock support registered
+[VM 2] 275,4266140656,2961008016,4467148672,1506140656
+[VM 1] [    4.090233] EDAC MC: Ver: 3.0.0
+[VM 2] 276,4273971680,2971008016,4474979696,1503971680
+[VM 2] 277,4281908048,2981008016,4482916064,1501908048
+[VM 1] [    4.165343] scmi_core: SCMI protocol bus registered
+[VM 2] 278,4289795808,2991008016,4490803824,1499795808
+[VM 1] [    4.179649] FPGA manager framework
+[VM 2] 279,4297466800,3001008016,4498474816,1497466800
+[VM 2] 280,4305169344,3011008016,4506177360,1495169344
+[VM 1] [    4.198969] vgaarb: loaded
+[VM 2] 281,4312772624,3021008016,4513780640,1492772624
+[VM 2] 282,4320744512,3031008016,4521752528,1490744512
+[VM 2] 283,4328542912,3041008016,4529550928,1488542912
+[VM 1] [    4.210649] clocksource: Switched to clocksource arch_sys_counter
+[VM 2] 284,4336334064,3051008016,4537342080,1486334064
+[VM 1] [    4.227456] VFS: Disk quotas dquot_6.6.0
+[VM 2] 285,4344466496,3061008016,4545474512,1484466496
+[VM 2] 286,4624095584,3071008016,4825103600,1754095584
+[VM 2] 287,4632204768,3081008016,4833212784,1752204768
+[VM 1] [    4.509989] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[VM 2] 288,4640573792,3091008016,4841581808,1750573792
+[VM 1] [    4.513284] pnp: PnP ACPI: disabled
+[VM 2] 289,4648564144,3101008016,4849572160,1748564144
+[VM 2] 290,4656145808,3111008016,4857153824,1746145808
+[VM 2] 291,4663629312,3121008016,4864637328,1743629312
+[VM 2] 292,4671263056,3131008016,4872271072,1741263056
+[VM 1] [    4.558094] NET: Registered PF_INET protocol family
+[VM 2] 293,4679301872,3141008016,4880309888,1739301872
+[VM 2] 294,4686883072,3151008016,4887891088,1736883072
+[VM 2] 295,4694609824,3161008016,4895617840,1734609824
+[VM 1] [    4.572032] IP idents hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[VM 2] 296,4702383456,3171008016,4903391472,1732383456
+[VM 2] 297,4710468768,3181008016,4911476784,1730468768
+[VM 2] 298,4718212368,3191008016,4919220384,1728212368
+[VM 1] [    4.592779] tcp_listen_portaddr_hash hash table entries: 512 (order: 1, 8192 bytes, linear)
+[VM 2] 299,4726079296,3201008016,4927087312,1726079296
+[VM 2] PERIODIC LATENCY COMPLETE samples=300
+[VM 1] [    4.614209] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[VM 1] [    4.631701] TCP established hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[VM 1] [    4.647475] TCP bind hash table entries: 8192 (order: 6, 262144 bytes, linear)
+[VM 1] [    4.668791] TCP: Hash tables configured (established 8192 bind 8192)
+[VM 1] [    4.685819] UDP hash table entries: 512 (order: 3, 32768 bytes, linear)
+[VM 1] [    4.712266] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[VM 1] [    4.730123] RPC: Registered named UNIX socket transport module.
+[VM 1] [    4.746817] RPC: Registered udp transport module.
+[VM 1] [    4.756605] RPC: Registered tcp transport module.
+
+[Axvisor] detached VM[1] console
+Welcome to AxVisor Shell!
+Type 'help' to see available commands
+Use UP/DOWN arrows to navigate command history
+Console shortcuts:
+  Ctrl+X, then h  return to the Axvisor shell
+  Ctrl+X, then [  attach the previous running guest
+  Ctrl+X, then ]  attach the next running guest
+Note: Running with limited features (filesystem support disabled).
+
+[2Kaxvisor:$ [2Kaxvisor:$ v[2Kaxvisor:$ vm[2Kaxvisor:$ vme[2Kaxvisor:$ vmex[2Kaxvisor:$ vmexi[2Kaxvisor:$ vmexit[2Kaxvisor:$ vmexit [2Kaxvisor:$ vmexit s[2Kaxvisor:$ vmexit st[2Kaxvisor:$ vmexit sta[2Kaxvisor:$ vmexit stat
+VM-exit counters per physical CPU (12 reasons):
+  cpu         irq     timer      mmio       wfi   hvc-smc    sysreg    gic-if       sgi    cpu-up  sys-down   nothing     other
+    1         392       301     28536        46         -         -         -         -         -         -         -         -
+    2         529       325     25480        12         7         -         -        63         -         -        11         -
+    3         237       204        52       710         -         -         -        13         -         -         2         -
+axvisor:$ [2Kaxvisor:$ v[2Kaxvisor:$ vm[2Kaxvisor:$ vm [2Kaxvisor:$ vm c[2Kaxvisor:$ vm co[2Kaxvisor:$ vm con[2Kaxvisor:$ vm cons[2Kaxvisor:$ vm conso[2Kaxvisor:$ vm consol[2Kaxvisor:$ vm console[2Kaxvisor:$ vm console [2Kaxvisor:$ vm console 1
+✓ Attached VM[1] console; use Ctrl+X, then h to return to the shell
+[    4.775371] RPC: Registered tcp-with-tls transport module.
+[    5.093476] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[    5.093621] PCI: CLS 0 bytes, default 64
+[    5.098267] Unpacking initramfs...
+[    5.135589] kvm [1]: HYP mode not available
+[    5.148608] Initialise system trusted keyrings
+[    5.164539] workingset: timestamp_bits=42 (anon: 38) max_order=18 bucket_order=0 (anon: 0)
+[    5.186272] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[    5.208708] NFS: Registering the id_resolver key type
+[    5.220248] Key type id_resolver registered
+[    5.220281] Key type id_legacy registered
+[    5.220627] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[    5.220714] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[    5.270981] 9p: Installing v9fs 9p2000 file system support
+[    5.272868] Key type asymmetric registered
+[    5.273143] Asymmetric key parser 'x509' registered
+[    5.273565] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 244)
+[    5.273861] io scheduler mq-deadline registered
+[    5.274209] io scheduler kyber registered
+[    5.343306] io scheduler bfq registered
+[    5.385558] ledtrig-cpu: registered to indicate activity on CPUs
+[    5.487629] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[    5.519454] msm_serial: driver initialized
+[    5.520593] SuperH (H)SCI(F) driver initialized
+[    5.521027] STM32 USART driver initialized
+[    6.200422] loop: module loaded
+[    6.209207] megasas: 07.734.00.00-rc1
+[    6.237092] tun: Universal TUN/TAP device driver, 1.6
+[    6.292727] thunder_xcv, ver 1.0
+[    6.299888] thunder_bgx, ver 1.0
+[    6.306894] nicpf, ver 1.0
+[    6.317074] e1000: Intel(R) PRO/1000 Network Driver
+[    6.330906] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[    6.331289] e1000e: Intel(R) PRO/1000 Network Driver
+[    6.331467] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[    6.331784] igb: Intel(R) Gigabit Ethernet Network Driver
+[    6.331964] igb: Copyright (c) 2007-2014 Intel Corporation.
+[    6.332274] igbvf: Intel(R) Gigabit Virtual Function Network Driver
+[    6.332454] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[    6.333172] sky2: driver version 1.30
+[    6.424683] VFIO - User Level meta-driver version: 0.3
+[    6.444122] usbcore: registered new interface driver usb-storage
+[    6.469412] i2c_dev: i2c /dev entries driver
+[    6.509784] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[    6.528282] usbcore: registered new interface driver usbhid
+[    6.539325] usbhid: USB HID core driver
+[    6.564972] NET: Registered PF_INET6 protocol family
+[    6.589386] Segment Routing with IPv6
+[    6.597181] In-situ OAM (IOAM) with IPv6
+[    6.611180] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[    6.625630] NET: Registered PF_PACKET protocol family
+[    6.639255] 9pnet: Installing 9P2000 support
+[    6.651160] Key type dns_resolver registered
+[    6.712306] registered taskstats version 1
+[    6.727138] Loading compiled-in X.509 certificates
+[    6.761012] Demotion targets for Node 0: null
+[    6.779857] clk: Disabling unused clocks
+[    6.791100] PM: genpd: Disabling unused power domains
+[    6.861941] Freeing initrd memory: 19160K
+[    6.955535] Freeing unused kernel memory: 12672K
+[    6.968773] Run /init as init process
+RT_INIT scenario=idle cpu=1 load_cpu=0 loops=1800000 interval_us=1000 maxlat_us=400 priority=90 start_delay_sec=25
+RT_CPUS total=2
+RT_SCHED_PROBE_START
+pid 1's current scheduling policy: SCHED_OTHER
+pid 1's current scheduling priority: 0
+RT_SCHED_PROBE_OK
+RT_WAIT_BEFORE_TEST seconds=25
+RT_CYCLICTEST_START
+WARN: stat /dev/cpu_dma_latency failed: No such file or directory
+[   45.283384] random: crng init done
+# Histogram
+000156 000002
+000157 000001
+000158 000001
+000159 000007
+000160 000012
+000161 000017
+000162 000032
+000163 000035
+000164 000051
+000165 000051
+000166 000063
+000167 000072
+000168 000076
+000169 000075
+000170 000101
+000171 000109
+000172 000141
+000173 000133
+000174 000130
+000175 000135
+000176 000144
+000177 000170
+000178 000180
+000179 000183
+000180 000180
+000181 000182
+000182 000171
+000183 000171
+000184 000190
+000185 000196
+000186 000203
+000187 000203
+000188 000178
+000189 000202
+000190 000200
+000191 000192
+000192 000204
+000193 000228
+000194 000197
+000195 000229
+000196 000253
+000197 000252
+000198 000258
+000199 000260
+000200 000241
+000201 000238
+000202 000251
+000203 000246
+000204 000234
+000205 000261
+000206 000260
+000207 000260
+000208 000227
+000209 000252
+000210 000250
+000211 000257
+000212 000226
+000213 000253
+000214 000247
+000215 000241
+000216 000238
+000217 000237
+000218 000263
+000219 000206
+000220 000224
+000221 000206
+000222 000228
+000223 000204
+000224 000212
+000225 000221
+000226 000184
+000227 000173
+000228 000187
+000229 000184
+000230 000203
+000231 000197
+000232 000196
+000233 000195
+000234 000180
+000235 000182
+000236 000156
+000237 000176
+000238 000202
+000239 000165
+000240 000207
+000241 000196
+000242 000168
+000243 000148
+000244 000168
+000245 000142
+000246 000180
+000247 000155
+000248 000141
+000249 000160
+000250 000120
+000251 000142
+000252 000141
+000253 000125
+000254 000129
+000255 000139
+000256 000122
+000257 000143
+000258 000164
+000259 000128
+000260 000142
+000261 000143
+000262 000127
+000263 000130
+000264 000129
+000265 000116
+000266 000113
+000267 000122
+000268 000094
+000269 000108
+000270 000096
+000271 000108
+000272 000105
+000273 000099
+000274 000099
+000275 000090
+000276 000112
+000277 000094
+000278 000105
+000279 000097
+000280 000090
+000281 000096
+000282 000101
+000283 000087
+000284 000078
+000285 000096
+000286 000071
+000287 000078
+000288 000080
+000289 000079
+000290 000083
+000291 000068
+000292 000085
+000293 000071
+000294 000076
+000295 000066
+000296 000078
+000297 000069
+000298 000085
+000299 000064
+000300 000070
+000301 000062
+000302 000072
+000303 000071
+000304 000052
+000305 000078
+000306 000060
+000307 000059
+000308 000057
+000309 000057
+000310 000074
+000311 000059
+000312 000064
+000313 000061
+000314 000068
+000315 000049
+000316 000054
+000317 000057
+000318 000059
+000319 000061
+000320 000067
+000321 000067
+000322 000046
+000323 000046
+000324 000063
+000325 000064
+000326 000042
+000327 000053
+000328 000057
+000329 000064
+000330 000069
+000331 000049
+000332 000068
+000333 000062
+000334 000068
+000335 000073
+000336 000060
+000337 000088
+000338 000063
+000339 000093
+000340 000099
+000341 000101
+000342 000110
+000343 000105
+000344 000115
+000345 000131
+000346 000137
+000347 000141
+000348 000167
+000349 000154
+000350 000147
+000351 000168
+000352 000160
+000353 000193
+000354 000187
+000355 000190
+000356 000228
+000357 000215
+000358 000226
+000359 000217
+000360 000273
+000361 000244
+000362 000254
+000363 000292
+000364 000271
+000365 000304
+000366 000306
+000367 000323
+000368 000309
+000369 000338
+000370 000342
+000371 000346
+000372 000349
+000373 000358
+000374 000369
+000375 000357
+000376 000382
+000377 000342
+000378 000389
+000379 000355
+000380 000388
+000381 000358
+000382 000438
+000383 000384
+000384 000425
+000385 000421
+000386 000425
+000387 000369
+000388 000385
+000389 000401
+000390 000405
+000391 000403
+000392 000420
+000393 000391
+000394 000421
+000395 000451
+000396 000423
+000397 000410
+000398 000386
+000399 000405
+# Min Latencies: 00156
+# Avg Latencies: 00588
+# Max Latencies: 11869
+# Histogram Overflows: 1758010
+# Histogram Overflow at cycle number:
+# Thread 0: 00000 00001 00002 00003 00004 00005 00006 00007 00008 00009 00010 00011 00012 00013 00014 00015 00016 00017 00018 00019 00021 00022 00023 00024 00025 00026 00027 00028 00029 00030 00031 00032 00033 00034 00035 00036 00037 00038 00039 00040 00041 00042 00043 00045 00046 00047 00048 00049 00050 00051 00052 00053 00054 00055 00056 00057 00058 00059 00060 00061 00062 00063 00064 00065 00066 00067 00068 00069 00070 00071 00072 00073 00074 00075 00077 00078 00079 00080 00081 00082 00083 00084 00085 00086 00088 00089 00090 00091 00092 00093 00094 00095 00096 00097 00099 00100 00101 00102 00103 00104 00105 00106 00107 00108 00109 00110 00111 00112 00113 00114 00115 00116 00117 00118 00119 00120 00121 00122 00123 00124 00125 00126 00127 00128 00129 00130 00131 00132 00133 00134 00135 00136 00137 00138 00139 00140 00141 00142 00143 00144 00145 00146 00147 00148 00149 00150 00151 00152 00153 00154 00155 00156 00157 00158 00159 00160 00161 00163 00164 00165 00166 00167 00168 00169 00170 00171 00172 00173 00174 00175 00176 00177 00178 00179 00180 00181 00182 00183 00184 00185 00186 00187 00188 00189 00190 00191 00192 00193 00194 00195 00196 00197 00198 00199 00200 00201 00202 00203 00204 00205 00206 00207 00208 00209 00210 00211 00212 00213 00214 00216 00217 00218 00219 00220 00221 00222 00223 00224 00225 00226 00227 00228 00229 00230 00231 00232 00233 00234 00235 00236 00237 00238 00239 00240 00241 00242 00243 00244 00245 00246 00247 00248 00249 00250 00251 00252 00253 00254 00255 00256 00257 00258 00259 00260 00261 00262 00263 00264 00265 00266 00267 00268 00269 00270 00271 00272 00273 00274 00275 00276 00277 00278 00279 00280 00281 00282 00283 00284 00285 00286 00287 00288 00289 00291 00292 00293 00294 00295 00296 00297 00298 00299 00300 00301 00302 00303 00304 00305 00306 00307 00308 00309 00310 00311 00312 00313 00314 00315 00316 00317 00318 00319 00320 00321 00322 00323 00324 00325 00326 00327 00328 00329 00330 00331 00332 00333 00334 00335 00336 00337 00338 00339 00340 00341 00342 00343 00344 00345 00346 00347 00348 00349 00350 00351 00352 00353 00355 00356 00357 00358 00359 00360 00361 00362 00363 00364 00365 00366 00367 00368 00369 00370 00371 00372 00373 00374 00376 00377 00378 00379 00380 00381 00382 00383 00384 00385 00386 00387 00388 00389 00390 00391 00392 00393 00394 00395 00396 00397 00398 00399 00400 00401 00402 00403 00404 00405 00406 00407 00408 00409 # 1757610 others
+
+RT_CYCLICTEST_COMPLETE
+RT_CPUSTAT sample=0 cpu=cpu0 user=6 nice=0 system=211 idle=2492 iowait=0 irq=22 softirq=1 steal=0
+RT_CPUSTAT sample=0 cpu=cpu1 user=0 nice=0 system=1 idle=2845 iowait=0 irq=6 softirq=0 steal=0
+RT_CPUSTAT sample=1 cpu=cpu0 user=7 nice=0 system=213 idle=2989 iowait=0 irq=23 softirq=1 steal=0
+RT_CPUSTAT sample=1 cpu=cpu1 user=1 nice=0 system=7 idle=3208 iowait=0 irq=99 softirq=0 steal=0
+RT_CPUSTAT sample=2 cpu=cpu0 user=7 nice=0 system=214 idle=3488 iowait=0 irq=24 softirq=2 steal=0
+RT_CPUSTAT sample=2 cpu=cpu1 user=2 nice=0 system=9 idle=3573 iowait=0 irq=192 softirq=0 steal=0
+RT_CPUSTAT sample=3 cpu=cpu0 user=7 nice=0 system=216 idle=3986 iowait=0 irq=25 softirq=2 steal=0
+RT_CPUSTAT sample=3 cpu=cpu1 user=3 nice=0 system=11 idle=3937 iowait=0 irq=286 softirq=0 steal=0
+RT_CPUSTAT sample=4 cpu=cpu0 user=7 nice=0 system=217 idle=4485 iowait=0 irq=26 softirq=2 steal=0
+RT_CPUSTAT sample=4 cpu=cpu1 user=3 nice=0 system=14 idle=4303 iowait=0 irq=378 softirq=0 steal=0
+RT_CPUSTAT sample=5 cpu=cpu0 user=7 nice=0 system=218 idle=4984 iowait=0 irq=27 softirq=2 steal=0
+RT_CPUSTAT sample=5 cpu=cpu1 user=3 nice=0 system=16 idle=4671 iowait=0 irq=469 softirq=0 steal=0
+RT_CPUSTAT sample=6 cpu=cpu0 user=7 nice=0 system=219 idle=5483 iowait=0 irq=27 softirq=2 steal=0
+RT_CPUSTAT sample=6 cpu=cpu1 user=4 nice=0 system=18 idle=5036 iowait=0 irq=561 softirq=0 steal=0
+RT_CPUSTAT sample=7 cpu=cpu0 user=7 nice=0 system=220 idle=5982 iowait=0 irq=28 softirq=2 steal=0
+RT_CPUSTAT sample=7 cpu=cpu1 user=4 nice=0 system=22 idle=5403 iowait=0 irq=652 softirq=0 steal=0
+RT_CPUSTAT sample=8 cpu=cpu0 user=8 nice=0 system=221 idle=6481 iowait=0 irq=29 softirq=2 steal=0
+RT_CPUSTAT sample=8 cpu=cpu1 user=5 nice=0 system=26 idle=5770 iowait=0 irq=744 softirq=1 steal=0
+RT_CPUSTAT sample=9 cpu=cpu0 user=8 nice=0 system=221 idle=6980 iowait=0 irq=30 softirq=3 steal=0
+RT_CPUSTAT sample=9 cpu=cpu1 user=5 nice=0 system=27 idle=6137 iowait=0 irq=836 softirq=1 steal=0
+RT_CPUSTAT sample=10 cpu=cpu0 user=8 nice=0 system=222 idle=7479 iowait=0 irq=31 softirq=3 steal=0
+RT_CPUSTAT sample=10 cpu=cpu1 user=6 nice=0 system=28 idle=6505 iowait=0 irq=926 softirq=1 steal=0
+RT_CPUSTAT sample=11 cpu=cpu0 user=8 nice=0 system=223 idle=7978 iowait=0 irq=31 softirq=3 steal=0
+RT_CPUSTAT sample=11 cpu=cpu1 user=6 nice=0 system=30 idle=6873 iowait=0 irq=1017 softirq=1 steal=0
+RT_CPUSTAT sample=12 cpu=cpu0 user=8 nice=0 system=224 idle=8477 iowait=0 irq=32 softirq=3 steal=0
+RT_CPUSTAT sample=12 cpu=cpu1 user=7 nice=0 system=33 idle=7240 iowait=0 irq=1108 softirq=1 steal=0
+RT_CPUSTAT sample=13 cpu=cpu0 user=8 nice=0 system=225 idle=8976 iowait=0 irq=33 softirq=3 steal=0
+RT_CPUSTAT sample=13 cpu=cpu1 user=7 nice=0 system=36 idle=7610 iowait=0 irq=1197 softirq=1 steal=0
+RT_CPUSTAT sample=14 cpu=cpu0 user=8 nice=0 system=226 idle=9475 iowait=0 irq=34 softirq=3 steal=0
+RT_CPUSTAT sample=14 cpu=cpu1 user=8 nice=0 system=41 idle=7974 iowait=0 irq=1289 softirq=1 steal=0
+RT_CPUSTAT sample=15 cpu=cpu0 user=9 nice=0 system=227 idle=9974 iowait=0 irq=35 softirq=4 steal=0
+RT_CPUSTAT sample=15 cpu=cpu1 user=9 nice=0 system=43 idle=8339 iowait=0 irq=1382 softirq=1 steal=0
+RT_CPUSTAT sample=16 cpu=cpu0 user=9 nice=0 system=228 idle=10473 iowait=0 irq=36 softirq=4 steal=0
+RT_CPUSTAT sample=16 cpu=cpu1 user=10 nice=0 system=45 idle=8705 iowait=0 irq=1475 softirq=1 steal=0
+RT_CPUSTAT sample=17 cpu=cpu0 user=9 nice=0 system=229 idle=10972 iowait=0 irq=36 softirq=4 steal=0
+RT_CPUSTAT sample=17 cpu=cpu1 user=10 nice=0 system=47 idle=9072 iowait=0 irq=1566 softirq=2 steal=0
+RT_CPUSTAT sample=18 cpu=cpu0 user=9 nice=0 system=229 idle=11471 iowait=0 irq=37 softirq=4 steal=0
+RT_CPUSTAT sample=18 cpu=cpu1 user=11 nice=0 system=49 idle=9435 iowait=0 irq=1661 softirq=2 steal=0
+RT_CPUSTAT sample=19 cpu=cpu0 user=10 nice=0 system=230 idle=11969 iowait=0 irq=38 softirq=4 steal=0
+RT_CPUSTAT sample=19 cpu=cpu1 user=11 nice=0 system=51 idle=9797 iowait=0 irq=1756 softirq=2 steal=0
+RT_CPUSTAT sample=20 cpu=cpu0 user=10 nice=0 system=230 idle=12468 iowait=0 irq=39 softirq=4 steal=0
+RT_CPUSTAT sample=20 cpu=cpu1 user=11 nice=0 system=53 idle=10161 iowait=0 irq=1851 softirq=2 steal=0
+RT_CPUSTAT sample=21 cpu=cpu0 user=10 nice=0 system=231 idle=12967 iowait=0 irq=39 softirq=5 steal=0
+RT_CPUSTAT sample=21 cpu=cpu1 user=11 nice=0 system=55 idle=10524 iowait=0 irq=1945 softirq=2 steal=0
+RT_CPUSTAT sample=22 cpu=cpu0 user=11 nice=0 system=232 idle=13466 iowait=0 irq=40 softirq=5 steal=0
+RT_CPUSTAT sample=22 cpu=cpu1 user=13 nice=0 system=59 idle=10886 iowait=0 irq=2040 softirq=2 steal=0
+RT_CPUSTAT sample=23 cpu=cpu0 user=11 nice=0 system=233 idle=13965 iowait=0 irq=41 softirq=5 steal=0
+RT_CPUSTAT sample=23 cpu=cpu1 user=13 nice=0 system=63 idle=11252 iowait=0 irq=2133 softirq=2 steal=0
+RT_CPUSTAT sample=24 cpu=cpu0 user=11 nice=0 system=233 idle=14464 iowait=0 irq=42 softirq=5 steal=0
+RT_CPUSTAT sample=24 cpu=cpu1 user=13 nice=0 system=64 idle=11616 iowait=0 irq=2227 softirq=2 steal=0
+RT_CPUSTAT sample=25 cpu=cpu0 user=12 nice=0 system=234 idle=14963 iowait=0 irq=43 softirq=5 steal=0
+RT_CPUSTAT sample=25 cpu=cpu1 user=13 nice=0 system=67 idle=11981 iowait=0 irq=2319 softirq=2 steal=0
+RT_CPUSTAT sample=26 cpu=cpu0 user=12 nice=0 system=235 idle=15462 iowait=0 irq=44 softirq=5 steal=0
+RT_CPUSTAT sample=26 cpu=cpu1 user=13 nice=0 system=68 idle=12345 iowait=0 irq=2413 softirq=3 steal=0
+RT_CPUSTAT sample=27 cpu=cpu0 user=12 nice=0 system=236 idle=15961 iowait=0 irq=44 softirq=6 steal=0
+RT_CPUSTAT sample=27 cpu=cpu1 user=14 nice=0 system=70 idle=12711 iowait=0 irq=2506 softirq=3 steal=0
+RT_CPUSTAT sample=28 cpu=cpu0 user=12 nice=0 system=237 idle=16460 iowait=0 irq=45 softirq=6 steal=0
+RT_CPUSTAT sample=28 cpu=cpu1 user=14 nice=0 system=71 idle=13075 iowait=0 irq=2599 softirq=3 steal=0
+RT_CPUSTAT sample=29 cpu=cpu0 user=12 nice=0 system=237 idle=16959 iowait=0 irq=46 softirq=6 steal=0
+RT_CPUSTAT sample=29 cpu=cpu1 user=15 nice=0 system=71 idle=13442 iowait=0 irq=2692 softirq=3 steal=0
+RT_CPUSTAT sample=30 cpu=cpu0 user=12 nice=0 system=238 idle=17458 iowait=0 irq=47 softirq=6 steal=0
+RT_CPUSTAT sample=30 cpu=cpu1 user=16 nice=0 system=76 idle=13809 iowait=0 irq=2783 softirq=3 steal=0
+RT_CPUSTAT sample=31 cpu=cpu0 user=13 nice=0 system=240 idle=17957 iowait=0 irq=48 softirq=6 steal=0
+RT_CPUSTAT sample=31 cpu=cpu1 user=17 nice=0 system=78 idle=14174 iowait=0 irq=2877 softirq=3 steal=0
+RT_CPUSTAT sample=32 cpu=cpu0 user=13 nice=0 system=240 idle=18456 iowait=0 irq=49 softirq=6 steal=0
+RT_CPUSTAT sample=32 cpu=cpu1 user=17 nice=0 system=81 idle=14538 iowait=0 irq=2970 softirq=3 steal=0
+RT_CPUSTAT sample=33 cpu=cpu0 user=14 nice=0 system=241 idle=18955 iowait=0 irq=49 softirq=6 steal=0
+RT_CPUSTAT sample=33 cpu=cpu1 user=19 nice=0 system=83 idle=14901 iowait=0 irq=3065 softirq=3 steal=0
+RT_CPUSTAT sample=34 cpu=cpu0 user=14 nice=0 system=242 idle=19453 iowait=0 irq=50 softirq=7 steal=0
+RT_CPUSTAT sample=34 cpu=cpu1 user=19 nice=0 system=84 idle=15265 iowait=0 irq=3159 softirq=3 steal=0
+RT_CPUSTAT sample=35 cpu=cpu0 user=14 nice=0 system=243 idle=19952 iowait=0 irq=51 softirq=7 steal=0
+RT_CPUSTAT sample=35 cpu=cpu1 user=20 nice=0 system=86 idle=15629 iowait=0 irq=3253 softirq=4 steal=0
+RT_CPUSTAT sample=36 cpu=cpu0 user=14 nice=0 system=244 idle=20451 iowait=0 irq=52 softirq=7 steal=0
+RT_CPUSTAT sample=36 cpu=cpu1 user=20 nice=0 system=91 idle=15991 iowait=0 irq=3349 softirq=4 steal=0
+RT_CPUSTAT sample=37 cpu=cpu0 user=14 nice=0 system=244 idle=20950 iowait=0 irq=53 softirq=7 steal=0
+RT_CPUSTAT sample=37 cpu=cpu1 user=21 nice=0 system=93 idle=16353 iowait=0 irq=3444 softirq=4 steal=0
+RT_CPUSTAT sample=38 cpu=cpu0 user=15 nice=0 system=245 idle=21448 iowait=0 irq=54 softirq=7 steal=0
+RT_CPUSTAT sample=38 cpu=cpu1 user=21 nice=0 system=97 idle=16710 iowait=0 irq=3544 softirq=4 steal=0
+RT_CPUSTAT sample=39 cpu=cpu0 user=16 nice=0 system=245 idle=21947 iowait=0 irq=55 softirq=7 steal=0
+RT_CPUSTAT sample=39 cpu=cpu1 user=22 nice=0 system=102 idle=17070 iowait=0 irq=3643 softirq=4 steal=0
+RT_CPUSTAT sample=40 cpu=cpu0 user=16 nice=0 system=246 idle=22446 iowait=0 irq=55 softirq=8 steal=0
+RT_CPUSTAT sample=40 cpu=cpu1 user=23 nice=0 system=106 idle=17434 iowait=0 irq=3737 softirq=4 steal=0
+RT_CPUSTAT sample=41 cpu=cpu0 user=16 nice=0 system=247 idle=22945 iowait=0 irq=56 softirq=8 steal=0
+RT_CPUSTAT sample=41 cpu=cpu1 user=23 nice=0 system=108 idle=17799 iowait=0 irq=3831 softirq=4 steal=0
+RT_CPUSTAT sample=42 cpu=cpu0 user=17 nice=0 system=247 idle=23444 iowait=0 irq=57 softirq=8 steal=0
+RT_CPUSTAT sample=42 cpu=cpu1 user=23 nice=0 system=110 idle=18167 iowait=0 irq=3921 softirq=4 steal=0
+RT_CPUSTAT sample=43 cpu=cpu0 user=17 nice=0 system=249 idle=23943 iowait=0 irq=58 softirq=8 steal=0
+RT_CPUSTAT sample=43 cpu=cpu1 user=24 nice=0 system=110 idle=18533 iowait=0 irq=4013 softirq=4 steal=0
+RT_CPUSTAT sample=44 cpu=cpu0 user=17 nice=0 system=250 idle=24442 iowait=0 irq=59 softirq=8 steal=0
+RT_CPUSTAT sample=44 cpu=cpu1 user=25 nice=0 system=114 idle=18896 iowait=0 irq=4108 softirq=5 steal=0
+RT_CPUSTAT sample=45 cpu=cpu0 user=17 nice=0 system=250 idle=24941 iowait=0 irq=59 softirq=8 steal=0
+RT_CPUSTAT sample=45 cpu=cpu1 user=25 nice=0 system=117 idle=19258 iowait=0 irq=4204 softirq=5 steal=0
+RT_CPUSTAT sample=46 cpu=cpu0 user=17 nice=0 system=252 idle=25439 iowait=0 irq=60 softirq=9 steal=0
+RT_CPUSTAT sample=46 cpu=cpu1 user=26 nice=0 system=119 idle=19623 iowait=0 irq=4297 softirq=5 steal=0
+RT_CPUSTAT sample=47 cpu=cpu0 user=17 nice=0 system=252 idle=25938 iowait=0 irq=61 softirq=9 steal=0
+RT_CPUSTAT sample=47 cpu=cpu1 user=26 nice=0 system=121 idle=19989 iowait=0 irq=4388 softirq=5 steal=0
+RT_CPUSTAT sample=48 cpu=cpu0 user=17 nice=0 system=253 idle=26437 iowait=0 irq=62 softirq=9 steal=0
+RT_CPUSTAT sample=48 cpu=cpu1 user=26 nice=0 system=123 idle=20353 iowait=0 irq=4481 softirq=5 steal=0
+RT_CPUSTAT sample=49 cpu=cpu0 user=17 nice=0 system=254 idle=26936 iowait=0 irq=63 softirq=9 steal=0
+RT_CPUSTAT sample=49 cpu=cpu1 user=27 nice=0 system=124 idle=20718 iowait=0 irq=4573 softirq=5 steal=0
+RT_CPUSTAT sample=50 cpu=cpu0 user=18 nice=0 system=254 idle=27435 iowait=0 irq=63 softirq=9 steal=0
+RT_CPUSTAT sample=50 cpu=cpu1 user=28 nice=0 system=129 idle=21082 iowait=0 irq=4667 softirq=5 steal=0
+RT_CPUSTAT sample=51 cpu=cpu0 user=18 nice=0 system=255 idle=27934 iowait=0 irq=64 softirq=9 steal=0
+RT_CPUSTAT sample=51 cpu=cpu1 user=28 nice=0 system=132 idle=21447 iowait=0 irq=4760 softirq=5 steal=0
+RT_CPUSTAT sample=52 cpu=cpu0 user=18 nice=0 system=256 idle=28433 iowait=0 irq=65 softirq=10 steal=0
+RT_CPUSTAT sample=52 cpu=cpu1 user=28 nice=0 system=134 idle=21812 iowait=0 irq=4853 softirq=5 steal=0
+RT_CPUSTAT sample=53 cpu=cpu0 user=18 nice=0 system=257 idle=28932 iowait=0 irq=66 softirq=10 steal=0
+RT_CPUSTAT sample=53 cpu=cpu1 user=29 nice=0 system=137 idle=22174 iowait=0 irq=4948 softirq=6 steal=0
+RT_CPUSTAT sample=54 cpu=cpu0 user=19 nice=0 system=257 idle=29431 iowait=0 irq=67 softirq=10 steal=0
+RT_CPUSTAT sample=54 cpu=cpu1 user=29 nice=0 system=140 idle=22539 iowait=0 irq=5041 softirq=6 steal=0
+RT_CPUSTAT sample=55 cpu=cpu0 user=19 nice=0 system=258 idle=29929 iowait=0 irq=68 softirq=10 steal=0
+RT_CPUSTAT sample=55 cpu=cpu1 user=30 nice=0 system=145 idle=22902 iowait=0 irq=5135 softirq=6 steal=0
+RT_CPUSTAT sample=56 cpu=cpu0 user=20 nice=0 system=259 idle=30427 iowait=0 irq=69 softirq=10 steal=0
+RT_CPUSTAT sample=56 cpu=cpu1 user=31 nice=0 system=153 idle=23260 iowait=0 irq=5234 softirq=6 steal=0
+RT_CPUSTAT sample=57 cpu=cpu0 user=20 nice=0 system=259 idle=30926 iowait=0 irq=70 softirq=10 steal=0
+RT_CPUSTAT sample=57 cpu=cpu1 user=31 nice=0 system=157 idle=23625 iowait=0 irq=5327 softirq=6 steal=0
+RT_CPUSTAT sample=58 cpu=cpu0 user=21 nice=0 system=259 idle=31424 iowait=0 irq=71 softirq=11 steal=0
+RT_CPUSTAT sample=58 cpu=cpu1 user=33 nice=0 system=158 idle=23989 iowait=0 irq=5420 softirq=6 steal=0
+RT_CPUSTAT sample=59 cpu=cpu0 user=21 nice=0 system=260 idle=31923 iowait=0 irq=72 softirq=11 steal=0
+RT_CPUSTAT sample=59 cpu=cpu1 user=34 nice=0 system=160 idle=24354 iowait=0 irq=5513 softirq=6 steal=0
+RT_CPUSTAT sample=60 cpu=cpu0 user=21 nice=0 system=261 idle=32422 iowait=0 irq=72 softirq=11 steal=0
+RT_CPUSTAT sample=60 cpu=cpu1 user=35 nice=0 system=163 idle=24717 iowait=0 irq=5607 softirq=6 steal=0
+RT_CPUSTAT sample=61 cpu=cpu0 user=21 nice=0 system=262 idle=32921 iowait=0 irq=73 softirq=11 steal=0
+RT_CPUSTAT sample=61 cpu=cpu1 user=35 nice=0 system=165 idle=25081 iowait=0 irq=5701 softirq=7 steal=0
+RT_CPUSTAT sample=62 cpu=cpu0 user=21 nice=0 system=263 idle=33420 iowait=0 irq=74 softirq=11 steal=0
+RT_CPUSTAT sample=62 cpu=cpu1 user=36 nice=0 system=167 idle=25446 iowait=0 irq=5794 softirq=7 steal=0
+RT_CPUSTAT sample=63 cpu=cpu0 user=21 nice=0 system=264 idle=33919 iowait=0 irq=75 softirq=12 steal=0
+RT_CPUSTAT sample=63 cpu=cpu1 user=37 nice=0 system=169 idle=25810 iowait=0 irq=5888 softirq=7 steal=0
+RT_CPUSTAT sample=64 cpu=cpu0 user=21 nice=0 system=265 idle=34418 iowait=0 irq=76 softirq=12 steal=0
+RT_CPUSTAT sample=64 cpu=cpu1 user=37 nice=0 system=171 idle=26177 iowait=0 irq=5979 softirq=7 steal=0
+RT_CPUSTAT sample=65 cpu=cpu0 user=21 nice=0 system=266 idle=34916 iowait=0 irq=77 softirq=12 steal=0
+RT_CPUSTAT sample=65 cpu=cpu1 user=38 nice=0 system=175 idle=26541 iowait=0 irq=6074 softirq=7 steal=0
+RT_CPUSTAT sample=66 cpu=cpu0 user=22 nice=0 system=266 idle=35415 iowait=0 irq=77 softirq=12 steal=0
+RT_CPUSTAT sample=66 cpu=cpu1 user=38 nice=0 system=177 idle=26906 iowait=0 irq=6166 softirq=7 steal=0
+RT_CPUSTAT sample=67 cpu=cpu0 user=22 nice=0 system=267 idle=35914 iowait=0 irq=78 softirq=12 steal=0
+RT_CPUSTAT sample=67 cpu=cpu1 user=39 nice=0 system=179 idle=27273 iowait=0 irq=6257 softirq=7 steal=0
+RT_CPUSTAT sample=68 cpu=cpu0 user=22 nice=0 system=267 idle=36413 iowait=0 irq=79 softirq=12 steal=0
+RT_CPUSTAT sample=68 cpu=cpu1 user=39 nice=0 system=181 idle=27640 iowait=0 irq=6349 softirq=7 steal=0
+RT_CPUSTAT sample=69 cpu=cpu0 user=22 nice=0 system=269 idle=36912 iowait=0 irq=80 softirq=13 steal=0
+RT_CPUSTAT sample=69 cpu=cpu1 user=39 nice=0 system=185 idle=28002 iowait=0 irq=6445 softirq=7 steal=0
+RT_CPUSTAT sample=70 cpu=cpu0 user=22 nice=0 system=269 idle=37411 iowait=0 irq=81 softirq=13 steal=0
+RT_CPUSTAT sample=70 cpu=cpu1 user=40 nice=0 system=186 idle=28366 iowait=0 irq=6538 softirq=8 steal=0
+RT_CPUSTAT sample=71 cpu=cpu0 user=23 nice=0 system=270 idle=37909 iowait=0 irq=82 softirq=13 steal=0
+RT_CPUSTAT sample=71 cpu=cpu1 user=40 nice=0 system=189 idle=28732 iowait=0 irq=6631 softirq=8 steal=0
+RT_CPUSTAT sample=72 cpu=cpu0 user=24 nice=0 system=271 idle=38408 iowait=0 irq=82 softirq=13 steal=0
+RT_CPUSTAT sample=72 cpu=cpu1 user=41 nice=0 system=190 idle=29097 iowait=0 irq=6724 softirq=8 steal=0
+RT_CPUSTAT sample=73 cpu=cpu0 user=24 nice=0 system=272 idle=38907 iowait=0 irq=83 softirq=13 steal=0
+RT_CPUSTAT sample=73 cpu=cpu1 user=41 nice=0 system=193 idle=29459 iowait=0 irq=6820 softirq=8 steal=0
+RT_CPUSTAT sample=74 cpu=cpu0 user=24 nice=0 system=272 idle=39406 iowait=0 irq=84 softirq=13 steal=0
+RT_CPUSTAT sample=74 cpu=cpu1 user=41 nice=0 system=195 idle=29824 iowait=0 irq=6914 softirq=8 steal=0
+RT_CPUSTAT sample=75 cpu=cpu0 user=24 nice=0 system=274 idle=39905 iowait=0 irq=85 softirq=13 steal=0
+RT_CPUSTAT sample=75 cpu=cpu1 user=41 nice=0 system=196 idle=30190 iowait=0 irq=7006 softirq=8 steal=0
+RT_CPUSTAT sample=76 cpu=cpu0 user=25 nice=0 system=274 idle=40404 iowait=0 irq=86 softirq=14 steal=0
+RT_CPUSTAT sample=76 cpu=cpu1 user=42 nice=0 system=197 idle=30554 iowait=0 irq=7100 softirq=8 steal=0
+RT_CPUSTAT sample=77 cpu=cpu0 user=25 nice=0 system=275 idle=40903 iowait=0 irq=87 softirq=14 steal=0
+RT_CPUSTAT sample=77 cpu=cpu1 user=42 nice=0 system=200 idle=30916 iowait=0 irq=7196 softirq=8 steal=0
+RT_CPUSTAT sample=78 cpu=cpu0 user=25 nice=0 system=276 idle=41402 iowait=0 irq=87 softirq=14 steal=0
+RT_CPUSTAT sample=78 cpu=cpu1 user=43 nice=0 system=203 idle=31274 iowait=0 irq=7294 softirq=8 steal=0
+RT_CPUSTAT sample=79 cpu=cpu0 user=25 nice=0 system=277 idle=41900 iowait=0 irq=89 softirq=14 steal=0
+RT_CPUSTAT sample=79 cpu=cpu1 user=44 nice=0 system=207 idle=31635 iowait=0 irq=7391 softirq=8 steal=0
+RT_CPUSTAT sample=80 cpu=cpu0 user=25 nice=0 system=278 idle=42399 iowait=0 irq=90 softirq=14 steal=0
+RT_CPUSTAT sample=80 cpu=cpu1 user=45 nice=0 system=210 idle=32001 iowait=0 irq=7484 softirq=9 steal=0
+RT_CPUSTAT sample=81 cpu=cpu0 user=25 nice=0 system=279 idle=42898 iowait=0 irq=90 softirq=14 steal=0
+RT_CPUSTAT sample=81 cpu=cpu1 user=45 nice=0 system=213 idle=32363 iowait=0 irq=7579 softirq=9 steal=0
+RT_CPUSTAT sample=82 cpu=cpu0 user=25 nice=0 system=280 idle=43397 iowait=0 irq=91 softirq=15 steal=0
+RT_CPUSTAT sample=82 cpu=cpu1 user=45 nice=0 system=216 idle=32728 iowait=0 irq=7672 softirq=9 steal=0
+RT_CPUSTAT sample=83 cpu=cpu0 user=26 nice=0 system=280 idle=43896 iowait=0 irq=92 softirq=15 steal=0
+RT_CPUSTAT sample=83 cpu=cpu1 user=45 nice=0 system=219 idle=33094 iowait=0 irq=7765 softirq=9 steal=0
+RT_CPUSTAT sample=84 cpu=cpu0 user=26 nice=0 system=282 idle=44394 iowait=0 irq=93 softirq=15 steal=0
+RT_CPUSTAT sample=84 cpu=cpu1 user=46 nice=0 system=220 idle=33461 iowait=0 irq=7857 softirq=9 steal=0
+RT_CPUSTAT sample=85 cpu=cpu0 user=26 nice=0 system=283 idle=44893 iowait=0 irq=94 softirq=15 steal=0
+RT_CPUSTAT sample=85 cpu=cpu1 user=46 nice=0 system=224 idle=33824 iowait=0 irq=7951 softirq=9 steal=0
+RT_CPUSTAT sample=86 cpu=cpu0 user=26 nice=0 system=284 idle=45392 iowait=0 irq=95 softirq=15 steal=0
+RT_CPUSTAT sample=86 cpu=cpu1 user=47 nice=0 system=226 idle=34188 iowait=0 irq=8044 softirq=9 steal=0
+RT_CPUSTAT sample=87 cpu=cpu0 user=27 nice=0 system=285 idle=45891 iowait=0 irq=95 softirq=15 steal=0
+RT_CPUSTAT sample=87 cpu=cpu1 user=48 nice=0 system=228 idle=34549 iowait=0 irq=8139 softirq=9 steal=0
+RT_CPUSTAT sample=88 cpu=cpu0 user=27 nice=0 system=285 idle=46390 iowait=0 irq=96 softirq=16 steal=0
+RT_CPUSTAT sample=88 cpu=cpu1 user=48 nice=0 system=231 idle=34909 iowait=0 irq=8236 softirq=10 steal=0
+RT_CPUSTAT sample=89 cpu=cpu0 user=27 nice=0 system=287 idle=46889 iowait=0 irq=97 softirq=16 steal=0
+RT_CPUSTAT sample=89 cpu=cpu1 user=48 nice=0 system=234 idle=35274 iowait=0 irq=8329 softirq=10 steal=0
+RT_CPUSTAT sample=90 cpu=cpu0 user=27 nice=0 system=288 idle=47388 iowait=0 irq=98 softirq=16 steal=0
+RT_CPUSTAT sample=90 cpu=cpu1 user=49 nice=0 system=239 idle=35635 iowait=0 irq=8424 softirq=10 steal=0
+RT_CPUSTAT sample=91 cpu=cpu0 user=27 nice=0 system=289 idle=47887 iowait=0 irq=98 softirq=16 steal=0
+RT_CPUSTAT sample=91 cpu=cpu1 user=51 nice=0 system=242 idle=35995 iowait=0 irq=8520 softirq=10 steal=0
+RT_CPUSTAT sample=92 cpu=cpu0 user=27 nice=0 system=290 idle=48385 iowait=0 irq=99 softirq=16 steal=0
+RT_CPUSTAT sample=92 cpu=cpu1 user=52 nice=0 system=247 idle=36353 iowait=0 irq=8617 softirq=10 steal=0
+RT_CPUSTAT sample=93 cpu=cpu0 user=28 nice=0 system=291 idle=48884 iowait=0 irq=100 softirq=16 steal=0
+RT_CPUSTAT sample=93 cpu=cpu1 user=53 nice=0 system=250 idle=36718 iowait=0 irq=8710 softirq=10 steal=0
+RT_CPUSTAT sample=94 cpu=cpu0 user=28 nice=0 system=292 idle=49383 iowait=0 irq=101 softirq=17 steal=0
+RT_CPUSTAT sample=94 cpu=cpu1 user=54 nice=0 system=252 idle=37084 iowait=0 irq=8802 softirq=10 steal=0
+RT_CPUSTAT sample=95 cpu=cpu0 user=28 nice=0 system=293 idle=49882 iowait=0 irq=102 softirq=17 steal=0
+RT_CPUSTAT sample=95 cpu=cpu1 user=55 nice=0 system=254 idle=37449 iowait=0 irq=8895 softirq=10 steal=0
+RT_CPUSTAT sample=96 cpu=cpu0 user=28 nice=0 system=294 idle=50381 iowait=0 irq=103 softirq=17 steal=0
+RT_CPUSTAT sample=96 cpu=cpu1 user=55 nice=0 system=256 idle=37813 iowait=0 irq=8988 softirq=10 steal=0
+RT_CPUSTAT sample=97 cpu=cpu0 user=28 nice=0 system=295 idle=50880 iowait=0 irq=104 softirq=17 steal=0
+RT_CPUSTAT sample=97 cpu=cpu1 user=56 nice=0 system=258 idle=38176 iowait=0 irq=9083 softirq=10 steal=0
+RT_CPUSTAT sample=98 cpu=cpu0 user=28 nice=0 system=296 idle=51378 iowait=0 irq=105 softirq=17 steal=0
+RT_CPUSTAT sample=98 cpu=cpu1 user=57 nice=0 system=260 idle=38540 iowait=0 irq=9177 softirq=11 steal=0
+RT_CPUSTAT sample=99 cpu=cpu0 user=28 nice=0 system=297 idle=51877 iowait=0 irq=106 softirq=17 steal=0
+RT_CPUSTAT sample=99 cpu=cpu1 user=58 nice=0 system=263 idle=38902 iowait=0 irq=9273 softirq=11 steal=0
+RT_CPUSTAT sample=100 cpu=cpu0 user=28 nice=0 system=298 idle=52376 iowait=0 irq=107 softirq=18 steal=0
+RT_CPUSTAT sample=100 cpu=cpu1 user=59 nice=0 system=265 idle=39267 iowait=0 irq=9366 softirq=11 steal=0
+RT_CPUSTAT sample=101 cpu=cpu0 user=29 nice=0 system=298 idle=52875 iowait=0 irq=107 softirq=18 steal=0
+RT_CPUSTAT sample=101 cpu=cpu1 user=60 nice=0 system=266 idle=39628 iowait=0 irq=9461 softirq=11 steal=0
+RT_CPUSTAT sample=102 cpu=cpu0 user=29 nice=0 system=300 idle=53374 iowait=0 irq=108 softirq=18 steal=0
+RT_CPUSTAT sample=102 cpu=cpu1 user=60 nice=0 system=269 idle=39991 iowait=0 irq=9555 softirq=11 steal=0
+RT_CPUSTAT sample=103 cpu=cpu0 user=29 nice=0 system=301 idle=53873 iowait=0 irq=109 softirq=18 steal=0
+RT_CPUSTAT sample=103 cpu=cpu1 user=61 nice=0 system=272 idle=40350 iowait=0 irq=9653 softirq=11 steal=0
+RT_CPUSTAT sample=104 cpu=cpu0 user=29 nice=0 system=302 idle=54371 iowait=0 irq=110 softirq=18 steal=0
+RT_CPUSTAT sample=104 cpu=cpu1 user=61 nice=0 system=275 idle=40713 iowait=0 irq=9747 softirq=11 steal=0
+RT_CPUSTAT sample=105 cpu=cpu0 user=29 nice=0 system=302 idle=54870 iowait=0 irq=111 softirq=18 steal=0
+RT_CPUSTAT sample=105 cpu=cpu1 user=61 nice=0 system=278 idle=41075 iowait=0 irq=9843 softirq=11 steal=0
+RT_CPUSTAT sample=106 cpu=cpu0 user=30 nice=0 system=303 idle=55369 iowait=0 irq=112 softirq=19 steal=0
+RT_CPUSTAT sample=106 cpu=cpu1 user=62 nice=0 system=280 idle=41439 iowait=0 irq=9937 softirq=11 steal=0
+RT_CPUSTAT sample=107 cpu=cpu0 user=30 nice=0 system=303 idle=55868 iowait=0 irq=113 softirq=19 steal=0
+RT_CPUSTAT sample=107 cpu=cpu1 user=63 nice=0 system=284 idle=41797 iowait=0 irq=10035 softirq=12 steal=0
+RT_CPUSTAT sample=108 cpu=cpu0 user=30 nice=0 system=304 idle=56367 iowait=0 irq=113 softirq=19 steal=0
+RT_CPUSTAT sample=108 cpu=cpu1 user=64 nice=0 system=286 idle=42157 iowait=0 irq=10133 softirq=12 steal=0
+RT_CPUSTAT sample=109 cpu=cpu0 user=30 nice=0 system=305 idle=56866 iowait=0 irq=114 softirq=19 steal=0
+RT_CPUSTAT sample=109 cpu=cpu1 user=64 nice=0 system=288 idle=42525 iowait=0 irq=10224 softirq=12 steal=0
+RT_CPUSTAT sample=110 cpu=cpu0 user=30 nice=0 system=306 idle=57365 iowait=0 irq=115 softirq=19 steal=0
+RT_CPUSTAT sample=110 cpu=cpu1 user=64 nice=0 system=291 idle=42890 iowait=0 irq=10317 softirq=12 steal=0
+RT_CPUSTAT sample=111 cpu=cpu0 user=30 nice=0 system=307 idle=57864 iowait=0 irq=116 softirq=19 steal=0
+RT_CPUSTAT sample=111 cpu=cpu1 user=64 nice=0 system=295 idle=43252 iowait=0 irq=10411 softirq=12 steal=0
+RT_CPUSTAT sample=112 cpu=cpu0 user=31 nice=0 system=307 idle=58363 iowait=0 irq=117 softirq=20 steal=0
+RT_CPUSTAT sample=112 cpu=cpu1 user=65 nice=0 system=297 idle=43617 iowait=0 irq=10503 softirq=12 steal=0
+RT_CPUSTAT sample=113 cpu=cpu0 user=31 nice=0 system=308 idle=58861 iowait=0 irq=117 softirq=20 steal=0
+RT_CPUSTAT sample=113 cpu=cpu1 user=65 nice=0 system=299 idle=43980 iowait=0 irq=10597 softirq=12 steal=0
+RT_CPUSTAT sample=114 cpu=cpu0 user=31 nice=0 system=309 idle=59360 iowait=0 irq=118 softirq=20 steal=0
+RT_CPUSTAT sample=114 cpu=cpu1 user=66 nice=0 system=304 idle=44343 iowait=0 irq=10691 softirq=12 steal=0
+RT_CPUSTAT sample=115 cpu=cpu0 user=31 nice=0 system=310 idle=59859 iowait=0 irq=119 softirq=20 steal=0
+RT_CPUSTAT sample=115 cpu=cpu1 user=66 nice=0 system=307 idle=44708 iowait=0 irq=10784 softirq=12 steal=0
+RT_CPUSTAT sample=116 cpu=cpu0 user=31 nice=0 system=311 idle=60358 iowait=0 irq=120 softirq=20 steal=0
+RT_CPUSTAT sample=116 cpu=cpu1 user=68 nice=0 system=308 idle=45072 iowait=0 irq=10879 softirq=13 steal=0
+RT_CPUSTAT sample=117 cpu=cpu0 user=32 nice=0 system=312 idle=60857 iowait=0 irq=121 softirq=20 steal=0
+RT_CPUSTAT sample=117 cpu=cpu1 user=68 nice=0 system=310 idle=45433 iowait=0 irq=10974 softirq=13 steal=0
+RT_CPUSTAT sample=118 cpu=cpu0 user=32 nice=0 system=313 idle=61356 iowait=0 irq=122 softirq=20 steal=0
+RT_CPUSTAT sample=118 cpu=cpu1 user=70 nice=0 system=313 idle=45799 iowait=0 irq=11066 softirq=13 steal=0
+RT_CPUSTAT sample=119 cpu=cpu0 user=32 nice=0 system=314 idle=61855 iowait=0 irq=122 softirq=21 steal=0
+RT_CPUSTAT sample=119 cpu=cpu1 user=70 nice=0 system=316 idle=46161 iowait=0 irq=11161 softirq=13 steal=0
+RT_CPUSTAT sample=120 cpu=cpu0 user=32 nice=0 system=315 idle=62354 iowait=0 irq=123 softirq=21 steal=0
+RT_CPUSTAT sample=120 cpu=cpu1 user=70 nice=0 system=317 idle=46523 iowait=0 irq=11255 softirq=13 steal=0
+RT_CPUSTAT sample=121 cpu=cpu0 user=32 nice=0 system=316 idle=62852 iowait=0 irq=124 softirq=21 steal=0
+RT_CPUSTAT sample=121 cpu=cpu1 user=71 nice=0 system=319 idle=46891 iowait=0 irq=11345 softirq=14 steal=0
+RT_CPUSTAT sample=122 cpu=cpu0 user=33 nice=0 system=316 idle=63351 iowait=0 irq=125 softirq=21 steal=0
+RT_CPUSTAT sample=122 cpu=cpu1 user=71 nice=0 system=321 idle=47258 iowait=0 irq=11436 softirq=14 steal=0
+RT_CPUSTAT sample=123 cpu=cpu0 user=33 nice=0 system=317 idle=63850 iowait=0 irq=126 softirq=21 steal=0
+RT_CPUSTAT sample=123 cpu=cpu1 user=71 nice=0 system=324 idle=47624 iowait=0 irq=11528 softirq=14 steal=0
+RT_CPUSTAT sample=124 cpu=cpu0 user=33 nice=0 system=318 idle=64349 iowait=0 irq=126 softirq=21 steal=0
+RT_CPUSTAT sample=124 cpu=cpu1 user=72 nice=0 system=325 idle=47990 iowait=0 irq=11620 softirq=14 steal=0
+RT_CPUSTAT sample=125 cpu=cpu0 user=33 nice=0 system=319 idle=64848 iowait=0 irq=127 softirq=22 steal=0
+RT_CPUSTAT sample=125 cpu=cpu1 user=72 nice=0 system=326 idle=48357 iowait=0 irq=11711 softirq=14 steal=0
+RT_CPUSTAT sample=126 cpu=cpu0 user=33 nice=0 system=320 idle=65346 iowait=0 irq=128 softirq=22 steal=0
+RT_CPUSTAT sample=126 cpu=cpu1 user=72 nice=0 system=329 idle=48720 iowait=0 irq=11806 softirq=14 steal=0
+RT_CPUSTAT sample=127 cpu=cpu0 user=33 nice=0 system=321 idle=65845 iowait=0 irq=129 softirq=22 steal=0
+RT_CPUSTAT sample=127 cpu=cpu1 user=72 nice=0 system=331 idle=49082 iowait=0 irq=11903 softirq=14 steal=0
+RT_CPUSTAT sample=128 cpu=cpu0 user=33 nice=0 system=322 idle=66344 iowait=0 irq=130 softirq=22 steal=0
+RT_CPUSTAT sample=128 cpu=cpu1 user=74 nice=0 system=335 idle=49442 iowait=0 irq=11998 softirq=14 steal=0
+RT_CPUSTAT sample=129 cpu=cpu0 user=33 nice=0 system=323 idle=66843 iowait=0 irq=131 softirq=22 steal=0
+RT_CPUSTAT sample=129 cpu=cpu1 user=74 nice=0 system=338 idle=49805 iowait=0 irq=12093 softirq=14 steal=0
+RT_CPUSTAT sample=130 cpu=cpu0 user=33 nice=0 system=324 idle=67342 iowait=0 irq=132 softirq=22 steal=0
+RT_CPUSTAT sample=130 cpu=cpu1 user=75 nice=0 system=340 idle=50168 iowait=0 irq=12186 softirq=15 steal=0
+RT_CPUSTAT sample=131 cpu=cpu0 user=34 nice=0 system=325 idle=67841 iowait=0 irq=132 softirq=23 steal=0
+RT_CPUSTAT sample=131 cpu=cpu1 user=76 nice=0 system=343 idle=50533 iowait=0 irq=12279 softirq=15 steal=0
+RT_CPUSTAT sample=132 cpu=cpu0 user=34 nice=0 system=326 idle=68340 iowait=0 irq=133 softirq=23 steal=0
+RT_CPUSTAT sample=132 cpu=cpu1 user=76 nice=0 system=345 idle=50896 iowait=0 irq=12372 softirq=15 steal=0
+RT_CPUSTAT sample=133 cpu=cpu0 user=34 nice=0 system=327 idle=68839 iowait=0 irq=134 softirq=23 steal=0
+RT_CPUSTAT sample=133 cpu=cpu1 user=77 nice=0 system=348 idle=51260 iowait=0 irq=12466 softirq=15 steal=0
+RT_CPUSTAT sample=134 cpu=cpu0 user=34 nice=0 system=328 idle=69338 iowait=0 irq=135 softirq=23 steal=0
+RT_CPUSTAT sample=134 cpu=cpu1 user=78 nice=0 system=352 idle=51624 iowait=0 irq=12560 softirq=15 steal=0
+RT_CPUSTAT sample=135 cpu=cpu0 user=34 nice=0 system=329 idle=69836 iowait=0 irq=136 softirq=23 steal=0
+RT_CPUSTAT sample=135 cpu=cpu1 user=79 nice=0 system=356 idle=51985 iowait=0 irq=12655 softirq=15 steal=0
+RT_CPUSTAT sample=136 cpu=cpu0 user=34 nice=0 system=330 idle=70335 iowait=0 irq=137 softirq=23 steal=0
+RT_CPUSTAT sample=136 cpu=cpu1 user=80 nice=0 system=357 idle=52349 iowait=0 irq=12748 softirq=15 steal=0
+RT_CPUSTAT sample=137 cpu=cpu0 user=34 nice=0 system=331 idle=70834 iowait=0 irq=137 softirq=23 steal=0
+RT_CPUSTAT sample=137 cpu=cpu1 user=82 nice=0 system=361 idle=52709 iowait=0 irq=12845 softirq=15 steal=0
+RT_CPUSTAT sample=138 cpu=cpu0 user=34 nice=0 system=331 idle=71333 iowait=0 irq=138 softirq=24 steal=0
+RT_CPUSTAT sample=138 cpu=cpu1 user=83 nice=0 system=363 idle=53076 iowait=0 irq=12936 softirq=15 steal=0
+RT_CPUSTAT sample=139 cpu=cpu0 user=35 nice=0 system=332 idle=71832 iowait=0 irq=139 softirq=24 steal=0
+RT_CPUSTAT sample=139 cpu=cpu1 user=84 nice=0 system=368 idle=53434 iowait=0 irq=13035 softirq=15 steal=0
+RT_CPUSTAT sample=140 cpu=cpu0 user=35 nice=0 system=333 idle=72331 iowait=0 irq=140 softirq=24 steal=0
+RT_CPUSTAT sample=140 cpu=cpu1 user=84 nice=0 system=370 idle=53798 iowait=0 irq=13129 softirq=16 steal=0
+RT_CPUSTAT sample=141 cpu=cpu0 user=35 nice=0 system=335 idle=72830 iowait=0 irq=141 softirq=24 steal=0
+RT_CPUSTAT sample=141 cpu=cpu1 user=85 nice=0 system=376 idle=54155 iowait=0 irq=13229 softirq=16 steal=0
+RT_CPUSTAT sample=142 cpu=cpu0 user=36 nice=0 system=335 idle=73329 iowait=0 irq=142 softirq=24 steal=0
+RT_CPUSTAT sample=142 cpu=cpu1 user=86 nice=0 system=378 idle=54517 iowait=0 irq=13324 softirq=16 steal=0
+RT_CPUSTAT sample=143 cpu=cpu0 user=36 nice=0 system=335 idle=73827 iowait=0 irq=143 softirq=25 steal=0
+RT_CPUSTAT sample=143 cpu=cpu1 user=86 nice=0 system=382 idle=54881 iowait=0 irq=13418 softirq=16 steal=0
+RT_CPUSTAT sample=144 cpu=cpu0 user=36 nice=0 system=336 idle=74326 iowait=0 irq=144 softirq=25 steal=0
+RT_CPUSTAT sample=144 cpu=cpu1 user=86 nice=0 system=383 idle=55246 iowait=0 irq=13511 softirq=16 steal=0
+RT_CPUSTAT sample=145 cpu=cpu0 user=37 nice=0 system=337 idle=74825 iowait=0 irq=145 softirq=25 steal=0
+RT_CPUSTAT sample=145 cpu=cpu1 user=86 nice=0 system=386 idle=55611 iowait=0 irq=13605 softirq=16 steal=0
+RT_CPUSTAT sample=146 cpu=cpu0 user=37 nice=0 system=338 idle=75324 iowait=0 irq=146 softirq=25 steal=0
+RT_CPUSTAT sample=146 cpu=cpu1 user=87 nice=0 system=388 idle=55976 iowait=0 irq=13697 softirq=16 steal=0
+RT_CPUSTAT sample=147 cpu=cpu0 user=37 nice=0 system=338 idle=75823 iowait=0 irq=146 softirq=25 steal=0
+RT_CPUSTAT sample=147 cpu=cpu1 user=88 nice=0 system=390 idle=56339 iowait=0 irq=13790 softirq=16 steal=0
+RT_CPUSTAT sample=148 cpu=cpu0 user=38 nice=0 system=339 idle=76321 iowait=0 irq=147 softirq=25 steal=0
+RT_CPUSTAT sample=148 cpu=cpu1 user=88 nice=0 system=393 idle=56702 iowait=0 irq=13885 softirq=16 steal=0
+RT_CPUSTAT sample=149 cpu=cpu0 user=38 nice=0 system=340 idle=76820 iowait=0 irq=148 softirq=26 steal=0
+RT_CPUSTAT sample=149 cpu=cpu1 user=90 nice=0 system=396 idle=57062 iowait=0 irq=13979 softirq=17 steal=0
+RT_CPUSTAT sample=150 cpu=cpu0 user=38 nice=0 system=341 idle=77319 iowait=0 irq=149 softirq=26 steal=0
+RT_CPUSTAT sample=150 cpu=cpu1 user=90 nice=0 system=398 idle=57427 iowait=0 irq=14072 softirq=17 steal=0
+RT_CPUSTAT sample=151 cpu=cpu0 user=38 nice=0 system=341 idle=77818 iowait=0 irq=150 softirq=26 steal=0
+RT_CPUSTAT sample=151 cpu=cpu1 user=91 nice=0 system=400 idle=57791 iowait=0 irq=14165 softirq=17 steal=0
+RT_CPUSTAT sample=152 cpu=cpu0 user=38 nice=0 system=342 idle=78317 iowait=0 irq=150 softirq=26 steal=0
+RT_CPUSTAT sample=152 cpu=cpu1 user=91 nice=0 system=402 idle=58155 iowait=0 irq=14258 softirq=17 steal=0
+RT_CPUSTAT sample=153 cpu=cpu0 user=39 nice=0 system=343 idle=78816 iowait=0 irq=151 softirq=26 steal=0
+RT_CPUSTAT sample=153 cpu=cpu1 user=92 nice=0 system=403 idle=58520 iowait=0 irq=14352 softirq=17 steal=0
+RT_CPUSTAT sample=154 cpu=cpu0 user=39 nice=0 system=343 idle=79315 iowait=0 irq=152 softirq=26 steal=0
+RT_CPUSTAT sample=154 cpu=cpu1 user=93 nice=0 system=405 idle=58885 iowait=0 irq=14444 softirq=17 steal=0
+RT_CPUSTAT sample=155 cpu=cpu0 user=39 nice=0 system=344 idle=79814 iowait=0 irq=153 softirq=26 steal=0
+RT_CPUSTAT sample=155 cpu=cpu1 user=93 nice=0 system=405 idle=59251 iowait=0 irq=14536 softirq=17 steal=0
+RT_CPUSTAT sample=156 cpu=cpu0 user=39 nice=0 system=345 idle=80312 iowait=0 irq=154 softirq=27 steal=0
+RT_CPUSTAT sample=156 cpu=cpu1 user=93 nice=0 system=407 idle=59617 iowait=0 irq=14628 softirq=17 steal=0
+RT_CPUSTAT sample=157 cpu=cpu0 user=39 nice=0 system=346 idle=80811 iowait=0 irq=154 softirq=27 steal=0
+RT_CPUSTAT sample=157 cpu=cpu1 user=93 nice=0 system=409 idle=59982 iowait=0 irq=14721 softirq=17 steal=0
+RT_CPUSTAT sample=158 cpu=cpu0 user=40 nice=0 system=347 idle=81310 iowait=0 irq=155 softirq=27 steal=0
+RT_CPUSTAT sample=158 cpu=cpu1 user=93 nice=0 system=410 idle=60347 iowait=0 irq=14815 softirq=18 steal=0
+RT_CPUSTAT sample=159 cpu=cpu0 user=40 nice=0 system=347 idle=81809 iowait=0 irq=156 softirq=27 steal=0
+RT_CPUSTAT sample=159 cpu=cpu1 user=95 nice=0 system=414 idle=60706 iowait=0 irq=14912 softirq=18 steal=0
+RT_CPUSTAT sample=160 cpu=cpu0 user=41 nice=0 system=348 idle=82308 iowait=0 irq=157 softirq=27 steal=0
+RT_CPUSTAT sample=160 cpu=cpu1 user=96 nice=0 system=418 idle=61066 iowait=0 irq=15009 softirq=18 steal=0
+RT_CPUSTAT sample=161 cpu=cpu0 user=41 nice=0 system=348 idle=82807 iowait=0 irq=158 softirq=27 steal=0
+RT_CPUSTAT sample=161 cpu=cpu1 user=97 nice=0 system=422 idle=61422 iowait=0 irq=15109 softirq=18 steal=0
+RT_CPUSTAT sample=162 cpu=cpu0 user=41 nice=0 system=349 idle=83306 iowait=0 irq=159 softirq=28 steal=0
+RT_CPUSTAT sample=162 cpu=cpu1 user=98 nice=0 system=427 idle=61777 iowait=0 irq=15209 softirq=18 steal=0
+RT_CPUSTAT sample=163 cpu=cpu0 user=41 nice=0 system=350 idle=83805 iowait=0 irq=159 softirq=28 steal=0
+RT_CPUSTAT sample=163 cpu=cpu1 user=99 nice=0 system=429 idle=62140 iowait=0 irq=15302 softirq=18 steal=0
+RT_CPUSTAT sample=164 cpu=cpu0 user=42 nice=0 system=351 idle=84303 iowait=0 irq=160 softirq=28 steal=0
+RT_CPUSTAT sample=164 cpu=cpu1 user=100 nice=0 system=431 idle=62501 iowait=0 irq=15397 softirq=18 steal=0
+RT_CPUSTAT sample=165 cpu=cpu0 user=42 nice=0 system=352 idle=84802 iowait=0 irq=161 softirq=28 steal=0
+RT_CPUSTAT sample=165 cpu=cpu1 user=100 nice=0 system=435 idle=62862 iowait=0 irq=15493 softirq=18 steal=0
+RT_CPUSTAT sample=166 cpu=cpu0 user=42 nice=0 system=353 idle=85302 iowait=0 irq=162 softirq=28 steal=0
+RT_CPUSTAT sample=166 cpu=cpu1 user=100 nice=0 system=438 idle=63226 iowait=0 irq=15586 softirq=18 steal=0
+RT_CPUSTAT sample=167 cpu=cpu0 user=43 nice=0 system=353 idle=85801 iowait=0 irq=162 softirq=28 steal=0
+RT_CPUSTAT sample=167 cpu=cpu1 user=101 nice=0 system=441 idle=63589 iowait=0 irq=15680 softirq=19 steal=0
+RT_CPUSTAT sample=168 cpu=cpu0 user=43 nice=0 system=354 idle=86300 iowait=0 irq=163 softirq=29 steal=0
+RT_CPUSTAT sample=168 cpu=cpu1 user=102 nice=0 system=442 idle=63951 iowait=0 irq=15774 softirq=19 steal=0
+RT_CPUSTAT sample=169 cpu=cpu0 user=43 nice=0 system=355 idle=86799 iowait=0 irq=164 softirq=29 steal=0
+RT_CPUSTAT sample=169 cpu=cpu1 user=103 nice=0 system=445 idle=64315 iowait=0 irq=15867 softirq=19 steal=0
+RT_CPUSTAT sample=170 cpu=cpu0 user=43 nice=0 system=356 idle=87298 iowait=0 irq=165 softirq=29 steal=0
+RT_CPUSTAT sample=170 cpu=cpu1 user=104 nice=0 system=449 idle=64680 iowait=0 irq=15959 softirq=19 steal=0
+RT_CPUSTAT sample=171 cpu=cpu0 user=43 nice=0 system=357 idle=87797 iowait=0 irq=166 softirq=29 steal=0
+RT_CPUSTAT sample=171 cpu=cpu1 user=104 nice=0 system=453 idle=65045 iowait=0 irq=16051 softirq=19 steal=0
+RT_CPUSTAT sample=172 cpu=cpu0 user=44 nice=0 system=358 idle=88296 iowait=0 irq=166 softirq=29 steal=0
+RT_CPUSTAT sample=172 cpu=cpu1 user=105 nice=0 system=457 idle=65409 iowait=0 irq=16143 softirq=19 steal=0
+RT_CPUSTAT sample=173 cpu=cpu0 user=44 nice=0 system=358 idle=88795 iowait=0 irq=167 softirq=29 steal=0
+RT_CPUSTAT sample=173 cpu=cpu1 user=105 nice=0 system=461 idle=65773 iowait=0 irq=16236 softirq=19 steal=0
+RT_CPUSTAT sample=174 cpu=cpu0 user=45 nice=0 system=359 idle=89294 iowait=0 irq=168 softirq=29 steal=0
+RT_CPUSTAT sample=174 cpu=cpu1 user=106 nice=0 system=464 idle=66136 iowait=0 irq=16329 softirq=19 steal=0
+RT_CPUSTAT sample=175 cpu=cpu0 user=45 nice=0 system=360 idle=89793 iowait=0 irq=169 softirq=30 steal=0
+RT_CPUSTAT sample=175 cpu=cpu1 user=107 nice=0 system=467 idle=66500 iowait=0 irq=16423 softirq=19 steal=0
+RT_CPUSTAT sample=176 cpu=cpu0 user=45 nice=0 system=361 idle=90292 iowait=0 irq=169 softirq=30 steal=0
+RT_CPUSTAT sample=176 cpu=cpu1 user=107 nice=0 system=470 idle=66864 iowait=0 irq=16517 softirq=20 steal=0
+RT_CPUSTAT sample=177 cpu=cpu0 user=45 nice=0 system=362 idle=90791 iowait=0 irq=170 softirq=30 steal=0
+RT_CPUSTAT sample=177 cpu=cpu1 user=107 nice=0 system=473 idle=67227 iowait=0 irq=16610 softirq=20 steal=0
+RT_CPUSTAT sample=178 cpu=cpu0 user=45 nice=0 system=364 idle=91290 iowait=0 irq=171 softirq=30 steal=0
+RT_CPUSTAT sample=178 cpu=cpu1 user=107 nice=0 system=476 idle=67588 iowait=0 irq=16705 softirq=20 steal=0
+RT_CPUSTAT sample=179 cpu=cpu0 user=46 nice=0 system=364 idle=91789 iowait=0 irq=172 softirq=30 steal=0
+RT_CPUSTAT sample=179 cpu=cpu1 user=109 nice=0 system=482 idle=67949 iowait=0 irq=16800 softirq=20 steal=0
+RT_CPUSTAT sample=180 cpu=cpu0 user=46 nice=0 system=365 idle=92288 iowait=0 irq=173 softirq=30 steal=0
+RT_CPUSTAT sample=180 cpu=cpu1 user=109 nice=0 system=485 idle=68311 iowait=0 irq=16894 softirq=20 steal=0
+RT_CPUSTAT sample=181 cpu=cpu0 user=47 nice=0 system=366 idle=92786 iowait=0 irq=174 softirq=31 steal=0
+RT_CPUSTAT sample=181 cpu=cpu1 user=110 nice=0 system=487 idle=68676 iowait=0 irq=16987 softirq=20 steal=0
+RT_CPUSTAT sample=182 cpu=cpu0 user=47 nice=0 system=366 idle=93285 iowait=0 irq=174 softirq=31 steal=0
+RT_CPUSTAT sample=182 cpu=cpu1 user=110 nice=0 system=490 idle=69042 iowait=0 irq=17079 softirq=20 steal=0
+RT_CPUSTAT sample=183 cpu=cpu0 user=47 nice=0 system=367 idle=93784 iowait=0 irq=175 softirq=31 steal=0
+RT_CPUSTAT sample=183 cpu=cpu1 user=111 nice=0 system=492 idle=69407 iowait=0 irq=17171 softirq=21 steal=0
+RT_CPUSTAT sample=184 cpu=cpu0 user=47 nice=0 system=368 idle=94283 iowait=0 irq=176 softirq=31 steal=0
+RT_CPUSTAT sample=184 cpu=cpu1 user=111 nice=0 system=495 idle=69773 iowait=0 irq=17262 softirq=21 steal=0
+RT_CPUSTAT sample=185 cpu=cpu0 user=47 nice=0 system=369 idle=94782 iowait=0 irq=177 softirq=31 steal=0
+RT_CPUSTAT sample=185 cpu=cpu1 user=111 nice=0 system=497 idle=70138 iowait=0 irq=17355 softirq=21 steal=0
+RT_CPUSTAT sample=186 cpu=cpu0 user=48 nice=0 system=370 idle=95281 iowait=0 irq=178 softirq=31 steal=0
+RT_CPUSTAT sample=186 cpu=cpu1 user=112 nice=0 system=499 idle=70505 iowait=0 irq=17448 softirq=21 steal=0
+RT_CPUSTAT sample=187 cpu=cpu0 user=48 nice=0 system=371 idle=95780 iowait=0 irq=178 softirq=32 steal=0
+RT_CPUSTAT sample=187 cpu=cpu1 user=112 nice=0 system=506 idle=70862 iowait=0 irq=17546 softirq=21 steal=0
+RT_CPUSTAT sample=188 cpu=cpu0 user=48 nice=0 system=371 idle=96278 iowait=0 irq=180 softirq=32 steal=0
+RT_CPUSTAT sample=188 cpu=cpu1 user=112 nice=0 system=508 idle=71228 iowait=0 irq=17637 softirq=21 steal=0
+RT_CPUSTAT sample=189 cpu=cpu0 user=49 nice=0 system=372 idle=96777 iowait=0 irq=180 softirq=32 steal=0
+RT_CPUSTAT sample=189 cpu=cpu1 user=113 nice=0 system=510 idle=71592 iowait=0 irq=17731 softirq=21 steal=0
+RT_CPUSTAT sample=190 cpu=cpu0 user=49 nice=0 system=373 idle=97276 iowait=0 irq=181 softirq=32 steal=0
+RT_CPUSTAT sample=190 cpu=cpu1 user=114 nice=0 system=513 idle=71954 iowait=0 irq=17825 softirq=21 steal=0
+RT_CPUSTAT sample=191 cpu=cpu0 user=49 nice=0 system=374 idle=97775 iowait=0 irq=182 softirq=32 steal=0
+RT_CPUSTAT sample=191 cpu=cpu1 user=115 nice=0 system=515 idle=72315 iowait=0 irq=17923 softirq=21 steal=0
+RT_CPUSTAT sample=192 cpu=cpu0 user=49 nice=0 system=375 idle=98274 iowait=0 irq=183 softirq=32 steal=0
+RT_CPUSTAT sample=192 cpu=cpu1 user=116 nice=0 system=518 idle=72678 iowait=0 irq=18017 softirq=21 steal=0
+RT_CPUSTAT sample=193 cpu=cpu0 user=49 nice=0 system=376 idle=98773 iowait=0 irq=184 softirq=33 steal=0
+RT_CPUSTAT sample=193 cpu=cpu1 user=116 nice=0 system=520 idle=73041 iowait=0 irq=18111 softirq=21 steal=0
+RT_CPUSTAT sample=194 cpu=cpu0 user=49 nice=0 system=377 idle=99272 iowait=0 irq=185 softirq=33 steal=0
+RT_CPUSTAT sample=194 cpu=cpu1 user=116 nice=0 system=522 idle=73406 iowait=0 irq=18203 softirq=22 steal=0
+RT_CPUSTAT sample=195 cpu=cpu0 user=49 nice=0 system=378 idle=99771 iowait=0 irq=185 softirq=33 steal=0
+RT_CPUSTAT sample=195 cpu=cpu1 user=116 nice=0 system=524 idle=73771 iowait=0 irq=18296 softirq=22 steal=0
+RT_CPUSTAT sample=196 cpu=cpu0 user=50 nice=0 system=379 idle=100270 iowait=0 irq=186 softirq=33 steal=0
+RT_CPUSTAT sample=196 cpu=cpu1 user=117 nice=0 system=527 idle=74134 iowait=0 irq=18390 softirq=22 steal=0
+RT_CPUSTAT sample=197 cpu=cpu0 user=50 nice=0 system=380 idle=100768 iowait=0 irq=187 softirq=33 steal=0
+RT_CPUSTAT sample=197 cpu=cpu1 user=118 nice=0 system=528 idle=74498 iowait=0 irq=18484 softirq=22 steal=0
+RT_CPUSTAT sample=198 cpu=cpu0 user=50 nice=0 system=381 idle=101267 iowait=0 irq=188 softirq=33 steal=0
+RT_CPUSTAT sample=198 cpu=cpu1 user=118 nice=0 system=530 idle=74861 iowait=0 irq=18577 softirq=22 steal=0
+RT_CPUSTAT sample=199 cpu=cpu0 user=50 nice=0 system=382 idle=101766 iowait=0 irq=189 softirq=33 steal=0
+RT_CPUSTAT sample=199 cpu=cpu1 user=119 nice=0 system=536 idle=75222 iowait=0 irq=18674 softirq=22 steal=0
+RT_CPUSTAT sample=200 cpu=cpu0 user=50 nice=0 system=382 idle=102265 iowait=0 irq=189 softirq=34 steal=0
+RT_CPUSTAT sample=200 cpu=cpu1 user=121 nice=0 system=540 idle=75583 iowait=0 irq=18769 softirq=22 steal=0
+RT_CPUSTAT sample=201 cpu=cpu0 user=50 nice=0 system=383 idle=102764 iowait=0 irq=190 softirq=34 steal=0
+RT_CPUSTAT sample=201 cpu=cpu1 user=121 nice=0 system=542 idle=75949 iowait=0 irq=18860 softirq=22 steal=0
+RT_CPUSTAT sample=202 cpu=cpu0 user=50 nice=0 system=384 idle=103263 iowait=0 irq=191 softirq=34 steal=0
+RT_CPUSTAT sample=202 cpu=cpu1 user=122 nice=0 system=544 idle=76311 iowait=0 irq=18955 softirq=22 steal=0
+RT_CPUSTAT sample=203 cpu=cpu0 user=50 nice=0 system=385 idle=103761 iowait=0 irq=192 softirq=34 steal=0
+RT_CPUSTAT sample=203 cpu=cpu1 user=122 nice=0 system=548 idle=76680 iowait=0 irq=19046 softirq=23 steal=0
+RT_CPUSTAT sample=204 cpu=cpu0 user=50 nice=0 system=386 idle=104260 iowait=0 irq=193 softirq=34 steal=0
+RT_CPUSTAT sample=204 cpu=cpu1 user=123 nice=0 system=549 idle=77047 iowait=0 irq=19137 softirq=23 steal=0
+RT_CPUSTAT sample=205 cpu=cpu0 user=50 nice=0 system=388 idle=104759 iowait=0 irq=193 softirq=34 steal=0
+RT_CPUSTAT sample=205 cpu=cpu1 user=124 nice=0 system=553 idle=77412 iowait=0 irq=19230 softirq=23 steal=0
+RT_CPUSTAT sample=206 cpu=cpu0 user=50 nice=0 system=389 idle=105258 iowait=0 irq=195 softirq=35 steal=0
+RT_CPUSTAT sample=206 cpu=cpu1 user=125 nice=0 system=558 idle=77773 iowait=0 irq=19326 softirq=23 steal=0
+RT_CPUSTAT sample=207 cpu=cpu0 user=50 nice=0 system=390 idle=105756 iowait=0 irq=196 softirq=35 steal=0
+RT_CPUSTAT sample=207 cpu=cpu1 user=126 nice=0 system=558 idle=78135 iowait=0 irq=19422 softirq=23 steal=0
+RT_CPUSTAT sample=208 cpu=cpu0 user=51 nice=0 system=391 idle=106255 iowait=0 irq=197 softirq=35 steal=0
+RT_CPUSTAT sample=208 cpu=cpu1 user=126 nice=0 system=560 idle=78497 iowait=0 irq=19518 softirq=23 steal=0
+RT_CPUSTAT sample=209 cpu=cpu0 user=51 nice=0 system=392 idle=106754 iowait=0 irq=197 softirq=35 steal=0
+RT_CPUSTAT sample=209 cpu=cpu1 user=127 nice=0 system=563 idle=78860 iowait=0 irq=19612 softirq=23 steal=0
+RT_CPUSTAT sample=210 cpu=cpu0 user=51 nice=0 system=393 idle=107253 iowait=0 irq=198 softirq=35 steal=0
+RT_CPUSTAT sample=210 cpu=cpu1 user=128 nice=0 system=566 idle=79223 iowait=0 irq=19706 softirq=23 steal=0
+RT_CPUSTAT sample=211 cpu=cpu0 user=51 nice=0 system=394 idle=107752 iowait=0 irq=199 softirq=35 steal=0
+RT_CPUSTAT sample=211 cpu=cpu1 user=129 nice=0 system=568 idle=79587 iowait=0 irq=19799 softirq=24 steal=0
+RT_CPUSTAT sample=212 cpu=cpu0 user=52 nice=0 system=394 idle=108251 iowait=0 irq=200 softirq=35 steal=0
+RT_CPUSTAT sample=212 cpu=cpu1 user=129 nice=0 system=571 idle=79953 iowait=0 irq=19891 softirq=24 steal=0
+RT_CPUSTAT sample=213 cpu=cpu0 user=52 nice=0 system=395 idle=108749 iowait=0 irq=201 softirq=36 steal=0
+RT_CPUSTAT sample=213 cpu=cpu1 user=129 nice=0 system=576 idle=80310 iowait=0 irq=19991 softirq=24 steal=0
+RT_CPUSTAT sample=214 cpu=cpu0 user=52 nice=0 system=395 idle=109248 iowait=0 irq=202 softirq=36 steal=0
+RT_CPUSTAT sample=214 cpu=cpu1 user=129 nice=0 system=578 idle=80674 iowait=0 irq=20085 softirq=24 steal=0
+RT_CPUSTAT sample=215 cpu=cpu0 user=52 nice=0 system=396 idle=109747 iowait=0 irq=203 softirq=36 steal=0
+RT_CPUSTAT sample=215 cpu=cpu1 user=130 nice=0 system=581 idle=81037 iowait=0 irq=20179 softirq=24 steal=0
+RT_CPUSTAT sample=216 cpu=cpu0 user=52 nice=0 system=397 idle=110246 iowait=0 irq=203 softirq=36 steal=0
+RT_CPUSTAT sample=216 cpu=cpu1 user=130 nice=0 system=582 idle=81401 iowait=0 irq=20272 softirq=24 steal=0
+RT_CPUSTAT sample=217 cpu=cpu0 user=53 nice=0 system=398 idle=110745 iowait=0 irq=204 softirq=36 steal=0
+RT_CPUSTAT sample=217 cpu=cpu1 user=131 nice=0 system=585 idle=81768 iowait=0 irq=20363 softirq=24 steal=0
+RT_CPUSTAT sample=218 cpu=cpu0 user=53 nice=0 system=399 idle=111243 iowait=0 irq=205 softirq=37 steal=0
+RT_CPUSTAT sample=218 cpu=cpu1 user=132 nice=0 system=589 idle=82128 iowait=0 irq=20459 softirq=24 steal=0
+RT_CPUSTAT sample=219 cpu=cpu0 user=53 nice=0 system=400 idle=111742 iowait=0 irq=206 softirq=37 steal=0
+RT_CPUSTAT sample=219 cpu=cpu1 user=133 nice=0 system=590 idle=82492 iowait=0 irq=20553 softirq=24 steal=0
+RT_CPUSTAT sample=220 cpu=cpu0 user=54 nice=0 system=400 idle=112241 iowait=0 irq=207 softirq=37 steal=0
+RT_CPUSTAT sample=220 cpu=cpu1 user=133 nice=0 system=593 idle=82854 iowait=0 irq=20647 softirq=25 steal=0
+RT_CPUSTAT sample=221 cpu=cpu0 user=55 nice=0 system=400 idle=112740 iowait=0 irq=208 softirq=37 steal=0
+RT_CPUSTAT sample=221 cpu=cpu1 user=134 nice=0 system=593 idle=83219 iowait=0 irq=20739 softirq=25 steal=0
+RT_CPUSTAT sample=222 cpu=cpu0 user=55 nice=0 system=400 idle=113239 iowait=0 irq=208 softirq=37 steal=0
+RT_CPUSTAT sample=222 cpu=cpu1 user=134 nice=0 system=595 idle=83585 iowait=0 irq=20832 softirq=25 steal=0
+RT_CPUSTAT sample=223 cpu=cpu0 user=55 nice=0 system=401 idle=113738 iowait=0 irq=209 softirq=37 steal=0
+RT_CPUSTAT sample=223 cpu=cpu1 user=135 nice=0 system=597 idle=83949 iowait=0 irq=20924 softirq=25 steal=0
+RT_CPUSTAT sample=224 cpu=cpu0 user=55 nice=0 system=402 idle=114237 iowait=0 irq=210 softirq=37 steal=0
+RT_CPUSTAT sample=224 cpu=cpu1 user=135 nice=0 system=599 idle=84314 iowait=0 irq=21017 softirq=25 steal=0
+RT_CPUSTAT sample=225 cpu=cpu0 user=56 nice=0 system=403 idle=114736 iowait=0 irq=211 softirq=38 steal=0
+RT_CPUSTAT sample=225 cpu=cpu1 user=136 nice=0 system=601 idle=84680 iowait=0 irq=21109 softirq=25 steal=0
+RT_CPUSTAT sample=226 cpu=cpu0 user=56 nice=0 system=404 idle=115235 iowait=0 irq=211 softirq=38 steal=0
+RT_CPUSTAT sample=226 cpu=cpu1 user=136 nice=0 system=604 idle=85046 iowait=0 irq=21201 softirq=25 steal=0
+RT_CPUSTAT sample=227 cpu=cpu0 user=56 nice=0 system=405 idle=115734 iowait=0 irq=212 softirq=38 steal=0
+RT_CPUSTAT sample=227 cpu=cpu1 user=138 nice=0 system=607 idle=85410 iowait=0 irq=21294 softirq=25 steal=0
+RT_CPUSTAT sample=228 cpu=cpu0 user=56 nice=0 system=406 idle=116232 iowait=0 irq=213 softirq=38 steal=0
+RT_CPUSTAT sample=228 cpu=cpu1 user=139 nice=0 system=610 idle=85773 iowait=0 irq=21388 softirq=25 steal=0
+RT_CPUSTAT sample=229 cpu=cpu0 user=56 nice=0 system=407 idle=116731 iowait=0 irq=214 softirq=38 steal=0
+RT_CPUSTAT sample=229 cpu=cpu1 user=139 nice=0 system=613 idle=86136 iowait=0 irq=21483 softirq=26 steal=0
+RT_CPUSTAT sample=230 cpu=cpu0 user=56 nice=0 system=408 idle=117230 iowait=0 irq=215 softirq=38 steal=0
+RT_CPUSTAT sample=230 cpu=cpu1 user=140 nice=0 system=616 idle=86495 iowait=0 irq=21580 softirq=26 steal=0
+RT_CPUSTAT sample=231 cpu=cpu0 user=57 nice=0 system=408 idle=117729 iowait=0 irq=216 softirq=39 steal=0
+RT_CPUSTAT sample=231 cpu=cpu1 user=141 nice=0 system=619 idle=86854 iowait=0 irq=21678 softirq=26 steal=0
+RT_CPUSTAT sample=232 cpu=cpu0 user=57 nice=0 system=410 idle=118227 iowait=0 irq=216 softirq=39 steal=0
+RT_CPUSTAT sample=232 cpu=cpu1 user=142 nice=0 system=623 idle=87217 iowait=0 irq=21772 softirq=26 steal=0
+RT_CPUSTAT sample=233 cpu=cpu0 user=57 nice=0 system=410 idle=118727 iowait=0 irq=217 softirq=39 steal=0
+RT_CPUSTAT sample=233 cpu=cpu1 user=143 nice=0 system=625 idle=87580 iowait=0 irq=21866 softirq=26 steal=0
+RT_CPUSTAT sample=234 cpu=cpu0 user=57 nice=0 system=411 idle=119226 iowait=0 irq=218 softirq=39 steal=0
+RT_CPUSTAT sample=234 cpu=cpu1 user=143 nice=0 system=627 idle=87943 iowait=0 irq=21959 softirq=26 steal=0
+RT_CPUSTAT sample=235 cpu=cpu0 user=57 nice=0 system=412 idle=119724 iowait=0 irq=219 softirq=39 steal=0
+RT_CPUSTAT sample=235 cpu=cpu1 user=143 nice=0 system=631 idle=88304 iowait=0 irq=22054 softirq=26 steal=0
+RT_CPUSTAT sample=236 cpu=cpu0 user=57 nice=0 system=413 idle=120223 iowait=0 irq=220 softirq=39 steal=0
+RT_CPUSTAT sample=236 cpu=cpu1 user=143 nice=0 system=635 idle=88667 iowait=0 irq=22147 softirq=26 steal=0
+RT_CPUSTAT sample=237 cpu=cpu0 user=57 nice=0 system=413 idle=120722 iowait=0 irq=220 softirq=40 steal=0
+RT_CPUSTAT sample=237 cpu=cpu1 user=144 nice=0 system=637 idle=89033 iowait=0 irq=22239 softirq=27 steal=0
+RT_CPUSTAT sample=238 cpu=cpu0 user=58 nice=0 system=415 idle=121221 iowait=0 irq=221 softirq=40 steal=0
+RT_CPUSTAT sample=238 cpu=cpu1 user=144 nice=0 system=639 idle=89396 iowait=0 irq=22334 softirq=27 steal=0
+RT_CPUSTAT sample=239 cpu=cpu0 user=58 nice=0 system=416 idle=121720 iowait=0 irq=222 softirq=40 steal=0
+RT_CPUSTAT sample=239 cpu=cpu1 user=145 nice=0 system=642 idle=89762 iowait=0 irq=22426 softirq=27 steal=0
+RT_CPUSTAT sample=240 cpu=cpu0 user=58 nice=0 system=416 idle=122219 iowait=0 irq=223 softirq=40 steal=0
+RT_CPUSTAT sample=240 cpu=cpu1 user=146 nice=0 system=645 idle=90123 iowait=0 irq=22522 softirq=27 steal=0
+RT_CPUSTAT sample=241 cpu=cpu0 user=58 nice=0 system=417 idle=122718 iowait=0 irq=224 softirq=40 steal=0
+RT_CPUSTAT sample=241 cpu=cpu1 user=146 nice=0 system=646 idle=90486 iowait=0 irq=22616 softirq=27 steal=0
+RT_CPUSTAT sample=242 cpu=cpu0 user=59 nice=0 system=418 idle=123217 iowait=0 irq=225 softirq=40 steal=0
+RT_CPUSTAT sample=242 cpu=cpu1 user=147 nice=0 system=649 idle=90853 iowait=0 irq=22709 softirq=27 steal=0
+RT_CPUSTAT sample=243 cpu=cpu0 user=59 nice=0 system=419 idle=123716 iowait=0 irq=225 softirq=41 steal=0
+RT_CPUSTAT sample=243 cpu=cpu1 user=147 nice=0 system=651 idle=91219 iowait=0 irq=22801 softirq=27 steal=0
+RT_CPUSTAT sample=244 cpu=cpu0 user=59 nice=0 system=420 idle=124215 iowait=0 irq=226 softirq=41 steal=0
+RT_CPUSTAT sample=244 cpu=cpu1 user=147 nice=0 system=653 idle=91583 iowait=0 irq=22894 softirq=27 steal=0
+RT_CPUSTAT sample=245 cpu=cpu0 user=59 nice=0 system=421 idle=124714 iowait=0 irq=227 softirq=41 steal=0
+RT_CPUSTAT sample=245 cpu=cpu1 user=148 nice=0 system=656 idle=91947 iowait=0 irq=22988 softirq=27 steal=0
+RT_CPUSTAT sample=246 cpu=cpu0 user=59 nice=0 system=421 idle=125212 iowait=0 irq=228 softirq=41 steal=0
+RT_CPUSTAT sample=246 cpu=cpu1 user=149 nice=0 system=658 idle=92310 iowait=0 irq=23082 softirq=27 steal=0
+RT_CPUSTAT sample=247 cpu=cpu0 user=60 nice=0 system=422 idle=125711 iowait=0 irq=228 softirq=41 steal=0
+RT_CPUSTAT sample=247 cpu=cpu1 user=150 nice=0 system=661 idle=92674 iowait=0 irq=23176 softirq=28 steal=0
+RT_CPUSTAT sample=248 cpu=cpu0 user=60 nice=0 system=423 idle=126210 iowait=0 irq=229 softirq=41 steal=0
+RT_CPUSTAT sample=248 cpu=cpu1 user=150 nice=0 system=664 idle=93036 iowait=0 irq=23269 softirq=28 steal=0
+RT_CPUSTAT sample=249 cpu=cpu0 user=61 nice=0 system=423 idle=126709 iowait=0 irq=230 softirq=42 steal=0
+RT_CPUSTAT sample=249 cpu=cpu1 user=150 nice=0 system=667 idle=93401 iowait=0 irq=23362 softirq=28 steal=0
+RT_CPUSTAT sample=250 cpu=cpu0 user=61 nice=0 system=424 idle=127208 iowait=0 irq=231 softirq=42 steal=0
+RT_CPUSTAT sample=250 cpu=cpu1 user=151 nice=0 system=669 idle=93764 iowait=0 irq=23455 softirq=28 steal=0
+RT_CPUSTAT sample=251 cpu=cpu0 user=62 nice=0 system=425 idle=127707 iowait=0 irq=232 softirq=42 steal=0
+RT_CPUSTAT sample=251 cpu=cpu1 user=151 nice=0 system=671 idle=94128 iowait=0 irq=23549 softirq=28 steal=0
+RT_CPUSTAT sample=252 cpu=cpu0 user=62 nice=0 system=426 idle=128206 iowait=0 irq=233 softirq=42 steal=0
+RT_CPUSTAT sample=252 cpu=cpu1 user=151 nice=0 system=674 idle=94491 iowait=0 irq=23643 softirq=28 steal=0
+RT_CPUSTAT sample=253 cpu=cpu0 user=62 nice=0 system=426 idle=128704 iowait=0 irq=234 softirq=42 steal=0
+RT_CPUSTAT sample=253 cpu=cpu1 user=152 nice=0 system=676 idle=94859 iowait=0 irq=23734 softirq=28 steal=0
+RT_CPUSTAT sample=254 cpu=cpu0 user=62 nice=0 system=427 idle=129203 iowait=0 irq=234 softirq=42 steal=0
+RT_CPUSTAT sample=254 cpu=cpu1 user=152 nice=0 system=677 idle=95224 iowait=0 irq=23827 softirq=28 steal=0
+RT_CPUSTAT sample=255 cpu=cpu0 user=62 nice=0 system=428 idle=129702 iowait=0 irq=235 softirq=42 steal=0
+RT_CPUSTAT sample=255 cpu=cpu1 user=153 nice=0 system=679 idle=95591 iowait=0 irq=23918 softirq=28 steal=0
+RT_CPUSTAT sample=256 cpu=cpu0 user=63 nice=0 system=428 idle=130201 iowait=0 irq=236 softirq=43 steal=0
+RT_CPUSTAT sample=256 cpu=cpu1 user=154 nice=0 system=683 idle=95953 iowait=0 irq=24015 softirq=29 steal=0
+RT_CPUSTAT sample=257 cpu=cpu0 user=64 nice=0 system=429 idle=130700 iowait=0 irq=237 softirq=43 steal=0
+RT_CPUSTAT sample=257 cpu=cpu1 user=154 nice=0 system=684 idle=96318 iowait=0 irq=24107 softirq=29 steal=0
+RT_CPUSTAT sample=258 cpu=cpu0 user=64 nice=0 system=430 idle=131199 iowait=0 irq=237 softirq=43 steal=0
+RT_CPUSTAT sample=258 cpu=cpu1 user=155 nice=0 system=687 idle=96680 iowait=0 irq=24202 softirq=29 steal=0
+RT_CPUSTAT sample=259 cpu=cpu0 user=64 nice=0 system=431 idle=131697 iowait=0 irq=239 softirq=43 steal=0
+RT_CPUSTAT sample=259 cpu=cpu1 user=157 nice=0 system=690 idle=97036 iowait=0 irq=24304 softirq=29 steal=0
+RT_CPUSTAT sample=260 cpu=cpu0 user=64 nice=0 system=432 idle=132196 iowait=0 irq=240 softirq=43 steal=0
+RT_CPUSTAT sample=260 cpu=cpu1 user=158 nice=0 system=696 idle=97388 iowait=0 irq=24409 softirq=29 steal=0
+RT_CPUSTAT sample=261 cpu=cpu0 user=64 nice=0 system=433 idle=132695 iowait=0 irq=241 softirq=43 steal=0
+RT_CPUSTAT sample=261 cpu=cpu1 user=158 nice=0 system=697 idle=97749 iowait=0 irq=24505 softirq=29 steal=0
+RT_CPUSTAT sample=262 cpu=cpu0 user=65 nice=0 system=433 idle=133194 iowait=0 irq=241 softirq=44 steal=0
+RT_CPUSTAT sample=262 cpu=cpu1 user=160 nice=0 system=700 idle=98112 iowait=0 irq=24599 softirq=29 steal=0
+RT_CPUSTAT sample=263 cpu=cpu0 user=65 nice=0 system=434 idle=133693 iowait=0 irq=242 softirq=44 steal=0
+RT_CPUSTAT sample=263 cpu=cpu1 user=161 nice=0 system=702 idle=98474 iowait=0 irq=24693 softirq=29 steal=0
+RT_CPUSTAT sample=264 cpu=cpu0 user=65 nice=0 system=435 idle=134191 iowait=0 irq=243 softirq=44 steal=0
+RT_CPUSTAT sample=264 cpu=cpu1 user=161 nice=0 system=704 idle=98836 iowait=0 irq=24788 softirq=29 steal=0
+RT_CPUSTAT sample=265 cpu=cpu0 user=65 nice=0 system=436 idle=134690 iowait=0 irq=244 softirq=44 steal=0
+RT_CPUSTAT sample=265 cpu=cpu1 user=161 nice=0 system=706 idle=99199 iowait=0 irq=24882 softirq=30 steal=0
+RT_CPUSTAT sample=266 cpu=cpu0 user=65 nice=0 system=437 idle=135189 iowait=0 irq=245 softirq=44 steal=0
+RT_CPUSTAT sample=266 cpu=cpu1 user=163 nice=0 system=709 idle=99562 iowait=0 irq=24975 softirq=30 steal=0
+RT_CPUSTAT sample=267 cpu=cpu0 user=65 nice=0 system=438 idle=135688 iowait=0 irq=246 softirq=44 steal=0
+RT_CPUSTAT sample=267 cpu=cpu1 user=164 nice=0 system=712 idle=99928 iowait=0 irq=25067 softirq=30 steal=0
+RT_CPUSTAT sample=268 cpu=cpu0 user=66 nice=0 system=439 idle=136187 iowait=0 irq=247 softirq=45 steal=0
+RT_CPUSTAT sample=268 cpu=cpu1 user=164 nice=0 system=715 idle=100296 iowait=0 irq=25158 softirq=30 steal=0
+RT_CPUSTAT sample=269 cpu=cpu0 user=66 nice=0 system=440 idle=136686 iowait=0 irq=247 softirq=45 steal=0
+RT_CPUSTAT sample=269 cpu=cpu1 user=165 nice=0 system=718 idle=100661 iowait=0 irq=25251 softirq=30 steal=0
+RT_CPUSTAT sample=270 cpu=cpu0 user=66 nice=0 system=441 idle=137185 iowait=0 irq=248 softirq=45 steal=0
+RT_CPUSTAT sample=270 cpu=cpu1 user=165 nice=0 system=721 idle=101026 iowait=0 irq=25344 softirq=30 steal=0
+RT_CPUSTAT sample=271 cpu=cpu0 user=66 nice=0 system=442 idle=137683 iowait=0 irq=249 softirq=45 steal=0
+RT_CPUSTAT sample=271 cpu=cpu1 user=166 nice=0 system=722 idle=101392 iowait=0 irq=25436 softirq=30 steal=0
+RT_CPUSTAT sample=272 cpu=cpu0 user=67 nice=0 system=443 idle=138182 iowait=0 irq=250 softirq=45 steal=0
+RT_CPUSTAT sample=272 cpu=cpu1 user=166 nice=0 system=724 idle=101757 iowait=0 irq=25529 softirq=30 steal=0
+RT_CPUSTAT sample=273 cpu=cpu0 user=67 nice=0 system=444 idle=138681 iowait=0 irq=251 softirq=45 steal=0
+RT_CPUSTAT sample=273 cpu=cpu1 user=166 nice=0 system=726 idle=102120 iowait=0 irq=25624 softirq=30 steal=0
+RT_CPUSTAT sample=274 cpu=cpu0 user=67 nice=0 system=445 idle=139180 iowait=0 irq=251 softirq=46 steal=0
+RT_CPUSTAT sample=274 cpu=cpu1 user=166 nice=0 system=729 idle=102483 iowait=0 irq=25718 softirq=31 steal=0
+RT_CPUSTAT sample=275 cpu=cpu0 user=67 nice=0 system=446 idle=139679 iowait=0 irq=252 softirq=46 steal=0
+RT_CPUSTAT sample=275 cpu=cpu1 user=167 nice=0 system=732 idle=102844 iowait=0 irq=25814 softirq=31 steal=0
+RT_CPUSTAT sample=276 cpu=cpu0 user=67 nice=0 system=447 idle=140178 iowait=0 irq=253 softirq=46 steal=0
+RT_CPUSTAT sample=276 cpu=cpu1 user=167 nice=0 system=734 idle=103208 iowait=0 irq=25907 softirq=31 steal=0
+RT_CPUSTAT sample=277 cpu=cpu0 user=67 nice=0 system=447 idle=140677 iowait=0 irq=254 softirq=46 steal=0
+RT_CPUSTAT sample=277 cpu=cpu1 user=168 nice=0 system=737 idle=103572 iowait=0 irq=26000 softirq=31 steal=0
+RT_CPUSTAT sample=278 cpu=cpu0 user=67 nice=0 system=448 idle=141175 iowait=0 irq=255 softirq=46 steal=0
+RT_CPUSTAT sample=278 cpu=cpu1 user=169 nice=0 system=739 idle=103933 iowait=0 irq=26096 softirq=31 steal=0
+RT_CPUSTAT sample=279 cpu=cpu0 user=67 nice=0 system=449 idle=141674 iowait=0 irq=256 softirq=46 steal=0
+RT_CPUSTAT sample=279 cpu=cpu1 user=170 nice=0 system=740 idle=104298 iowait=0 irq=26189 softirq=31 steal=0
+RT_CPUSTAT sample=280 cpu=cpu0 user=67 nice=0 system=450 idle=142173 iowait=0 irq=256 softirq=47 steal=0
+RT_CPUSTAT sample=280 cpu=cpu1 user=170 nice=0 system=742 idle=104664 iowait=0 irq=26281 softirq=31 steal=0
+RT_CPUSTAT sample=281 cpu=cpu0 user=67 nice=0 system=451 idle=142672 iowait=0 irq=257 softirq=47 steal=0
+RT_CPUSTAT sample=281 cpu=cpu1 user=171 nice=0 system=744 idle=105027 iowait=0 irq=26375 softirq=31 steal=0
+RT_CPUSTAT sample=282 cpu=cpu0 user=67 nice=0 system=452 idle=143171 iowait=0 irq=258 softirq=47 steal=0
+RT_CPUSTAT sample=282 cpu=cpu1 user=171 nice=0 system=748 idle=105387 iowait=0 irq=26472 softirq=32 steal=0
+RT_CPUSTAT sample=283 cpu=cpu0 user=67 nice=0 system=453 idle=143669 iowait=0 irq=259 softirq=47 steal=0
+RT_CPUSTAT sample=283 cpu=cpu1 user=172 nice=0 system=749 idle=105755 iowait=0 irq=26564 softirq=32 steal=0
+RT_CPUSTAT sample=284 cpu=cpu0 user=68 nice=0 system=454 idle=144168 iowait=0 irq=260 softirq=47 steal=0
+RT_CPUSTAT sample=284 cpu=cpu1 user=172 nice=0 system=753 idle=106120 iowait=0 irq=26656 softirq=32 steal=0
+RT_CPUSTAT sample=285 cpu=cpu0 user=68 nice=0 system=455 idle=144667 iowait=0 irq=261 softirq=47 steal=0
+RT_CPUSTAT sample=285 cpu=cpu1 user=172 nice=0 system=755 idle=106484 iowait=0 irq=26750 softirq=32 steal=0
+RT_CPUSTAT sample=286 cpu=cpu0 user=68 nice=0 system=456 idle=145166 iowait=0 irq=261 softirq=48 steal=0
+RT_CPUSTAT sample=286 cpu=cpu1 user=173 nice=0 system=758 idle=106849 iowait=0 irq=26843 softirq=32 steal=0
+RT_CPUSTAT sample=287 cpu=cpu0 user=68 nice=0 system=456 idle=145665 iowait=0 irq=262 softirq=48 steal=0
+RT_CPUSTAT sample=287 cpu=cpu1 user=174 nice=0 system=760 idle=107212 iowait=0 irq=26937 softirq=32 steal=0
+RT_CPUSTAT sample=288 cpu=cpu0 user=68 nice=0 system=457 idle=146164 iowait=0 irq=263 softirq=48 steal=0
+RT_CPUSTAT sample=288 cpu=cpu1 user=175 nice=0 system=762 idle=107576 iowait=0 irq=27031 softirq=32 steal=0
+RT_CPUSTAT sample=289 cpu=cpu0 user=68 nice=0 system=458 idle=146663 iowait=0 irq=264 softirq=48 steal=0
+RT_CPUSTAT sample=289 cpu=cpu1 user=175 nice=0 system=764 idle=107937 iowait=0 irq=27127 softirq=32 steal=0
+RT_CPUSTAT sample=290 cpu=cpu0 user=69 nice=0 system=459 idle=147162 iowait=0 irq=264 softirq=48 steal=0
+RT_CPUSTAT sample=290 cpu=cpu1 user=176 nice=0 system=767 idle=108301 iowait=0 irq=27221 softirq=32 steal=0
+RT_CPUSTAT sample=291 cpu=cpu0 user=69 nice=0 system=459 idle=147661 iowait=0 irq=265 softirq=48 steal=0
+RT_CPUSTAT sample=291 cpu=cpu1 user=176 nice=0 system=769 idle=108667 iowait=0 irq=27313 softirq=33 steal=0
+RT_CPUSTAT sample=292 cpu=cpu0 user=69 nice=0 system=460 idle=148160 iowait=0 irq=266 softirq=48 steal=0
+RT_CPUSTAT sample=292 cpu=cpu1 user=177 nice=0 system=770 idle=109031 iowait=0 irq=27405 softirq=33 steal=0
+RT_CPUSTAT sample=293 cpu=cpu0 user=70 nice=0 system=461 idle=148659 iowait=0 irq=267 softirq=49 steal=0
+RT_CPUSTAT sample=293 cpu=cpu1 user=178 nice=0 system=774 idle=109396 iowait=0 irq=27498 softirq=33 steal=0
+RT_CPUSTAT sample=294 cpu=cpu0 user=70 nice=0 system=462 idle=149158 iowait=0 irq=268 softirq=49 steal=0
+RT_CPUSTAT sample=294 cpu=cpu1 user=179 nice=0 system=776 idle=109761 iowait=0 irq=27591 softirq=33 steal=0
+RT_CPUSTAT sample=295 cpu=cpu0 user=70 nice=0 system=462 idle=149657 iowait=0 irq=268 softirq=49 steal=0
+RT_CPUSTAT sample=295 cpu=cpu1 user=179 nice=0 system=779 idle=110126 iowait=0 irq=27684 softirq=33 steal=0
+RT_CPUSTAT sample=296 cpu=cpu0 user=71 nice=0 system=463 idle=150156 iowait=0 irq=269 softirq=49 steal=0
+RT_CPUSTAT sample=296 cpu=cpu1 user=179 nice=0 system=781 idle=110491 iowait=0 irq=27776 softirq=33 steal=0
+RT_CPUSTAT sample=297 cpu=cpu0 user=71 nice=0 system=464 idle=150654 iowait=0 irq=270 softirq=49 steal=0
+RT_CPUSTAT sample=297 cpu=cpu1 user=180 nice=0 system=783 idle=110854 iowait=0 irq=27871 softirq=33 steal=0
+RT_CPUSTAT sample=298 cpu=cpu0 user=71 nice=0 system=465 idle=151153 iowait=0 irq=271 softirq=49 steal=0
+RT_CPUSTAT sample=298 cpu=cpu1 user=180 nice=0 system=786 idle=111219 iowait=0 irq=27963 softirq=33 steal=0
+RT_CPUSTAT sample=299 cpu=cpu0 user=71 nice=0 system=466 idle=151652 iowait=0 irq=272 softirq=50 steal=0
+RT_CPUSTAT sample=299 cpu=cpu1 user=181 nice=0 system=788 idle=111586 iowait=0 irq=28055 softirq=33 steal=0
+RT_CPUSTAT sample=300 cpu=cpu0 user=71 nice=0 system=466 idle=152151 iowait=0 irq=272 softirq=50 steal=0
+RT_CPUSTAT sample=300 cpu=cpu1 user=181 nice=0 system=791 idle=111950 iowait=0 irq=28147 softirq=34 steal=0
+RT_CPUSTAT sample=301 cpu=cpu0 user=72 nice=0 system=467 idle=152650 iowait=0 irq=273 softirq=50 steal=0
+RT_CPUSTAT sample=301 cpu=cpu1 user=181 nice=0 system=793 idle=112318 iowait=0 irq=28238 softirq=34 steal=0
+RT_CPUSTAT sample=302 cpu=cpu0 user=72 nice=0 system=468 idle=153149 iowait=0 irq=274 softirq=50 steal=0
+RT_CPUSTAT sample=302 cpu=cpu1 user=182 nice=0 system=795 idle=112682 iowait=0 irq=28332 softirq=34 steal=0
+RT_CPUSTAT sample=303 cpu=cpu0 user=72 nice=0 system=468 idle=153648 iowait=0 irq=275 softirq=50 steal=0
+RT_CPUSTAT sample=303 cpu=cpu1 user=182 nice=0 system=797 idle=113046 iowait=0 irq=28425 softirq=34 steal=0
+RT_CPUSTAT sample=304 cpu=cpu0 user=72 nice=0 system=469 idle=154147 iowait=0 irq=276 softirq=50 steal=0
+RT_CPUSTAT sample=304 cpu=cpu1 user=183 nice=0 system=800 idle=113406 iowait=0 irq=28522 softirq=34 steal=0
+RT_CPUSTAT sample=305 cpu=cpu0 user=73 nice=0 system=471 idle=154646 iowait=0 irq=276 softirq=50 steal=0
+RT_CPUSTAT sample=305 cpu=cpu1 user=184 nice=0 system=804 idle=113769 iowait=0 irq=28616 softirq=34 steal=0
+RT_CPUSTAT sample=306 cpu=cpu0 user=73 nice=0 system=471 idle=155145 iowait=0 irq=277 softirq=51 steal=0
+RT_CPUSTAT sample=306 cpu=cpu1 user=186 nice=0 system=805 idle=114130 iowait=0 irq=28711 softirq=34 steal=0
+RT_CPUSTAT sample=307 cpu=cpu0 user=73 nice=0 system=472 idle=155643 iowait=0 irq=278 softirq=51 steal=0
+RT_CPUSTAT sample=307 cpu=cpu1 user=186 nice=0 system=808 idle=114491 iowait=0 irq=28806 softirq=34 steal=0
+RT_CPUSTAT sample=308 cpu=cpu0 user=74 nice=0 system=473 idle=156142 iowait=0 irq=279 softirq=51 steal=0
+RT_CPUSTAT sample=308 cpu=cpu1 user=186 nice=0 system=811 idle=114857 iowait=0 irq=28897 softirq=34 steal=0
+RT_CPUSTAT sample=309 cpu=cpu0 user=74 nice=0 system=473 idle=156641 iowait=0 irq=280 softirq=51 steal=0
+RT_CPUSTAT sample=309 cpu=cpu1 user=186 nice=0 system=813 idle=115220 iowait=0 irq=28992 softirq=34 steal=0
+RT_CPUSTAT sample=310 cpu=cpu0 user=74 nice=0 system=474 idle=157140 iowait=0 irq=280 softirq=51 steal=0
+RT_CPUSTAT sample=310 cpu=cpu1 user=187 nice=0 system=815 idle=115588 iowait=0 irq=29081 softirq=35 steal=0
+RT_CPUSTAT sample=311 cpu=cpu0 user=75 nice=0 system=475 idle=157639 iowait=0 irq=281 softirq=51 steal=0
+RT_CPUSTAT sample=311 cpu=cpu1 user=187 nice=0 system=817 idle=115952 iowait=0 irq=29176 softirq=35 steal=0
+RT_CPUSTAT sample=312 cpu=cpu0 user=75 nice=0 system=476 idle=158138 iowait=0 irq=282 softirq=52 steal=0
+RT_CPUSTAT sample=312 cpu=cpu1 user=188 nice=0 system=820 idle=116316 iowait=0 irq=29268 softirq=35 steal=0
+RT_CPUSTAT sample=313 cpu=cpu0 user=76 nice=0 system=476 idle=158637 iowait=0 irq=283 softirq=52 steal=0
+RT_CPUSTAT sample=313 cpu=cpu1 user=188 nice=0 system=821 idle=116679 iowait=0 irq=29363 softirq=35 steal=0
+RT_CPUSTAT sample=314 cpu=cpu0 user=76 nice=0 system=477 idle=159136 iowait=0 irq=284 softirq=52 steal=0
+RT_CPUSTAT sample=314 cpu=cpu1 user=190 nice=0 system=823 idle=117042 iowait=0 irq=29458 softirq=35 steal=0
+RT_CPUSTAT sample=315 cpu=cpu0 user=76 nice=0 system=477 idle=159635 iowait=0 irq=284 softirq=52 steal=0
+RT_CPUSTAT sample=315 cpu=cpu1 user=190 nice=0 system=826 idle=117406 iowait=0 irq=29551 softirq=35 steal=0
+RT_CPUSTAT sample=316 cpu=cpu0 user=77 nice=0 system=478 idle=160134 iowait=0 irq=285 softirq=52 steal=0
+RT_CPUSTAT sample=316 cpu=cpu1 user=190 nice=0 system=828 idle=117772 iowait=0 irq=29641 softirq=35 steal=0
+RT_CPUSTAT sample=317 cpu=cpu0 user=77 nice=0 system=479 idle=160633 iowait=0 irq=286 softirq=52 steal=0
+RT_CPUSTAT sample=317 cpu=cpu1 user=190 nice=0 system=830 idle=118137 iowait=0 irq=29734 softirq=35 steal=0
+RT_CPUSTAT sample=318 cpu=cpu0 user=78 nice=0 system=479 idle=161131 iowait=0 irq=287 softirq=52 steal=0
+RT_CPUSTAT sample=318 cpu=cpu1 user=190 nice=0 system=835 idle=118499 iowait=0 irq=29829 softirq=35 steal=0
+RT_CPUSTAT sample=319 cpu=cpu0 user=78 nice=0 system=481 idle=161630 iowait=0 irq=288 softirq=53 steal=0
+RT_CPUSTAT sample=319 cpu=cpu1 user=191 nice=0 system=836 idle=118865 iowait=0 irq=29922 softirq=36 steal=0
+RT_CPUSTAT sample=320 cpu=cpu0 user=78 nice=0 system=482 idle=162129 iowait=0 irq=289 softirq=53 steal=0
+RT_CPUSTAT sample=320 cpu=cpu1 user=191 nice=0 system=839 idle=119227 iowait=0 irq=30017 softirq=36 steal=0
+RT_CPUSTAT sample=321 cpu=cpu0 user=78 nice=0 system=483 idle=162628 iowait=0 irq=290 softirq=53 steal=0
+RT_CPUSTAT sample=321 cpu=cpu1 user=192 nice=0 system=843 idle=119589 iowait=0 irq=30113 softirq=36 steal=0
+RT_CPUSTAT sample=322 cpu=cpu0 user=78 nice=0 system=484 idle=163127 iowait=0 irq=290 softirq=53 steal=0
+RT_CPUSTAT sample=322 cpu=cpu1 user=193 nice=0 system=845 idle=119952 iowait=0 irq=30207 softirq=36 steal=0
+RT_CPUSTAT sample=323 cpu=cpu0 user=78 nice=0 system=485 idle=163625 iowait=0 irq=291 softirq=53 steal=0
+RT_CPUSTAT sample=323 cpu=cpu1 user=193 nice=0 system=849 idle=120316 iowait=0 irq=30300 softirq=36 steal=0
+RT_CPUSTAT sample=324 cpu=cpu0 user=78 nice=0 system=486 idle=164124 iowait=0 irq=292 softirq=53 steal=0
+RT_CPUSTAT sample=324 cpu=cpu1 user=193 nice=0 system=851 idle=120678 iowait=0 irq=30395 softirq=36 steal=0
+RT_CPUSTAT sample=325 cpu=cpu0 user=78 nice=0 system=487 idle=164623 iowait=0 irq=293 softirq=54 steal=0
+RT_CPUSTAT sample=325 cpu=cpu1 user=193 nice=0 system=853 idle=121044 iowait=0 irq=30487 softirq=36 steal=0
+RT_CPUSTAT sample=326 cpu=cpu0 user=79 nice=0 system=487 idle=165122 iowait=0 irq=294 softirq=54 steal=0
+RT_CPUSTAT sample=326 cpu=cpu1 user=194 nice=0 system=856 idle=121406 iowait=0 irq=30581 softirq=36 steal=0
+RT_CPUSTAT sample=327 cpu=cpu0 user=79 nice=0 system=489 idle=165621 iowait=0 irq=295 softirq=54 steal=0
+RT_CPUSTAT sample=327 cpu=cpu1 user=195 nice=0 system=859 idle=121769 iowait=0 irq=30674 softirq=36 steal=0
+RT_CPUSTAT sample=328 cpu=cpu0 user=79 nice=0 system=489 idle=166120 iowait=0 irq=295 softirq=54 steal=0
+RT_CPUSTAT sample=328 cpu=cpu1 user=195 nice=0 system=862 idle=122130 iowait=0 irq=30769 softirq=37 steal=0
+RT_CPUSTAT sample=329 cpu=cpu0 user=79 nice=0 system=491 idle=166619 iowait=0 irq=296 softirq=54 steal=0
+RT_CPUSTAT sample=329 cpu=cpu1 user=197 nice=0 system=866 idle=122490 iowait=0 irq=30866 softirq=37 steal=0
+RT_CPUSTAT sample=330 cpu=cpu0 user=80 nice=0 system=492 idle=167117 iowait=0 irq=297 softirq=54 steal=0
+RT_CPUSTAT sample=330 cpu=cpu1 user=198 nice=0 system=870 idle=122850 iowait=0 irq=30962 softirq=37 steal=0
+RT_CPUSTAT sample=331 cpu=cpu0 user=81 nice=0 system=492 idle=167616 iowait=0 irq=298 softirq=55 steal=0
+RT_CPUSTAT sample=331 cpu=cpu1 user=198 nice=0 system=873 idle=123210 iowait=0 irq=31057 softirq=37 steal=0
+RT_CPUSTAT sample=332 cpu=cpu0 user=81 nice=0 system=493 idle=168115 iowait=0 irq=299 softirq=55 steal=0
+RT_CPUSTAT sample=332 cpu=cpu1 user=200 nice=0 system=877 idle=123570 iowait=0 irq=31153 softirq=37 steal=0
+RT_CPUSTAT sample=333 cpu=cpu0 user=81 nice=0 system=494 idle=168614 iowait=0 irq=300 softirq=55 steal=0
+RT_CPUSTAT sample=333 cpu=cpu1 user=201 nice=0 system=879 idle=123934 iowait=0 irq=31247 softirq=37 steal=0
+RT_CPUSTAT sample=334 cpu=cpu0 user=82 nice=0 system=494 idle=169113 iowait=0 irq=301 softirq=55 steal=0
+RT_CPUSTAT sample=334 cpu=cpu1 user=201 nice=0 system=881 idle=124297 iowait=0 irq=31340 softirq=37 steal=0
+RT_CPUSTAT sample=335 cpu=cpu0 user=82 nice=0 system=496 idle=169612 iowait=0 irq=301 softirq=55 steal=0
+RT_CPUSTAT sample=335 cpu=cpu1 user=201 nice=0 system=884 idle=124659 iowait=0 irq=31435 softirq=37 steal=0
+RT_CPUSTAT sample=336 cpu=cpu0 user=82 nice=0 system=496 idle=170111 iowait=0 irq=302 softirq=55 steal=0
+RT_CPUSTAT sample=336 cpu=cpu1 user=202 nice=0 system=887 idle=125022 iowait=0 irq=31530 softirq=37 steal=0
+RT_CPUSTAT sample=337 cpu=cpu0 user=83 nice=0 system=497 idle=170610 iowait=0 irq=303 softirq=56 steal=0
+RT_CPUSTAT sample=337 cpu=cpu1 user=202 nice=0 system=890 idle=125384 iowait=0 irq=31625 softirq=38 steal=0
+RT_CPUSTAT sample=338 cpu=cpu0 user=83 nice=0 system=497 idle=171109 iowait=0 irq=304 softirq=56 steal=0
+RT_CPUSTAT sample=338 cpu=cpu1 user=202 nice=0 system=893 idle=125747 iowait=0 irq=31718 softirq=38 steal=0
+RT_CPUSTAT sample=339 cpu=cpu0 user=83 nice=0 system=498 idle=171607 iowait=0 irq=305 softirq=56 steal=0
+RT_CPUSTAT sample=339 cpu=cpu1 user=203 nice=0 system=896 idle=126110 iowait=0 irq=31812 softirq=38 steal=0
+RT_CPUSTAT sample=340 cpu=cpu0 user=83 nice=0 system=499 idle=172106 iowait=0 irq=305 softirq=56 steal=0
+RT_CPUSTAT sample=340 cpu=cpu1 user=203 nice=0 system=902 idle=126472 iowait=0 irq=31906 softirq=38 steal=0
+RT_CPUSTAT sample=341 cpu=cpu0 user=84 nice=0 system=500 idle=172605 iowait=0 irq=306 softirq=56 steal=0
+RT_CPUSTAT sample=341 cpu=cpu1 user=204 nice=0 system=905 idle=126835 iowait=0 irq=32000 softirq=38 steal=0
+RT_CPUSTAT sample=342 cpu=cpu0 user=84 nice=0 system=501 idle=173104 iowait=0 irq=307 softirq=56 steal=0
+RT_CPUSTAT sample=342 cpu=cpu1 user=205 nice=0 system=908 idle=127200 iowait=0 irq=32092 softirq=38 steal=0
+RT_CPUSTAT sample=343 cpu=cpu0 user=84 nice=0 system=502 idle=173603 iowait=0 irq=308 softirq=57 steal=0
+RT_CPUSTAT sample=343 cpu=cpu1 user=205 nice=0 system=911 idle=127564 iowait=0 irq=32185 softirq=38 steal=0
+RT_CPUSTAT sample=344 cpu=cpu0 user=85 nice=0 system=502 idle=174101 iowait=0 irq=309 softirq=57 steal=0
+RT_CPUSTAT sample=344 cpu=cpu1 user=206 nice=0 system=917 idle=127919 iowait=0 irq=32286 softirq=38 steal=0
+RT_CPUSTAT sample=345 cpu=cpu0 user=85 nice=0 system=502 idle=174599 iowait=0 irq=311 softirq=57 steal=0
+RT_CPUSTAT sample=345 cpu=cpu1 user=207 nice=0 system=920 idle=128273 iowait=0 irq=32390 softirq=38 steal=0
+RT_CPUSTAT sample=346 cpu=cpu0 user=86 nice=0 system=503 idle=175098 iowait=0 irq=311 softirq=57 steal=0
+RT_CPUSTAT sample=346 cpu=cpu1 user=208 nice=0 system=926 idle=128631 iowait=0 irq=32488 softirq=38 steal=0
+RT_CPUSTAT sample=347 cpu=cpu0 user=86 nice=0 system=504 idle=175597 iowait=0 irq=312 softirq=57 steal=0
+RT_CPUSTAT sample=347 cpu=cpu1 user=210 nice=0 system=929 idle=128992 iowait=0 irq=32583 softirq=39 steal=0
+RT_CPUSTAT sample=348 cpu=cpu0 user=86 nice=0 system=504 idle=176096 iowait=0 irq=313 softirq=57 steal=0
+RT_CPUSTAT sample=348 cpu=cpu1 user=211 nice=0 system=933 idle=129354 iowait=0 irq=32677 softirq=39 steal=0
+RT_CPUSTAT sample=349 cpu=cpu0 user=87 nice=0 system=504 idle=176595 iowait=0 irq=314 softirq=58 steal=0
+RT_CPUSTAT sample=349 cpu=cpu1 user=211 nice=0 system=935 idle=129717 iowait=0 irq=32770 softirq=39 steal=0
+RT_CPUSTAT sample=350 cpu=cpu0 user=87 nice=0 system=505 idle=177094 iowait=0 irq=315 softirq=58 steal=0
+RT_CPUSTAT sample=350 cpu=cpu1 user=211 nice=0 system=938 idle=130080 iowait=0 irq=32864 softirq=39 steal=0
+RT_CPUSTAT sample=351 cpu=cpu0 user=88 nice=0 system=506 idle=177593 iowait=0 irq=315 softirq=58 steal=0
+RT_CPUSTAT sample=351 cpu=cpu1 user=212 nice=0 system=940 idle=130444 iowait=0 irq=32957 softirq=39 steal=0
+RT_CPUSTAT sample=352 cpu=cpu0 user=88 nice=0 system=506 idle=178092 iowait=0 irq=316 softirq=58 steal=0
+RT_CPUSTAT sample=352 cpu=cpu1 user=212 nice=0 system=942 idle=130807 iowait=0 irq=33051 softirq=39 steal=0
+RT_CPUSTAT sample=353 cpu=cpu0 user=89 nice=0 system=507 idle=178590 iowait=0 irq=317 softirq=58 steal=0
+RT_CPUSTAT sample=353 cpu=cpu1 user=212 nice=0 system=945 idle=131172 iowait=0 irq=33145 softirq=39 steal=0
+RT_CPUSTAT sample=354 cpu=cpu0 user=89 nice=0 system=508 idle=179089 iowait=0 irq=318 softirq=58 steal=0
+RT_CPUSTAT sample=354 cpu=cpu1 user=213 nice=0 system=947 idle=131534 iowait=0 irq=33239 softirq=39 steal=0
+RT_CPUSTAT sample=355 cpu=cpu0 user=89 nice=0 system=509 idle=179588 iowait=0 irq=319 softirq=59 steal=0
+RT_CPUSTAT sample=355 cpu=cpu1 user=213 nice=0 system=950 idle=131896 iowait=0 irq=33335 softirq=40 steal=0
+RT_CPUSTAT sample=356 cpu=cpu0 user=90 nice=0 system=510 idle=180086 iowait=0 irq=320 softirq=59 steal=0
+RT_CPUSTAT sample=356 cpu=cpu1 user=213 nice=0 system=952 idle=132259 iowait=0 irq=33428 softirq=40 steal=0
+RT_CPUSTAT sample=357 cpu=cpu0 user=90 nice=0 system=511 idle=180585 iowait=0 irq=321 softirq=59 steal=0
+RT_CPUSTAT sample=357 cpu=cpu1 user=213 nice=0 system=954 idle=132625 iowait=0 irq=33520 softirq=40 steal=0
+RT_CPUSTAT sample=358 cpu=cpu0 user=90 nice=0 system=512 idle=181084 iowait=0 irq=322 softirq=59 steal=0
+RT_CPUSTAT sample=358 cpu=cpu1 user=213 nice=0 system=956 idle=132990 iowait=0 irq=33613 softirq=40 steal=0
+RT_CPUSTAT sample=359 cpu=cpu0 user=90 nice=0 system=512 idle=181583 iowait=0 irq=322 softirq=59 steal=0
+RT_CPUSTAT sample=359 cpu=cpu1 user=215 nice=0 system=960 idle=133355 iowait=0 irq=33706 softirq=40 steal=0
+RT_CPUSTAT sample=360 cpu=cpu0 user=90 nice=0 system=513 idle=182082 iowait=0 irq=323 softirq=60 steal=0
+RT_CPUSTAT sample=360 cpu=cpu1 user=216 nice=0 system=963 idle=133719 iowait=0 irq=33799 softirq=40 steal=0
+RT_CPUSTAT sample=361 cpu=cpu0 user=90 nice=0 system=515 idle=182581 iowait=0 irq=324 softirq=60 steal=0
+RT_CPUSTAT sample=361 cpu=cpu1 user=217 nice=0 system=965 idle=134085 iowait=0 irq=33891 softirq=40 steal=0
+RT_CPUSTAT sample=362 cpu=cpu0 user=91 nice=0 system=515 idle=183080 iowait=0 irq=325 softirq=60 steal=0
+RT_CPUSTAT sample=362 cpu=cpu1 user=217 nice=0 system=969 idle=134447 iowait=0 irq=33986 softirq=40 steal=0
+RT_CPUSTAT sample=363 cpu=cpu0 user=91 nice=0 system=517 idle=183578 iowait=0 irq=326 softirq=60 steal=0
+RT_CPUSTAT sample=363 cpu=cpu1 user=218 nice=0 system=970 idle=134810 iowait=0 irq=34080 softirq=40 steal=0
+RT_CPUSTAT sample=364 cpu=cpu0 user=91 nice=0 system=517 idle=184077 iowait=0 irq=327 softirq=60 steal=0
+RT_CPUSTAT sample=364 cpu=cpu1 user=219 nice=0 system=973 idle=135172 iowait=0 irq=34175 softirq=40 steal=0
+RT_CPUSTAT sample=365 cpu=cpu0 user=91 nice=0 system=518 idle=184576 iowait=0 irq=328 softirq=60 steal=0
+RT_CPUSTAT sample=365 cpu=cpu1 user=220 nice=0 system=975 idle=135538 iowait=0 irq=34268 softirq=41 steal=0
+RT_CPUSTAT sample=366 cpu=cpu0 user=92 nice=0 system=518 idle=185075 iowait=0 irq=328 softirq=60 steal=0
+RT_CPUSTAT sample=366 cpu=cpu1 user=220 nice=0 system=977 idle=135902 iowait=0 irq=34362 softirq=41 steal=0
+RT_CPUSTAT sample=367 cpu=cpu0 user=93 nice=0 system=519 idle=185574 iowait=0 irq=329 softirq=61 steal=0
+RT_CPUSTAT sample=367 cpu=cpu1 user=220 nice=0 system=978 idle=136265 iowait=0 irq=34457 softirq=41 steal=0
+RT_CPUSTAT sample=368 cpu=cpu0 user=93 nice=0 system=520 idle=186073 iowait=0 irq=330 softirq=61 steal=0
+RT_CPUSTAT sample=368 cpu=cpu1 user=221 nice=0 system=980 idle=136627 iowait=0 irq=34551 softirq=41 steal=0
+RT_CPUSTAT sample=369 cpu=cpu0 user=93 nice=0 system=520 idle=186571 iowait=0 irq=331 softirq=61 steal=0
+RT_CPUSTAT sample=369 cpu=cpu1 user=221 nice=0 system=986 idle=136986 iowait=0 irq=34649 softirq=41 steal=0
+RT_CPUSTAT sample=370 cpu=cpu0 user=94 nice=0 system=521 idle=187077 iowait=0 irq=332 softirq=61 steal=0
+RT_CPUSTAT sample=370 cpu=cpu1 user=222 nice=0 system=1065 idle=137171 iowait=0 irq=34703 softirq=41 steal=0
+RT_INIT_DONE scenario=idle
+[ 1914.411494] reboot: Power down
+[37m[1917.796376 2:17 axvm::runtime::hvc:352] [33mVM[1] PSCI_SYSTEM_OFF[m
+[m[37m[1917.796598 2:17 axvm::vm:1360] [32mStopping VM[1]: SystemDown[m
+[m
+[37m[1917.797025 2:17 axvm::runtime::vcpus:773] [33mVM[1] VCpu[0] stopping because of VM stopping[m[Axvisor] VM[1] stopped; returning to the management shell
+[m[37m[1917.797099 3:22 axvm::runtime::vcpus:773] [33mVM[1] VCpu[1] stopping because of VM stopping[m
+
+[m[2Kaxvisor:$ [37m[1918.073451 2:17 axvm::runtime::vcpus:811] [32mVM[1] VCpu[0] exiting...[m
+[m[37m[1918.073488 3:22 axvm::runtime::vcpus:780] [32mVM[1] VCpu[1] last VCpu exiting, decreasing running VM count[m
+[m[37m[1918.074430 3:22 axvm::runtime::vcpus:790] [32mVM[1] state changed to Stopped[m
+[m[37m[1918.074629 3:22 axvm::runtime::vcpus:811] [32mVM[1] VCpu[1] exiting...[m
+[m[2Kaxvisor:$ v[2Kaxvisor:$ vm[2Kaxvisor:$ vme[2Kaxvisor:$ vmex[2Kaxvisor:$ vmexi[2Kaxvisor:$ vmexit[2Kaxvisor:$ vmexit [2Kaxvisor:$ vmexit s[2Kaxvisor:$ vmexit st[2Kaxvisor:$ vmexit sta[2Kaxvisor:$ vmexit stat
+VM-exit counters per physical CPU (12 reasons):
+  cpu         irq     timer      mmio       wfi   hvc-smc    sysreg    gic-if       sgi    cpu-up  sys-down   nothing     other
+    1         392       301     28536        46         -         -         -         -         -         -         -         -
+    2   21788@11.1/s 14992@7.7/s188929@85.6/s1937067@1014.1/s     8@0.0/s         -         -   119@0.0/s         -         -        11         -
+    3  1935918@1013.4/s1881575@984.9/s 13385@7.0/s1789464@936.5/s         -         -         -  2044@1.1/s         -         -         2         -
+axvisor:$ rt_experiment end_ns=1786740963905724044 elapsed_ms=1932320

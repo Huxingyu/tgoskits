@@ -1,0 +1,11 @@
+VM-exit counters per physical CPU (12 reasons):
+  cpu         irq     timer      mmio       wfi   hvc-smc    sysreg    gic-if       sgi    cpu-up  sys-down   nothing     other
+    1       17273     17072     78618     17071         -         -         -         -         -         -         -         -
+    2  644012@332.8/s468438@242.0/s325942@153.4/s   197@0.0/s     8@0.0/s         -         -   130@0.0/s         -         -        11         -
+    3  1909331@987.7/s1849044@956.5/s        521758121@909.1/s         -         -         -  1631@0.8/s         -         -         2         -
+Host periodic scheduler ticks (event-driven timer IRQs excluded):
+  cpu   0:     193800 (98.672/s)
+  cpu   1:     193773 (98.658/s)
+  cpu   2:     193769 (98.658/s)
+  cpu   3:     193790 (98.667/s)
+axvisor:$ rt_experiment end_ns=1786825331441639409 elapsed_ms=1977514
