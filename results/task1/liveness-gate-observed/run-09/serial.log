@@ -1,0 +1,454 @@
+[host_monotonic_s=186425.566569] dedicated_cpus=1 rt_burner=0:10:53:60000
+[host_monotonic_s=186425.566751] VM Load @PA:0x40200000
+[host_monotonic_s=186425.566779] VM Load Offset: 0xffff0000c0200000
+[host_monotonic_s=186425.568072] Memory Map:
+[host_monotonic_s=186425.569266]   Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+[host_monotonic_s=186425.569268]   KImg   0x00000040200000 - 0x00000044c00000 (74 MiB)
+[host_monotonic_s=186425.570300]   Free   0x00000044c00000 - 0x00000240000000 (7.93 GiB)
+[host_monotonic_s=186425.570404] Initialize RAM allocator: 0x44c00000..0x240000000
+[host_monotonic_s=186425.598681] Reserving CPU-local areas
+[host_monotonic_s=186425.600791] CPU-local area stride: 0x44000 bytes
+[host_monotonic_s=186425.600836] Total CPU-local allocation: 0x110000 bytes (4 CPUs)
+[host_monotonic_s=186425.601031] Flushed RAM used range to memory map: 0x44c00000..0x44d00000, current: 0x44d00000
+[host_monotonic_s=186425.601176] Flushed RAM used range to memory map: 0x44d00000..0x44e10000, current: 0x44e10000
+[host_monotonic_s=186425.602523] CPU-local areas allocated at 0x44d00000 - 0x44e10000
+[host_monotonic_s=186425.602526] EL: 2
+[host_monotonic_s=186425.602546] Mapping early memory regions...
+[host_monotonic_s=186425.603268] Ram                 : [0x0000000040000000, 0x0000000240000000) -> [0x0000000040000000, 0x0000000240000000) (8 GiB)
+[host_monotonic_s=186425.603728] KImage              : [0x0000ffff80000000, 0x0000ffff84a00000) -> [0x0000000040200000, 0x0000000044c00000) (74 MiB)
+[host_monotonic_s=186425.604009] PerCpu              : [0x0000ff0044d00000, 0x0000ff0044e10000) -> [0x0000000044d00000, 0x0000000044e10000) (1.06 MiB)
+[host_monotonic_s=186425.604210] Debug serial        : [0x0000000009000000, 0x0000000009001000) -> [0x0000000009000000, 0x0000000009001000) (4 KiB)
+[host_monotonic_s=186425.604344] Boot page table at physical address: PA:0x44e10000
+[host_monotonic_s=186425.604367] Setting up table registers...
+[host_monotonic_s=186425.604520] MMU Entry point at physical address: 0x403bd31c
+[host_monotonic_s=186425.609132] Trap vector at 0xffff801c1000
+[host_monotonic_s=186425.609490] Memory Map:
+[host_monotonic_s=186425.610673]   MMIO   0x00000009000000 - 0x00000009001000 (4 KiB)
+[host_monotonic_s=186425.610711]   Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+[host_monotonic_s=186425.610913]   KImg   0x00000040200000 - 0x00000044c00000 (74 MiB)
+[host_monotonic_s=186425.610916]   Rsv    0x00000044c00000 - 0x00000044d00000 (1 MiB)
+[host_monotonic_s=186425.611970]   PerCPU 0x00000044d00000 - 0x00000044e10000 (1.06 MiB)
+[host_monotonic_s=186425.611972]   Rsv    0x00000044e10000 - 0x00000044e1a000 (40 KiB)
+[host_monotonic_s=186425.612335]   Free   0x00000044e1a000 - 0x00000240000000 (7.92 GiB)
+[host_monotonic_s=186425.616110] Jumping to main entry point at 0xffff801a513c with SP 0x0000ff0044d44000
+[host_monotonic_s=186425.617613] 
+[host_monotonic_s=186425.617615]        d8888                            .d88888b.   .d8888b.
+[host_monotonic_s=186425.617637]       d88888                           d88P" "Y88b d88P  Y88b
+[host_monotonic_s=186425.617677]      d88P888                           888     888 Y88b.
+[host_monotonic_s=186425.617733]     d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+[host_monotonic_s=186425.617794]    d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+[host_monotonic_s=186425.617857]   d88P   888 888     888      88888888 888     888       "888
+[host_monotonic_s=186425.617919]  d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+[host_monotonic_s=186425.617976] d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+[host_monotonic_s=186425.617998] 
+[host_monotonic_s=186425.618456] arch = aarch64
+[host_monotonic_s=186425.618458] platform = linux,dummy-virt
+[host_monotonic_s=186425.618459] target = aarch64-unknown-none-softfloat
+[host_monotonic_s=186425.618459] build_mode = 
+[host_monotonic_s=186425.618460] log_level = info
+[host_monotonic_s=186425.618476] backtrace = false
+[host_monotonic_s=186425.618498] smp = 4
+[host_monotonic_s=186425.618510] 
+[host_monotonic_s=186425.619128] [37m[  0.057724 ax_runtime:220] [32mLogging is enabled.[m
+[host_monotonic_s=186425.619181] [m[37m[  0.058124 ax_runtime:221] [32mPrimary CPU 0 started, arg = 0x44c00000.[m
+[host_monotonic_s=186425.619301] [m[37m[  0.058239 ax_runtime:223] [32mFound physcial memory regions:[m
+[host_monotonic_s=186425.620508] [m[37m[  0.059274 ax_runtime:225] [32m  [PA:0x9000000, PA:0x9001000) mmio (READ | WRITE | DEVICE | RESERVED)[m
+[host_monotonic_s=186425.620614] [m[37m[  0.059507 ax_runtime:225] [32m  [PA:0x40000000, PA:0x40200000) free memory (READ | WRITE | FREE)[m
+[host_monotonic_s=186425.620744] [m[37m[  0.059653 ax_runtime:225] [32m  [PA:0x40200000, PA:0x44c00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=186425.620870] [m[37m[  0.059782 ax_runtime:225] [32m  [PA:0x44c00000, PA:0x44d00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=186425.620996] [m[37m[  0.059907 ax_runtime:225] [32m  [PA:0x44d00000, PA:0x44e10000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=186425.621126] [m[37m[  0.060032 ax_runtime:225] [32m  [PA:0x44e10000, PA:0x44e1a000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=186425.621247] [m[37m[  0.060165 ax_runtime:225] [32m  [PA:0x44e1a000, PA:0x240000000) free memory (READ | WRITE | FREE)[m
+[host_monotonic_s=186425.621371] [m[37m[  0.060306 ax_runtime:375] [32mInitialize global memory allocator...[m
+[host_monotonic_s=186425.621459] [m[37m[  0.060411 ax_runtime:376] [32m  use buddy-slab-allocator allocator.[m
+[host_monotonic_s=186425.621703] [m[37m[  0.060603 ax_alloc::buddy_slab:158] [32mInitialize global memory allocator, start_vaddr: 0x44e1a000, size: 0x1fb1e6000[m
+[host_monotonic_s=186425.628806] [m[37m[  0.067649 ax_alloc::buddy_slab:424] [32mglobal allocator initialized[m
+[host_monotonic_s=186425.628923] [m[37m[  0.067841 ax_alloc::buddy_slab:168] [32mAdd memory region, start_vaddr: 0x40000000, size: 0x200000[m
+[host_monotonic_s=186425.629207] [m[37m[  0.068018 buddy_slab_allocator::global:151] [32mGlobalAllocator: skip region 0x40000000+0x200000, no allocator-visible memory after 2097152 alignment[m
+[host_monotonic_s=186425.629526] [m[37m[  0.068445 ax_runtime:260] [32mkernel aspace: [VA:0x0, VA:0xffffffffffffffff)[m
+[host_monotonic_s=186425.629684] [m[37m[  0.068630 ax_mm:103] [32mInitialize virtual memory management...[m
+[host_monotonic_s=186426.431128] [m[37m[  0.686150 ax_runtime:272] [32mInitialize platform devices...[m
+[host_monotonic_s=186426.431145] [m[37m[  0.692892 someboot::arch::power:23] [32mPower management method : SMC[m
+[host_monotonic_s=186426.431149] [m[37m[  0.693084 somehal::driver:5] [32mInitializing rdrive with FDT at 0x44c00000[m
+[host_monotonic_s=186426.431278] [m[37m[  0.706528 somehal::arch::gic::v3:274] [32mGICv3 CPU 0 EOI mode: two_step=true[m
+[host_monotonic_s=186426.447796] [m[37m[  0.886648 ax_runtime:558] [32mDedicated (no-tick) host CPUs: 0b10[m
+[host_monotonic_s=186426.447862] [m[37m[  0.886808 ax_task::api:158] [32mInitialize scheduling...[m
+[host_monotonic_s=186426.449250] [m[37m[  0.888122 ax_task::api:166] [32m  use FIFO scheduler.[m
+[host_monotonic_s=186426.449549] [m[37m[  0.888495 ax_runtime:300] [32mInitialize interrupt handlers...[m
+[host_monotonic_s=186426.451767] [m[37m[  0.890704 ax_runtime::devices:2] [32mProbe platform devices...[m
+[host_monotonic_s=186426.464889] [m[37m[  0.903720 somehal::arch::gic::v3:274] [32mGICv3 CPU 1 EOI mode: two_step=true[m
+[host_monotonic_s=186426.465384] [m[37m[  0.904255 ax_runtime::mp:79] [32mSecondary CPU 1 started.[m
+[host_monotonic_s=186426.466484] [m[37m[  0.905346 ax_runtime::mp:110] [32mSecondary CPU 1 init OK.[m
+[host_monotonic_s=186426.475743] [m[37m[  0.914577 somehal::arch::gic::v3:274] [32mGICv3 CPU 2 EOI mode: two_step=true[m
+[host_monotonic_s=186426.475793] [m[37m[  0.914732 ax_runtime::mp:79] [32mSecondary CPU 2 started.[m
+[host_monotonic_s=186426.476024] [m[37m[  0.914958 ax_runtime::mp:110] [32mSecondary CPU 2 init OK.[m
+[host_monotonic_s=186426.487063] [m[37m[  0.925888 somehal::arch::gic::v3:274] [32mGICv3 CPU 3 EOI mode: two_step=true[m
+[host_monotonic_s=186426.487244] [m[37m[  0.926131 ax_runtime::mp:79] [32mSecondary CPU 3 started.[m
+[host_monotonic_s=186426.487353] [m[37m[  0.926181 ax_runtime:348] [32mPrimary CPU 0 init OK.[m
+[host_monotonic_s=186426.487822] [m[37m[  0.926684 ax_runtime::mp:110] [32mSecondary CPU 3 init OK.[m
+[host_monotonic_s=186426.490012] [m
+[host_monotonic_s=186426.490132] 
+[host_monotonic_s=186426.490180]        d8888            888     888  d8b
+[host_monotonic_s=186426.490223]       d88888            888     888  Y8P
+[host_monotonic_s=186426.490265]      d88P888            888     888
+[host_monotonic_s=186426.490347]     d88P 888  888  888  Y88b   d88P  888  .d8888b    .d88b.   888d888
+[host_monotonic_s=186426.490422]    d88P  888  `Y8bd8P'   Y88b d88P   888  88K       d88""88b  888P"
+[host_monotonic_s=186426.490497]   d88P   888    X88K      Y88o88P    888  "Y8888b.  888  888  888
+[host_monotonic_s=186426.490586]  d8888888888  .d8""8b.     Y888P     888       X88  Y88..88P  888
+[host_monotonic_s=186426.490659] d88P     888  888  888      Y8P      888   88888P'   "Y88P"   888
+[host_monotonic_s=186426.490676] 
+[host_monotonic_s=186426.490700] 
+[host_monotonic_s=186426.490741] by AxVisor Team
+[host_monotonic_s=186426.490748] 
+[host_monotonic_s=186426.490976] [37m[  0.929867 0:2 axvisor:78] [32mRT partition host CPU mask established: 0b10[m
+[host_monotonic_s=186426.491089] [m[37m[  0.930035 0:2 axvisor:81] [32mStarting virtualization...[m
+[host_monotonic_s=186426.491322] [m[37m[  0.930224 0:2 axvm::host::arceos:335] [32mEnabling hardware virtualization support on all cores...[m
+[host_monotonic_s=186426.491574] [m[37m[  0.930472 0:2 axvm::host::arceos:341] [32mCore 0 is initializing hardware virtualization support...[m
+[host_monotonic_s=186426.491761] [m[37m[  0.930695 0:2 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=186426.497549] [m[37m[  0.936422 0:2 axvm::host::arceos:343] [32mHardware virtualization support enabled on core 0[m
+[host_monotonic_s=186426.498429] [m[37m[  0.937288 0:2 axvm::host::arceos:370] [32mWaiting for all cores to enable hardware virtualization...[m
+[host_monotonic_s=186426.498953] [m[37m[  0.937800 2:12 axvm::host::arceos:353] [32mCore 2 is initializing hardware virtualization support...[m
+[host_monotonic_s=186426.499136] [m[37m[  0.937836 1:11 axvm::host::arceos:353] [32mCore 1 is initializing hardware virtualization support...[m
+[host_monotonic_s=186426.499254] [m[37m[  0.937999 2:12 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=186426.499368] [m[37m[  0.938181 1:11 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=186426.499682] [m[37m[  0.937825 3:13 axvm::host::arceos:353] [32mCore 3 is initializing hardware virtualization support...[m
+[host_monotonic_s=186426.499861] [m[37m[  0.938711 2:12 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 2 (2/4)[m
+[host_monotonic_s=186426.500009] [m[37m[  0.938755 1:11 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 1 (3/4)[m
+[host_monotonic_s=186426.501374] [m[37m[  0.938734 3:13 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=186426.501604] [m[37m[  0.940500 3:13 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 3 (4/4)[m
+[host_monotonic_s=186426.502620] [m[37m[  0.941498 0:2 axvm::host::arceos:381] [32mAll cores have enabled hardware virtualization support.[m
+[host_monotonic_s=186426.502818] [m[37m[  0.941761 0:2 axvisor::config:91] [32mUsing static VM configs.[m
+[host_monotonic_s=186426.520427] [m[37m[  0.958034 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[1] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[host_monotonic_s=186426.522010] [m[37m[  0.960879 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[1] architectural timer follows host firmware PPIs[m
+[host_monotonic_s=186426.526353] [m[37m[  0.965222 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[host_monotonic_s=186426.526569] [m[37m[  0.965455 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[host_monotonic_s=186426.526766] [m[37m[  0.965653 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[host_monotonic_s=186426.526937] [m[37m[  0.965825 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[host_monotonic_s=186426.527171] [m[37m[  0.966070 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[host_monotonic_s=186426.527711] [m[37m[  0.966582 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[1] DTB not found, generating from the VM configuration[m
+[host_monotonic_s=186426.538739] [m[37m[  0.977514 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=186426.549828] [m[37m[  0.988649 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=186426.550746] [m[37m[  0.989627 0:2 axvisor::config:258] [32mCreating VM[1] "rt-partition-linux"[m
+[host_monotonic_s=186426.567479] [m[37m[  1.006369 0:2 axvm::vm:1083] [32mVM created: id=1[m
+[host_monotonic_s=186427.654476] [m[37m[  2.093258 0:2 axvisor::config:270] [32mVM[1] created success, loading images...[m
+[host_monotonic_s=186427.954895] [m[37m[  2.205537 0:2 axvm::boot::images:137] [32mLoading ramdisk image from memory (19620641 bytes) into GPA @0x84000000[m
+[host_monotonic_s=186427.954906] [m[37m[  2.262413 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[host_monotonic_s=186427.954980] [m[37m[  2.262845 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[host_monotonic_s=186427.956086] [m[37m[  2.394371 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[host_monotonic_s=186427.961893] [m[37m[  2.400609 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[host_monotonic_s=186427.967088] [m[37m[  2.405947 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[host_monotonic_s=186427.971120] [m[37m[  2.409991 0:2 axvm::vm::prepare:82] [32mVM setup: id=1[m
+[host_monotonic_s=186427.974141] [m[37m[  2.412530 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[2] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[host_monotonic_s=186427.974375] [m[37m[  2.413282 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[2] architectural timer follows host firmware PPIs[m
+[host_monotonic_s=186427.977618] [m[37m[  2.416493 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[host_monotonic_s=186427.977801] [m[37m[  2.416663 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[host_monotonic_s=186427.977989] [m[37m[  2.416860 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[host_monotonic_s=186427.978160] [m[37m[  2.417044 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[host_monotonic_s=186427.978295] [m[37m[  2.417223 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[host_monotonic_s=186427.978428] [m[37m[  2.417337 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[2] DTB not found, generating from the VM configuration[m
+[host_monotonic_s=186427.985228] [m[37m[  2.424074 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=186427.989593] [m[37m[  2.428443 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=186427.989965] [m[37m[  2.428896 0:2 axvisor::config:258] [32mCreating VM[2] "rt-partition-zephyr"[m
+[host_monotonic_s=186427.991062] [m[37m[  2.429936 0:2 axvm::vm:1083] [32mVM created: id=2[m
+[host_monotonic_s=186428.791952] [m[37m[  2.975908 0:2 axvisor::config:270] [32mVM[2] created success, loading images...[m
+[host_monotonic_s=186428.791964] [m[37m[  2.980051 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[host_monotonic_s=186428.791966] [m[37m[  2.980193 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[host_monotonic_s=186428.792625] [m[37m[  3.230819 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[host_monotonic_s=186428.793344] [m[37m[  3.231931 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[host_monotonic_s=186428.794065] [m[37m[  3.232761 0:2 axvm::vm::prepare:82] [32mVM setup: id=2[m
+[host_monotonic_s=186428.796295] [m[37m[  3.234972 0:2 axvm::runtime:51] [32mInitializing VMM...[m
+[host_monotonic_s=186428.802739] [m[37m[  3.241582 0:2 axvm::runtime:62] [32mVMM starting, booting VMs...[m
+[host_monotonic_s=186428.803158] [m[37m[  3.242046 0:2 axvm::vm:1303] [32mStarting VM[1][m
+[host_monotonic_s=186428.803532] [m[37m[  3.242408 0:2 axvm::runtime::vcpus:609] [32mSpawning task for VM[1] VCpu[0][m
+[host_monotonic_s=186428.804435] [m[37m[  3.243209 0:2 axvm::runtime::vcpus:627] [32mVCpu task Task(18, "VM[1]-VCpu[0]") created cpumask: [2, ][m
+[host_monotonic_s=186428.808496] [m[37m[  3.247382 0:2 axvm::runtime:70] [32mVM[1] boot success[m
+[host_monotonic_s=186428.808568] [m[37m[  3.247458 2:18 axvm::runtime::vcpus:681] [32mVM[1] VCpu[0] waiting for running[m
+[host_monotonic_s=186428.808641] [m[37m[  3.247492 0:2 axvm::vm:1303] [32mStarting VM[2][m
+[host_monotonic_s=186428.808751] [m[37m[  3.247686 0:2 axvm::runtime::vcpus:609] [32mSpawning task for VM[2] VCpu[0][m
+[host_monotonic_s=186428.808951] [m[37m[  3.247886 2:18 axvm::runtime::vcpus:719] [32mVM[1] VCpu[0] running...[m
+[host_monotonic_s=186428.809090] [m[37m[  3.247956 0:2 axvm::runtime::vcpus:627] [32mVCpu task Task(20, "VM[2]-VCpu[0]") created cpumask: [1, ][m
+[host_monotonic_s=186428.809386] [m[37m[  3.248332 0:2 axvm::runtime:70] [32mVM[2] boot success[m
+[host_monotonic_s=186428.809562] [m[37m[  3.248463 1:20 axvm::runtime::vcpus:681] [32mVM[2] VCpu[0] waiting for running[m
+[host_monotonic_s=186428.809681] [m[37m[  3.248609 1:20 axvm::runtime::vcpus:719] [32mVM[2] VCpu[0] running...[m
+[host_monotonic_s=186428.810233] [m[37m[  3.249178 0:2 axvisor:100] [32m[OK] Default guest initialized[m
+[host_monotonic_s=186428.812516] [m[37m[  3.251298 0:17 axvisor::rt_burner:41] [32mRT_BURNER_ARMED cpu=0 start_delay_ms=60000[m
+[host_monotonic_s=186428.846535] [m[VM 2] *** Booting Zephyr OS build v3.7.0 ***
+[host_monotonic_s=186428.848782] [37m[  3.287601 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0x80000000[m
+[host_monotonic_s=186428.849782] [m[37m[  3.288630 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000001[m
+[host_monotonic_s=186428.850186] [m[37m[  3.289055 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc400000e[m
+[host_monotonic_s=186428.850250] [m[VM 2] PERIODIC LATENCY READY
+[host_monotonic_s=186428.850500] [37m[  3.289371 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000012[m
+[host_monotonic_s=186428.850758] [m[37m[  3.289667 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000015[m
+[host_monotonic_s=186429.029625] [m[37m[  3.468455 2:18 axvm::runtime::hvc:272] [32mVM[1] PSCI_CPU_ON target=0x1 entry=0x8228158c context=0x0[m
+[host_monotonic_s=186429.030329] [m[37m[  3.469189 2:18 axvm::runtime::vcpus:609] [32mSpawning task for VM[1] VCpu[1][m
+[host_monotonic_s=186429.030571] [m[37m[  3.469425 2:18 axvm::runtime::vcpus:627] [32mVCpu task Task(23, "VM[1]-VCpu[1]") created cpumask: [3, ][m
+[host_monotonic_s=186429.031336] [m[37m[  3.470191 3:23 axvm::runtime::vcpus:681] [32mVM[1] VCpu[1] waiting for running[m
+[host_monotonic_s=186429.031825] [m[37m[  3.470682 3:23 axvm::runtime::vcpus:719] [32mVM[1] VCpu[1] running...[m
+[host_monotonic_s=186429.252011] [m[VM 1] [    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd083]
+[host_monotonic_s=186429.296449] [VM 1] [    0.000000] Linux version 7.1.0-rc2-g74fe02ce122a (runner@s1lqc) (aarch64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #2 SMP PREEMPT Mon Jun  8 08:07:46 UTC 2026
+[host_monotonic_s=186429.306553] [VM 1] [    0.000000] KASLR disabled due to lack of seed
+[host_monotonic_s=186429.315087] [VM 1] [    0.000000] Machine model: linux,dummy-virt
+[host_monotonic_s=186429.322014] [VM 1] [    0.000000] efi: UEFI not found.
+[host_monotonic_s=186429.336735] [VM 1] [    0.000000] OF: reserved mem: Reserved memory: No reserved-memory node in the DT
+[host_monotonic_s=186429.358837] [VM 1] [    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=186429.375282] [VM 1] [    0.000000] NODE_DATA(0) allocated [mem 0xbfe08940-0xbfe0b03f]
+[host_monotonic_s=186429.386218] [VM 1] [    0.000000] cma: Reserved 32 MiB at 0x00000000bde00000
+[host_monotonic_s=186429.396339] [VM 1] [    0.000000] psci: probing for conduit method from DT.
+[host_monotonic_s=186429.405884] [VM 1] [    0.000000] psci: PSCIv1.1 detected in firmware.
+[host_monotonic_s=186429.416959] [VM 1] [    0.000000] psci: Using standard PSCI v0.2 function IDs
+[host_monotonic_s=186429.426986] [VM 1] [    0.000000] psci: Trusted OS migration not required
+[host_monotonic_s=186429.437258] [VM 1] [    0.000000] psci: SMC Calling Convention v65535.65535
+[host_monotonic_s=186429.442639] [VM 1] [    0.000000] Zone ranges:
+[host_monotonic_s=186429.455007] [VM 1] [    0.000000]   DMA      [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=186429.461200] [VM 1] [    0.000000]   DMA32    empty
+[host_monotonic_s=186429.468009] [VM 1] [    0.000000]   Normal   empty
+[host_monotonic_s=186429.477035] [VM 1] [    0.000000] Movable zone start for each node
+[host_monotonic_s=186429.484521] [VM 1] [    0.000000] Early memory node ranges
+[host_monotonic_s=186429.500226] [VM 1] [    0.000000]   node   0: [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=186429.815124] [VM 1] [    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=186429.815135] [VM 1] [    0.000000] percpu: Embedded 26 pages/cpu s66584 r8192 d31720 u106496
+[host_monotonic_s=186429.815137] [VM 1] [    0.000000] Detected PIPT I-cache on CPU0
+[host_monotonic_s=186429.815139] [VM 1] [    0.000000] CPU features: detected: GICv3 CPU interface
+[host_monotonic_s=186429.815264] [VM 1] [    0.000000] CPU features: detected: Spectre-v2
+[host_monotonic_s=186429.831200] [VM 1] [    0.000000] CPU features: detected: Spectre-v3a
+[host_monotonic_s=186429.840287] [VM 1] [    0.000000] CPU features: detected: Spectre-v4
+[host_monotonic_s=186429.849950] [VM 1] [    0.000000] CPU features: detected: Spectre-BHB
+[host_monotonic_s=186429.860585] [VM 1] [    0.000000] CPU features: detected: ARM erratum 1742098
+[host_monotonic_s=186429.875676] [VM 1] [    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[host_monotonic_s=186429.886399] [VM 1] [    0.000000] alternatives: applying boot alternatives
+[host_monotonic_s=186429.942577] [VM 1] [    0.000000] Kernel command line: console=ttyAMA0 devtmpfs.mount=1 loglevel=7 isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=stress-dedicated rt_cpu=1 rt_load_cpu=0 rt_loops=0 rt_duration_sec=60 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_start_delay_sec=25
+[host_monotonic_s=186429.956239] [VM 1] [    0.000000] Housekeeping: nohz unsupported. Build with CONFIG_NO_HZ_FULL
+[host_monotonic_s=186430.001512] [VM 1] [    0.000000] Unknown kernel command line parameters "nohz_full=1 rt_scenario=stress-dedicated rt_cpu=1 rt_load_cpu=0 rt_loops=0 rt_duration_sec=60 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_start_delay_sec=25", will be passed to user space.
+[host_monotonic_s=186430.017043] [VM 1] [    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[host_monotonic_s=186430.033160] [VM 1] [    0.000000] Dentry cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[host_monotonic_s=186430.048495] [VM 1] [    0.000000] Inode-cache hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[host_monotonic_s=186430.063026] [VM 1] [    0.000000] software IO TLB: SWIOTLB bounce buffer size adjusted to 1MB
+[host_monotonic_s=186430.071785] [VM 1] [    0.000000] software IO TLB: area num 2.
+[host_monotonic_s=186430.372426] [VM 1] [    0.000000] software IO TLB: mapped [mem 0x00000000bcb00000-0x00000000bcc00000] (1MB)
+[host_monotonic_s=186430.372442] [VM 1] [    0.000000] Fallback order for Node 0: 0 
+[host_monotonic_s=186430.372446] [VM 1] [    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 262144
+[host_monotonic_s=186430.372449] [VM 1] [    0.000000] Policy zone: DMA
+[host_monotonic_s=186430.373083] [VM 1] [    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[host_monotonic_s=186430.395011] [VM 1] [    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[host_monotonic_s=186430.406636] [VM 1] [    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[host_monotonic_s=186430.415888] [VM 1] [    0.000000] rcu: 	RCU event tracing is enabled.
+[host_monotonic_s=186430.429678] [VM 1] [    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=512 to nr_cpu_ids=2.
+[host_monotonic_s=186430.439882] [VM 1] [    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[host_monotonic_s=186430.449739] [VM 1] [    0.000000] 	Tracing variant of Tasks RCU enabled.
+[host_monotonic_s=186430.464714] [VM 1] [    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[host_monotonic_s=186430.478396] [VM 1] [    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[host_monotonic_s=186430.495870] [VM 1] [    0.000000] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[host_monotonic_s=186430.509690] [VM 1] [    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[host_monotonic_s=186430.517735] [VM 1] [    0.000000] GICv3: 256 SPIs implemented
+[host_monotonic_s=186430.527129] [VM 1] [    0.000000] GICv3: 0 Extended SPIs implemented
+[host_monotonic_s=186430.535846] [VM 1] [    0.000000] Root IRQ handler: gic_handle_irq
+[host_monotonic_s=186430.545386] [VM 1] [    0.000000] GICv3: GICv3 features: 16 PPIs, RSS
+[host_monotonic_s=186430.555030] [VM 1] [    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=0
+[host_monotonic_s=186430.569368] [VM 1] [    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[host_monotonic_s=186430.580128] [VM 1] [    0.000000] ITS [mem 0x08080000-0x0809ffff]
+[host_monotonic_s=186430.599187] [VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Devices @83860000 (indirect, esz 8, psz 64K, shr 1)
+[host_monotonic_s=186430.620026] [VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Interrupt Collections @83870000 (flat, esz 8, psz 64K, shr 1)
+[host_monotonic_s=186430.632234] [VM 1] [    0.000000] GICv3: using LPI property table @0x0000000083880000
+[host_monotonic_s=186430.932869] [VM 1] [    0.000000] GICv3: CPU0: using allocated LPI pending table @0x0000000083890000
+[host_monotonic_s=186430.932885] [VM 1] [    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[host_monotonic_s=186430.932890] [VM 1] [    0.000000] arch_timer: cp15 timer running at 62.50MHz (virt).
+[host_monotonic_s=186430.934093] [VM 1] [    0.000000] clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[host_monotonic_s=186430.956621] [VM 1] [    0.000205] sched_clock: 57 bits at 63MHz, resolution 16ns, wraps every 4398046511096ns
+[host_monotonic_s=186430.965361] [VM 1] [    0.008925] Console: colour dummy device 80x25
+[host_monotonic_s=186430.989693] [VM 1] [    0.012139] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[host_monotonic_s=186430.998679] [VM 1] [    0.012239] pid_max: default: 32768 minimum: 301
+[host_monotonic_s=186431.013198] [VM 1] [    0.016718] Mount-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[host_monotonic_s=186431.028644] [VM 1] [    0.016754] Mountpoint-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[host_monotonic_s=186431.038754] [VM 1] [    0.025237] VFS: Finished mounting rootfs on nullfs
+[host_monotonic_s=186431.050860] [VM 1] [    0.045389] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[host_monotonic_s=186431.060571] [VM 1] [    0.058255] rcu: Hierarchical SRCU implementation.
+[host_monotonic_s=186431.071980] [VM 1] [    0.058287] rcu: 	Max phase no-delay instances is 1000.
+[host_monotonic_s=186431.088976] [VM 1] [    0.059766] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[host_monotonic_s=186431.099592] [VM 1] [    0.062051] fsl-mc MSI: its@8080000 domain created
+[host_monotonic_s=186431.110060] [VM 1] [    0.063004] EFI services will not be available.
+[host_monotonic_s=186431.120304] [VM 1] [    0.064407] smp: Bringing up secondary CPUs ...
+[host_monotonic_s=186431.129142] [VM 1] [    0.070000] Detected PIPT I-cache on CPU1
+[host_monotonic_s=186431.144876] [VM 1] [    0.071307] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[host_monotonic_s=186431.161413] [VM 1] [    0.073941] GICv3: CPU1: using allocated LPI pending table @0x00000000838a0000
+[host_monotonic_s=186431.175422] [VM 1] [    0.076964] CPU1: Booted secondary processor 0x0000000001 [0x410fd083]
+[host_monotonic_s=186431.184755] [VM 1] [    0.085520] smp: Brought up 1 node, 2 CPUs
+[host_monotonic_s=186431.485185] [VM 1] [    0.085552] SMP: Total of 2 processors activated.
+[host_monotonic_s=186431.485200] [VM 1] [    0.085576] CPU: All CPU(s) started at EL1
+[host_monotonic_s=186431.485204] [VM 1] [    0.085843] CPU features: detected: 32-bit EL0 Support
+[host_monotonic_s=186431.485206] [VM 1] [    0.085853] CPU features: detected: 32-bit EL1 Support
+[host_monotonic_s=186431.485381] [VM 1] [    0.085902] CPU features: detected: CRC32 instructions
+[host_monotonic_s=186431.503303] [VM 1] [    0.086054] CPU features: detected: PMUv3
+[host_monotonic_s=186431.514352] [VM 1] [    0.097633] alternatives: applying system-wide alternatives
+[host_monotonic_s=186431.542389] [VM 1] [    0.126013] Memory: 919888K/1048576K available (18688K kernel code, 5242K rwdata, 14480K rodata, 12672K init, 718K bss, 92528K reserved, 32768K cma-reserved)
+[host_monotonic_s=186431.549644] [VM 1] [    0.152258] devtmpfs: initialized
+[host_monotonic_s=186431.570033] [VM 1] [    0.171174] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[host_monotonic_s=186431.585261] [VM 1] [    0.171644] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[host_monotonic_s=186431.603123] [VM 1] [    0.171907] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[host_monotonic_s=186431.613172] [VM 1] [    0.175228] 19744 pages in range for non-PLT usage
+[host_monotonic_s=186431.622617] [VM 1] [    0.175268] 511264 pages in range for PLT usage
+[host_monotonic_s=186431.630865] [VM 1] [    0.189268] DMI: not present or invalid.
+[host_monotonic_s=186431.642712] [VM 1] [    0.216525] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[host_monotonic_s=186431.658337] [VM 1] [    0.230278] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[host_monotonic_s=186431.673556] [VM 1] [    0.230588] audit: initializing netlink subsys (disabled)
+[host_monotonic_s=186431.689146] [VM 1] [    0.232922] audit: type=2000 audit(0.204:1): state=initialized audit_enabled=0 res=1
+[host_monotonic_s=186431.701295] [VM 1] [    0.237990] thermal_sys: Registered thermal governor 'step_wise'
+[host_monotonic_s=186431.715193] [VM 1] [    0.238023] thermal_sys: Registered thermal governor 'power_allocator'
+[host_monotonic_s=186431.723635] [VM 1] [    0.238327] cpuidle: using governor menu
+[host_monotonic_s=186432.037764] [VM 1] [    0.239840] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[host_monotonic_s=186432.037776] [VM 1] [    0.241477] ASID allocator initialised with 65536 entries
+[host_monotonic_s=186432.037779] [VM 1] [    0.247253] Serial: AMBA PL011 UART driver
+[host_monotonic_s=186432.037781] [VM 1] [    0.271558] 9000000.pl011: ttyAMA0 at MMIO 0x9000000 (irq = 13, base_baud = 0) is a PL011 rev1
+[host_monotonic_s=186432.037783] [VM 1] [    0.275315] printk: console [ttyAMA0] enabled
+[host_monotonic_s=186432.058566] [VM 1] [    1.126264] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[host_monotonic_s=186432.070640] [VM 1] [    1.126293] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[host_monotonic_s=186432.084671] [VM 1] [    1.126319] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[host_monotonic_s=186432.097377] [VM 1] [    1.126323] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[host_monotonic_s=186432.110732] [VM 1] [    1.126328] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[host_monotonic_s=186432.123303] [VM 1] [    1.126332] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[host_monotonic_s=186432.136912] [VM 1] [    1.126337] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[host_monotonic_s=186432.149874] [VM 1] [    1.126340] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[host_monotonic_s=186432.158131] [VM 1] [    2.698229] ACPI: Interpreter disabled.
+[host_monotonic_s=186432.170984] [VM 1] [    3.198660] iommu: Default domain type: Translated
+[host_monotonic_s=186432.184028] [VM 1] [    3.209254] iommu: DMA domain TLB invalidation policy: strict mode
+[host_monotonic_s=186432.196295] [VM 1] [    3.225041] SCSI subsystem initialized
+[host_monotonic_s=186432.210841] [VM 1] [    3.237295] usbcore: registered new interface driver usbfs
+[host_monotonic_s=186432.222871] [VM 1] [    3.249447] usbcore: registered new interface driver hub
+[host_monotonic_s=186432.236661] [VM 1] [    3.261196] usbcore: registered new device driver usb
+[host_monotonic_s=186432.249353] [VM 1] [    3.276123] pps_core: LinuxPPS API ver. 1 registered
+[host_monotonic_s=186432.267560] [VM 1] [    3.287460] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[host_monotonic_s=186432.275632] [VM 1] [    3.305815] PTP clock support registered
+[host_monotonic_s=186432.282974] [VM 1] [    3.314353] EDAC MC: Ver: 3.0.0
+[host_monotonic_s=186432.595149] [VM 1] [    3.322518] scmi_core: SCMI protocol bus registered
+[host_monotonic_s=186432.595163] [VM 1] [    3.335187] FPGA manager framework
+[host_monotonic_s=186432.595166] [VM 1] [    3.352371] vgaarb: loaded
+[host_monotonic_s=186432.595169] [VM 1] [    3.363180] clocksource: Switched to clocksource arch_sys_counter
+[host_monotonic_s=186432.595171] [VM 1] [    3.378042] VFS: Disk quotas dquot_6.6.0
+[host_monotonic_s=186432.596098] [VM 1] [    3.387902] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[host_monotonic_s=186432.612300] [VM 1] [    3.641964] pnp: PnP ACPI: disabled
+[host_monotonic_s=186432.642556] [VM 1] [    3.670029] NET: Registered PF_INET protocol family
+[host_monotonic_s=186432.659539] [VM 1] [    3.682008] IP idents hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[host_monotonic_s=186432.681512] [VM 1] [    3.701646] tcp_listen_portaddr_hash hash table entries: 512 (order: 1, 8192 bytes, linear)
+[host_monotonic_s=186432.698246] [VM 1] [    3.719732] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[host_monotonic_s=186432.717128] [VM 1] [    3.736521] TCP established hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[host_monotonic_s=186432.731814] [VM 1] [    3.736743] TCP bind hash table entries: 8192 (order: 6, 262144 bytes, linear)
+[host_monotonic_s=186432.744752] [VM 1] [    3.736919] TCP: Hash tables configured (established 8192 bind 8192)
+[host_monotonic_s=186432.758484] [VM 1] [    3.737976] UDP hash table entries: 512 (order: 3, 32768 bytes, linear)
+[host_monotonic_s=186432.770790] [VM 1] [    3.796998] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[host_monotonic_s=186432.786477] [VM 1] [    3.812243] RPC: Registered named UNIX socket transport module.
+[host_monotonic_s=186432.796232] [VM 1] [    3.824595] RPC: Registered udp transport module.
+[host_monotonic_s=186432.806881] [VM 1] [    3.834358] RPC: Registered tcp transport module.
+[host_monotonic_s=186432.818387] [VM 1] [    3.845104] RPC: Registered tcp-with-tls transport module.
+[host_monotonic_s=186432.831748] [VM 1] [    3.856469] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[host_monotonic_s=186432.840497] [VM 1] [    3.870004] PCI: CLS 0 bytes, default 64
+[host_monotonic_s=186432.852872] [VM 1] [    3.882621] Unpacking initramfs...
+[host_monotonic_s=186433.153208] [VM 1] [    3.895753] kvm [1]: HYP mode not available
+[host_monotonic_s=186433.153217] [VM 1] [    3.908351] Initialise system trusted keyrings
+[host_monotonic_s=186433.153219] [VM 1] [    3.922362] workingset: timestamp_bits=42 (anon: 38) max_order=18 bucket_order=0 (anon: 0)
+[host_monotonic_s=186433.153221] [VM 1] [    3.945593] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[host_monotonic_s=186433.181562] [VM 1] [    4.209124] NFS: Registering the id_resolver key type
+[host_monotonic_s=186433.190985] [VM 1] [    4.220113] Key type id_resolver registered
+[host_monotonic_s=186433.200240] [VM 1] [    4.229305] Key type id_legacy registered
+[host_monotonic_s=186433.215580] [VM 1] [    4.239295] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[host_monotonic_s=186433.231684] [VM 1] [    4.254343] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[host_monotonic_s=186433.244470] [VM 1] [    4.270800] 9p: Installing v9fs 9p2000 file system support
+[host_monotonic_s=186433.260105] [VM 1] [    4.289043] Key type asymmetric registered
+[host_monotonic_s=186433.272699] [VM 1] [    4.298385] Asymmetric key parser 'x509' registered
+[host_monotonic_s=186433.287817] [VM 1] [    4.299279] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 244)
+[host_monotonic_s=186433.297310] [VM 1] [    4.299584] io scheduler mq-deadline registered
+[host_monotonic_s=186433.305474] [VM 1] [    4.299831] io scheduler kyber registered
+[host_monotonic_s=186433.313543] [VM 1] [    4.300324] io scheduler bfq registered
+[host_monotonic_s=186433.361922] [VM 1] [    4.383337] ledtrig-cpu: registered to indicate activity on CPUs
+[host_monotonic_s=186433.755034] [VM 1] [    4.479584] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[host_monotonic_s=186433.755046] [VM 1] [    4.511968] msm_serial: driver initialized
+[host_monotonic_s=186433.755048] [VM 1] [    4.522053] SuperH (H)SCI(F) driver initialized
+[host_monotonic_s=186433.755050] [VM 1] [    4.535520] STM32 USART driver initialized
+[host_monotonic_s=186433.755052] [VM 1] [    4.588050] loop: module loaded
+[host_monotonic_s=186433.755053] [VM 1] [    4.597538] megasas: 07.734.00.00-rc1
+[host_monotonic_s=186433.755445] [VM 1] [    4.625114] tun: Universal TUN/TAP device driver, 1.6
+[host_monotonic_s=186433.811121] [VM 1] [    4.841328] thunder_xcv, ver 1.0
+[host_monotonic_s=186433.818635] [VM 1] [    4.849406] thunder_bgx, ver 1.0
+[host_monotonic_s=186433.827393] [VM 1] [    4.859511] nicpf, ver 1.0
+[host_monotonic_s=186433.840488] [VM 1] [    4.868505] e1000: Intel(R) PRO/1000 Network Driver
+[host_monotonic_s=186433.857397] [VM 1] [    4.883287] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[host_monotonic_s=186433.871733] [VM 1] [    4.895793] e1000e: Intel(R) PRO/1000 Network Driver
+[host_monotonic_s=186433.883699] [VM 1] [    4.896024] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[host_monotonic_s=186433.894790] [VM 1] [    4.896398] igb: Intel(R) Gigabit Ethernet Network Driver
+[host_monotonic_s=186433.906454] [VM 1] [    4.896584] igb: Copyright (c) 2007-2014 Intel Corporation.
+[host_monotonic_s=186433.919101] [VM 1] [    4.896910] igbvf: Intel(R) Gigabit Virtual Function Network Driver
+[host_monotonic_s=186433.931570] [VM 1] [    4.897086] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[host_monotonic_s=186433.939314] [VM 1] [    4.897843] sky2: driver version 1.30
+[host_monotonic_s=186433.953467] [VM 1] [    4.980805] VFIO - User Level meta-driver version: 0.3
+[host_monotonic_s=186433.976806] [VM 1] [    5.001987] usbcore: registered new interface driver usb-storage
+[host_monotonic_s=186433.997253] [VM 1] [    5.026076] i2c_dev: i2c /dev entries driver
+[host_monotonic_s=186434.051211] [VM 1] [    5.075363] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[host_monotonic_s=186434.351603] [VM 1] [    5.096216] usbcore: registered new interface driver usbhid
+[host_monotonic_s=186434.351615] [VM 1] [    5.096479] usbhid: USB HID core driver
+[host_monotonic_s=186434.351617] [VM 1] [    5.135594] NET: Registered PF_INET6 protocol family
+[host_monotonic_s=186434.351618] [VM 1] [    5.162001] Segment Routing with IPv6
+[host_monotonic_s=186434.351620] [VM 1] [    5.170522] In-situ OAM (IOAM) with IPv6
+[host_monotonic_s=186434.369849] [VM 1] [    5.394700] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[host_monotonic_s=186434.389983] [VM 1] [    5.417101] NET: Registered PF_PACKET protocol family
+[host_monotonic_s=186434.401910] [VM 1] [    5.430781] 9pnet: Installing 9P2000 support
+[host_monotonic_s=186434.418014] [VM 1] [    5.443853] Key type dns_resolver registered
+[host_monotonic_s=186434.470887] [VM 1] [    5.499767] registered taskstats version 1
+[host_monotonic_s=186434.482649] [VM 1] [    5.510458] Loading compiled-in X.509 certificates
+[host_monotonic_s=186434.522732] [VM 1] [    5.551432] Demotion targets for Node 0: null
+[host_monotonic_s=186434.540411] [VM 1] [    5.569445] clk: Disabling unused clocks
+[host_monotonic_s=186434.556514] [VM 1] [    5.583507] PM: genpd: Disabling unused power domains
+[host_monotonic_s=186435.256801] [VM 1] [    5.985353] Freeing initrd memory: 19160K
+[host_monotonic_s=186435.256807] [VM 1] [    6.086109] Freeing unused kernel memory: 12672K
+[host_monotonic_s=186435.256808] [VM 1] [    6.097385] Run /init as init process
+[host_monotonic_s=186436.057412] [VM 1] RT_INIT scenario=stress-dedicated cpu=1 load_cpu=0 loops=0 duration_sec=60 interval_us=1000 maxlat_us=20000 priority=90 start_delay_sec=25
+[host_monotonic_s=186436.057423] [VM 1] RT_CPUS total=2
+[host_monotonic_s=186436.057426] [VM 1] RT_SCHED_PROBE_START
+[host_monotonic_s=186436.057428] [VM 1] pid 1's current scheduling policy: SCHED_OTHER
+[host_monotonic_s=186436.057947] [VM 1] pid 1's current scheduling priority: 0
+[host_monotonic_s=186436.067033] [VM 1] RT_SCHED_PROBE_OK
+[host_monotonic_s=186436.072385] [VM 1] RT_WAIT_BEFORE_TEST seconds=25
+[host_monotonic_s=186460.277991] [VM 1] RT_STRESS_START cpu=0 workers=2 vm=1
+[host_monotonic_s=186460.281398] [VM 1] RT_CYCLICTEST_START
+[host_monotonic_s=186460.288460] [VM 1] RT_CYCLICTEST_TIMING_START uptime_s=28.77
+[host_monotonic_s=186460.293017] [VM 1] RT_PROGRESS uptime_s=28.78
+[host_monotonic_s=186460.380269] [VM 1] stress-ng: info:  [69] defaulting to a 1 day run per stressor
+[host_monotonic_s=186460.401849] [VM 1] stress-ng: info:  [69] dispatching hogs: 2 cpu, 1 vm
+[host_monotonic_s=186460.486229] [VM 1] stress-ng: info:  [78] vm: non-temporal memory stores not supported, dropping back to plain memory stores
+[host_monotonic_s=186460.558288] [VM 1] stress-ng: info:  [78] vm: using 64MB per stressor instance (total 64MB of 871.47MB available memory)
+[host_monotonic_s=186461.359544] 
+[host_monotonic_s=186461.359554] [Axvisor] detached VM[1] console
+[host_monotonic_s=186461.359557] Welcome to AxVisor Shell!
+[host_monotonic_s=186461.359560] Type 'help' to see available commands
+[host_monotonic_s=186461.359562] Use UP/DOWN arrows to navigate command history
+[host_monotonic_s=186461.359564] Console shortcuts:
+[host_monotonic_s=186461.359566]   Ctrl+X, then h  return to the Axvisor shell
+[host_monotonic_s=186461.359580]   Ctrl+X, then [  attach the previous running guest
+[host_monotonic_s=186461.359652]   Ctrl+X, then ]  attach the next running guest
+[host_monotonic_s=186461.360492] Note: Running with limited features (filesystem support disabled).
+[host_monotonic_s=186461.360565] 
+[host_monotonic_s=186462.162553] [2Kaxvisor:$ [2Kaxvisor:$ v[2Kaxvisor:$ vm[2Kaxvisor:$ vm [2Kaxvisor:$ vm c[2Kaxvisor:$ vm co[2Kaxvisor:$ vm con[2Kaxvisor:$ vm cons[2Kaxvisor:$ vm conso[2Kaxvisor:$ vm consol[2Kaxvisor:$ vm console[2Kaxvisor:$ vm console [2Kaxvisor:$ vm console 2
+[host_monotonic_s=186462.162932] ✓ Attached VM[2] console; use Ctrl+X, then h to return to the shell
+[host_monotonic_s=186463.170566] PERIODIC LATENCY START
+[host_monotonic_s=186463.177255] PERIODIC LATENCY SETTLE delay_ms=45000
+[host_monotonic_s=186463.978259] 
+[host_monotonic_s=186463.978265] [Axvisor] detached VM[2] console
+[host_monotonic_s=186464.779322] [2Kaxvisor:$ [2Kaxvisor:$ r[2Kaxvisor:$ rt[2Kaxvisor:$ rt [2Kaxvisor:$ rt s[2Kaxvisor:$ rt st[2Kaxvisor:$ rt sta[2Kaxvisor:$ rt stat
+[host_monotonic_s=186464.779328] RT vCPU wait counters:
+[host_monotonic_s=186464.779330]   vcpu=0 parks=15725 wakes=15720 notify_woke=0
+[host_monotonic_s=186464.779332]   vcpu=1 parks=4616 wakes=4466 notify_woke=0
+[host_monotonic_s=186464.779333]   lr_skips=0
+[host_monotonic_s=186464.779365] RT device-poll counters:
+[host_monotonic_s=186464.779753]   vm=1 published=0 consumed=0 pending=false
+[host_monotonic_s=186464.779785]   vm=2 published=1 consumed=1 pending=false
+[host_monotonic_s=186464.779828] RT AxVM timer counters:
+[host_monotonic_s=186464.779987]   cpu=0 registered=0 cancelled=0 expired=0 worker_wakes=3612
+[host_monotonic_s=186464.780106]   cpu=1 registered=31192 cancelled=15596 expired=15595 worker_wakes=15595
+[host_monotonic_s=186464.780194]   cpu=2 registered=252 cancelled=139 expired=113 worker_wakes=3897
+[host_monotonic_s=186464.780341]   cpu=3 registered=8753 cancelled=5276 expired=3477 worker_wakes=7313
+[host_monotonic_s=186464.780449] RT host hardware timer IRQ counters:
+[host_monotonic_s=186464.780495]   cpu=0 irqs=3814
+[host_monotonic_s=186464.780529]   cpu=1 irqs=15595
+[host_monotonic_s=186464.780554]   cpu=2 irqs=3946
+[host_monotonic_s=186464.780588]   cpu=3 irqs=7345
+[host_monotonic_s=186464.781078] RT console counters: attached=None flush_calls=2627200 host_write_bytes=16628
+[host_monotonic_s=186464.781521]   vm=1 active=true input_enqueued=0 input_drained=0 input_dropped=0 input_pending=0 output_enqueued=14883 output_drained=14883 output_dropped=0 output_pending=0
+[host_monotonic_s=186464.781815]   vm=2 active=true input_enqueued=1 input_drained=1 input_dropped=0 input_pending=0 output_enqueued=128 output_drained=128 output_dropped=0 output_pending=0
+[host_monotonic_s=186468.984536] axvisor:$ 

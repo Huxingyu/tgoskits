@@ -1,0 +1,32 @@
+scenario=stress-dedicated
+git_commit=619ab6c6dd9ebbd6557f4828cecaea3ab82dd203
+source_root=/home/huhu/tgoskits-rt
+run_mode=duration
+requested_loops=1800000
+duration_sec=90
+cyclictest_loops=0
+interval_us=1000
+deadline_tolerance_ns=1000000
+expected_runtime_sec=90
+tcg_runtime_scale=3
+runtime_scale_source=default
+expected_wall_runtime_sec=270
+elapsed_ms=165710
+dedicated_cpus=1
+rt_burner=0:10:53:60000
+vmexit_diagnostics=0
+require_init_done=0
+rootfs_override=/home/huhu/tgoskits-rt/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img
+zephyr_guest_type=virtualized
+zephyr_start_delay_ms=45000
+progress_timeout_sec=700
+zephyr_timeout_sec=420
+result_drain_timeout_sec=180
+timestamp_format=host_monotonic_s=seconds
+realtime_trace=disabled
+host_periodic_tick_policy=--require-zero-cpu 1
+linux_rt_cpu=1
+linux_load_cpu=0
+guest_cmdline=console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=stress-dedicated rt_cpu=1 rt_load_cpu=0 rt_loops=0 rt_duration_sec=90 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_start_delay_sec=25
+axvisor_bin=/home/huhu/tgoskits-rt/target/aarch64-unknown-linux-musl/release/axvisor.bin
+build_command=cd /home/huhu/tgoskits-rt && cargo xtask axvisor qemu --config /home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rt.toml --qemu-config /home/huhu/tgoskits-rt/tmp/rt-partition/generated-stress-dedicated-qemu.toml --vmconfigs /home/huhu/tgoskits-rt/tmp/rt-partition/generated-stress-dedicated-linux.toml --vmconfigs /home/huhu/tgoskits-rt/tmp/rt-partition/generated-stress-dedicated-zephyr.toml

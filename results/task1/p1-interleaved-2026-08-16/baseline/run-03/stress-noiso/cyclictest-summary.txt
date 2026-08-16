@@ -1,0 +1,14 @@
+min_latency_us=164
+avg_latency_us=591
+max_latency_us=302512
+p90_latency_us=709
+p90_latency_censored=0
+p95_latency_us=779
+p95_latency_censored=0
+p99_latency_us=1027
+p99_latency_censored=0
+p99_9_latency_us=8782
+p99_9_latency_censored=0
+bucket_samples=86387
+overflow_samples=9
+total_samples=86396

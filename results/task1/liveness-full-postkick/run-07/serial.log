@@ -1,0 +1,757 @@
+[host_monotonic_s=188161.872522] dedicated_cpus=1 rt_burner=0:10:53:60000
+[host_monotonic_s=188161.872770] VM Load @PA:0x40200000
+[host_monotonic_s=188161.872823] VM Load Offset: 0xffff0000c0200000
+[host_monotonic_s=188161.874157] Memory Map:
+[host_monotonic_s=188161.875368]   Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+[host_monotonic_s=188161.875391]   KImg   0x00000040200000 - 0x00000044c00000 (74 MiB)
+[host_monotonic_s=188161.876555]   Free   0x00000044c00000 - 0x00000240000000 (7.93 GiB)
+[host_monotonic_s=188161.876574] Initialize RAM allocator: 0x44c00000..0x240000000
+[host_monotonic_s=188161.906151] Reserving CPU-local areas
+[host_monotonic_s=188161.908475] CPU-local area stride: 0x44000 bytes
+[host_monotonic_s=188161.908587] Total CPU-local allocation: 0x110000 bytes (4 CPUs)
+[host_monotonic_s=188161.908740] Flushed RAM used range to memory map: 0x44c00000..0x44d00000, current: 0x44d00000
+[host_monotonic_s=188161.908839] Flushed RAM used range to memory map: 0x44d00000..0x44e10000, current: 0x44e10000
+[host_monotonic_s=188161.910215] CPU-local areas allocated at 0x44d00000 - 0x44e10000
+[host_monotonic_s=188161.910217] EL: 2
+[host_monotonic_s=188161.910244] Mapping early memory regions...
+[host_monotonic_s=188161.910983] Ram                 : [0x0000000040000000, 0x0000000240000000) -> [0x0000000040000000, 0x0000000240000000) (8 GiB)
+[host_monotonic_s=188161.911459] KImage              : [0x0000ffff80000000, 0x0000ffff84a00000) -> [0x0000000040200000, 0x0000000044c00000) (74 MiB)
+[host_monotonic_s=188161.911773] PerCpu              : [0x0000ff0044d00000, 0x0000ff0044e10000) -> [0x0000000044d00000, 0x0000000044e10000) (1.06 MiB)
+[host_monotonic_s=188161.911987] Debug serial        : [0x0000000009000000, 0x0000000009001000) -> [0x0000000009000000, 0x0000000009001000) (4 KiB)
+[host_monotonic_s=188161.912118] Boot page table at physical address: PA:0x44e10000
+[host_monotonic_s=188161.912160] Setting up table registers...
+[host_monotonic_s=188161.912333] MMU Entry point at physical address: 0x403bdb1c
+[host_monotonic_s=188161.917065] Trap vector at 0xffff801c1800
+[host_monotonic_s=188161.917413] Memory Map:
+[host_monotonic_s=188161.918649]   MMIO   0x00000009000000 - 0x00000009001000 (4 KiB)
+[host_monotonic_s=188161.918673]   Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+[host_monotonic_s=188161.918868]   KImg   0x00000040200000 - 0x00000044c00000 (74 MiB)
+[host_monotonic_s=188161.918870]   Rsv    0x00000044c00000 - 0x00000044d00000 (1 MiB)
+[host_monotonic_s=188161.919939]   PerCPU 0x00000044d00000 - 0x00000044e10000 (1.06 MiB)
+[host_monotonic_s=188161.919941]   Rsv    0x00000044e10000 - 0x00000044e1a000 (40 KiB)
+[host_monotonic_s=188161.920254]   Free   0x00000044e1a000 - 0x00000240000000 (7.92 GiB)
+[host_monotonic_s=188161.924285] Jumping to main entry point at 0xffff801a593c with SP 0x0000ff0044d44000
+[host_monotonic_s=188161.925959] 
+[host_monotonic_s=188161.925962]        d8888                            .d88888b.   .d8888b.
+[host_monotonic_s=188161.925984]       d88888                           d88P" "Y88b d88P  Y88b
+[host_monotonic_s=188161.926043]      d88P888                           888     888 Y88b.
+[host_monotonic_s=188161.926112]     d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+[host_monotonic_s=188161.926184]    d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+[host_monotonic_s=188161.926258]   d88P   888 888     888      88888888 888     888       "888
+[host_monotonic_s=188161.926346]  d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+[host_monotonic_s=188161.926414] d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+[host_monotonic_s=188161.926439] 
+[host_monotonic_s=188161.926902] arch = aarch64
+[host_monotonic_s=188161.926904] platform = linux,dummy-virt
+[host_monotonic_s=188161.926905] target = aarch64-unknown-none-softfloat
+[host_monotonic_s=188161.926905] build_mode = 
+[host_monotonic_s=188161.926906] log_level = info
+[host_monotonic_s=188161.926921] backtrace = false
+[host_monotonic_s=188161.927026] smp = 4
+[host_monotonic_s=188161.927029] 
+[host_monotonic_s=188161.927622] [37m[  0.060724 ax_runtime:220] [32mLogging is enabled.[m
+[host_monotonic_s=188161.927688] [m[37m[  0.061123 ax_runtime:221] [32mPrimary CPU 0 started, arg = 0x44c00000.[m
+[host_monotonic_s=188161.927819] [m[37m[  0.061241 ax_runtime:223] [32mFound physcial memory regions:[m
+[host_monotonic_s=188161.929048] [m[37m[  0.062317 ax_runtime:225] [32m  [PA:0x9000000, PA:0x9001000) mmio (READ | WRITE | DEVICE | RESERVED)[m
+[host_monotonic_s=188161.929210] [m[37m[  0.062561 ax_runtime:225] [32m  [PA:0x40000000, PA:0x40200000) free memory (READ | WRITE | FREE)[m
+[host_monotonic_s=188161.929361] [m[37m[  0.062742 ax_runtime:225] [32m  [PA:0x40200000, PA:0x44c00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=188161.929509] [m[37m[  0.062896 ax_runtime:225] [32m  [PA:0x44c00000, PA:0x44d00000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=188161.929653] [m[37m[  0.063044 ax_runtime:225] [32m  [PA:0x44d00000, PA:0x44e10000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=188161.929799] [m[37m[  0.063187 ax_runtime:225] [32m  [PA:0x44e10000, PA:0x44e1a000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[host_monotonic_s=188161.929931] [m[37m[  0.063333 ax_runtime:225] [32m  [PA:0x44e1a000, PA:0x240000000) free memory (READ | WRITE | FREE)[m
+[host_monotonic_s=188161.930067] [m[37m[  0.063488 ax_runtime:375] [32mInitialize global memory allocator...[m
+[host_monotonic_s=188161.930185] [m[37m[  0.063621 ax_runtime:376] [32m  use buddy-slab-allocator allocator.[m
+[host_monotonic_s=188161.930492] [m[37m[  0.063869 ax_alloc::buddy_slab:158] [32mInitialize global memory allocator, start_vaddr: 0x44e1a000, size: 0x1fb1e6000[m
+[host_monotonic_s=188161.938253] [m[37m[  0.071591 ax_alloc::buddy_slab:424] [32mglobal allocator initialized[m
+[host_monotonic_s=188161.938396] [m[37m[  0.071797 ax_alloc::buddy_slab:168] [32mAdd memory region, start_vaddr: 0x40000000, size: 0x200000[m
+[host_monotonic_s=188161.938718] [m[37m[  0.071997 buddy_slab_allocator::global:151] [32mGlobalAllocator: skip region 0x40000000+0x200000, no allocator-visible memory after 2097152 alignment[m
+[host_monotonic_s=188161.938976] [m[37m[  0.072390 ax_runtime:260] [32mkernel aspace: [VA:0x0, VA:0xffffffffffffffff)[m
+[host_monotonic_s=188161.939242] [m[37m[  0.072648 ax_mm:103] [32mInitialize virtual memory management...[m
+[host_monotonic_s=188162.740575] [m[37m[  0.802324 ax_runtime:272] [32mInitialize platform devices...[m
+[host_monotonic_s=188162.740589] [m[37m[  0.809509 someboot::arch::power:23] [32mPower management method : SMC[m
+[host_monotonic_s=188162.740593] [m[37m[  0.809713 somehal::driver:5] [32mInitializing rdrive with FDT at 0x44c00000[m
+[host_monotonic_s=188162.740683] [m[37m[  0.823632 somehal::arch::gic::v3:274] [32mGICv3 CPU 0 EOI mode: two_step=true[m
+[host_monotonic_s=188162.753963] [m[37m[  0.887311 ax_runtime:558] [32mDedicated (no-tick) host CPUs: 0b10[m
+[host_monotonic_s=188162.754019] [m[37m[  0.887467 ax_task::api:158] [32mInitialize scheduling...[m
+[host_monotonic_s=188162.755385] [m[37m[  0.888753 ax_task::api:166] [32m  use FIFO scheduler.[m
+[host_monotonic_s=188162.755706] [m[37m[  0.889141 ax_runtime:300] [32mInitialize interrupt handlers...[m
+[host_monotonic_s=188162.757989] [m[37m[  0.891367 ax_runtime::devices:2] [32mProbe platform devices...[m
+[host_monotonic_s=188162.771867] [m[37m[  0.905188 somehal::arch::gic::v3:274] [32mGICv3 CPU 1 EOI mode: two_step=true[m
+[host_monotonic_s=188162.772356] [m[37m[  0.905725 ax_runtime::mp:79] [32mSecondary CPU 1 started.[m
+[host_monotonic_s=188162.773453] [m[37m[  0.906811 ax_runtime::mp:110] [32mSecondary CPU 1 init OK.[m
+[host_monotonic_s=188162.782958] [m[37m[  0.916309 somehal::arch::gic::v3:274] [32mGICv3 CPU 2 EOI mode: two_step=true[m
+[host_monotonic_s=188162.783031] [m[37m[  0.916472 ax_runtime::mp:79] [32mSecondary CPU 2 started.[m
+[host_monotonic_s=188162.783253] [m[37m[  0.916686 ax_runtime::mp:110] [32mSecondary CPU 2 init OK.[m
+[host_monotonic_s=188162.793968] [m[37m[  0.927342 somehal::arch::gic::v3:274] [32mGICv3 CPU 3 EOI mode: two_step=true[m
+[host_monotonic_s=188162.794054] [m[37m[  0.927487 ax_runtime::mp:79] [32mSecondary CPU 3 started.[m
+[host_monotonic_s=188162.794176] [m[37m[  0.927543 ax_runtime:348] [32mPrimary CPU 0 init OK.[m
+[host_monotonic_s=188162.794456] [m[37m[  0.927886 ax_runtime::mp:110] [32mSecondary CPU 3 init OK.[m
+[host_monotonic_s=188162.796551] [m
+[host_monotonic_s=188162.796675] 
+[host_monotonic_s=188162.796752]        d8888            888     888  d8b
+[host_monotonic_s=188162.796795]       d88888            888     888  Y8P
+[host_monotonic_s=188162.796837]      d88P888            888     888
+[host_monotonic_s=188162.796923]     d88P 888  888  888  Y88b   d88P  888  .d8888b    .d88b.   888d888
+[host_monotonic_s=188162.796999]    d88P  888  `Y8bd8P'   Y88b d88P   888  88K       d88""88b  888P"
+[host_monotonic_s=188162.797083]   d88P   888    X88K      Y88o88P    888  "Y8888b.  888  888  888
+[host_monotonic_s=188162.797156]  d8888888888  .d8""8b.     Y888P     888       X88  Y88..88P  888
+[host_monotonic_s=188162.797222] d88P     888  888  888      Y8P      888   88888P'   "Y88P"   888
+[host_monotonic_s=188162.797240] 
+[host_monotonic_s=188162.797261] 
+[host_monotonic_s=188162.797298] by AxVisor Team
+[host_monotonic_s=188162.797304] 
+[host_monotonic_s=188162.797562] [37m[  0.930918 0:2 axvisor:78] [32mRT partition host CPU mask established: 0b10[m
+[host_monotonic_s=188162.797672] [m[37m[  0.931115 0:2 axvisor:81] [32mStarting virtualization...[m
+[host_monotonic_s=188162.797882] [m[37m[  0.931289 0:2 axvm::host::arceos:335] [32mEnabling hardware virtualization support on all cores...[m
+[host_monotonic_s=188162.798078] [m[37m[  0.931477 0:2 axvm::host::arceos:341] [32mCore 0 is initializing hardware virtualization support...[m
+[host_monotonic_s=188162.798259] [m[37m[  0.931694 0:2 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=188162.804101] [m[37m[  0.937494 0:2 axvm::host::arceos:343] [32mHardware virtualization support enabled on core 0[m
+[host_monotonic_s=188162.805018] [m[37m[  0.938345 0:2 axvm::host::arceos:370] [32mWaiting for all cores to enable hardware virtualization...[m
+[host_monotonic_s=188162.805897] [m[37m[  0.939058 2:12 axvm::host::arceos:353] [32mCore 2 is initializing hardware virtualization support...[m
+[host_monotonic_s=188162.806080] [m[37m[  0.939096 3:13 axvm::host::arceos:353] [32mCore 3 is initializing hardware virtualization support...[m
+[host_monotonic_s=188162.806260] [m[37m[  0.939071 1:11 axvm::host::arceos:353] [32mCore 1 is initializing hardware virtualization support...[m
+[host_monotonic_s=188162.806383] [m[37m[  0.939450 2:12 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=188162.806519] [m[37m[  0.939619 3:13 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=188162.806643] [m[37m[  0.939815 1:11 axvm::timer:349] [32mInitializing AxVM timer wheel...[m
+[host_monotonic_s=188162.807030] [m[37m[  0.940407 2:12 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 2 (2/4)[m
+[host_monotonic_s=188162.807170] [m[37m[  0.940427 1:11 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 1 (4/4)[m
+[host_monotonic_s=188162.807307] [m[37m[  0.940431 3:13 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 3 (3/4)[m
+[host_monotonic_s=188162.807457] [m[37m[  0.940484 0:2 axvm::host::arceos:381] [32mAll cores have enabled hardware virtualization support.[m
+[host_monotonic_s=188162.808998] [m[37m[  0.942436 0:2 axvisor::config:91] [32mUsing static VM configs.[m
+[host_monotonic_s=188162.826877] [m[37m[  0.958882 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[1] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[host_monotonic_s=188162.828477] [m[37m[  0.961869 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[1] architectural timer follows host firmware PPIs[m
+[host_monotonic_s=188162.832790] [m[37m[  0.966154 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[host_monotonic_s=188162.832999] [m[37m[  0.966381 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[host_monotonic_s=188162.833236] [m[37m[  0.966587 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[host_monotonic_s=188162.833413] [m[37m[  0.966787 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[host_monotonic_s=188162.833647] [m[37m[  0.967070 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[host_monotonic_s=188162.834187] [m[37m[  0.967581 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[1] DTB not found, generating from the VM configuration[m
+[host_monotonic_s=188162.845462] [m[37m[  0.978755 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=188162.855906] [m[37m[  0.989242 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=188162.856862] [m[37m[  0.990248 0:2 axvisor::config:258] [32mCreating VM[1] "rt-partition-linux"[m
+[host_monotonic_s=188162.874189] [m[37m[  1.007546 0:2 axvm::vm:1122] [32mVM created: id=1[m
+[host_monotonic_s=188164.316087] [m[37m[  2.148797 0:2 axvisor::config:270] [32mVM[1] created success, loading images...[m
+[host_monotonic_s=188164.316102] [m[37m[  2.264061 0:2 axvm::boot::images:137] [32mLoading ramdisk image from memory (19620641 bytes) into GPA @0x84000000[m
+[host_monotonic_s=188164.316105] [m[37m[  2.322949 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[host_monotonic_s=188164.316355] [m[37m[  2.323430 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[host_monotonic_s=188164.317548] [m[37m[  2.450519 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[host_monotonic_s=188164.324829] [m[37m[  2.457808 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[host_monotonic_s=188164.330279] [m[37m[  2.463511 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[host_monotonic_s=188164.334166] [m[37m[  2.467533 0:2 axvm::vm::prepare:82] [32mVM setup: id=1[m
+[host_monotonic_s=188164.337302] [m[37m[  2.470128 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[2] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32773), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32774), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[host_monotonic_s=188164.337576] [m[37m[  2.470942 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[2] architectural timer follows host firmware PPIs[m
+[host_monotonic_s=188164.340942] [m[37m[  2.474309 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[host_monotonic_s=188164.341127] [m[37m[  2.474490 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[host_monotonic_s=188164.341297] [m[37m[  2.474677 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@2, node_id: 0x2, hardware_cpu_id: 0x2[m
+[host_monotonic_s=188164.341461] [m[37m[  2.474842 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@3, node_id: 0x3, hardware_cpu_id: 0x3[m
+[host_monotonic_s=188164.341616] [m[37m[  2.475034 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 4 host CPU nodes[m
+[host_monotonic_s=188164.341791] [m[37m[  2.475178 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[2] DTB not found, generating from the VM configuration[m
+[host_monotonic_s=188164.349307] [m[37m[  2.482616 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=188164.354163] [m[37m[  2.487454 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[host_monotonic_s=188164.354622] [m[37m[  2.487998 0:2 axvisor::config:258] [32mCreating VM[2] "rt-partition-zephyr"[m
+[host_monotonic_s=188164.355867] [m[37m[  2.489253 0:2 axvm::vm:1122] [32mVM created: id=2[m
+[host_monotonic_s=188165.156888] [m[37m[  3.056057 0:2 axvisor::config:270] [32mVM[2] created success, loading images...[m
+[host_monotonic_s=188165.156899] [m[37m[  3.060363 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[host_monotonic_s=188165.156901] [m[37m[  3.060504 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[host_monotonic_s=188165.157887] [m[37m[  3.290328 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[host_monotonic_s=188165.159021] [m[37m[  3.291937 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[host_monotonic_s=188165.159858] [m[37m[  3.292980 0:2 axvm::vm::prepare:82] [32mVM setup: id=2[m
+[host_monotonic_s=188165.162340] [m[37m[  3.295484 0:2 axvm::runtime:51] [32mInitializing VMM...[m
+[host_monotonic_s=188165.167217] [m[37m[  3.300567 0:2 axvm::runtime:62] [32mVMM starting, booting VMs...[m
+[host_monotonic_s=188165.167601] [m[37m[  3.300992 0:2 axvm::vm:1342] [32mStarting VM[1][m
+[host_monotonic_s=188165.168037] [m[37m[  3.301349 0:2 axvm::runtime::vcpus:609] [32mSpawning task for VM[1] VCpu[0][m
+[host_monotonic_s=188165.169054] [m[37m[  3.302082 0:2 axvm::runtime::vcpus:627] [32mVCpu task Task(18, "VM[1]-VCpu[0]") created cpumask: [2, ][m
+[host_monotonic_s=188165.173065] [m[37m[  3.306433 0:2 axvm::runtime:70] [32mVM[1] boot success[m
+[host_monotonic_s=188165.173106] [m[37m[  3.306564 0:2 axvm::vm:1342] [32mStarting VM[2][m
+[host_monotonic_s=188165.173231] [m[37m[  3.306649 0:2 axvm::runtime::vcpus:609] [32mSpawning task for VM[2] VCpu[0][m
+[host_monotonic_s=188165.173484] [m[37m[  3.306688 2:18 axvm::runtime::vcpus:681] [32mVM[1] VCpu[0] waiting for running[m
+[host_monotonic_s=188165.173693] [m[37m[  3.306934 0:2 axvm::runtime::vcpus:627] [32mVCpu task Task(20, "VM[2]-VCpu[0]") created cpumask: [1, ][m
+[host_monotonic_s=188165.174071] [m[37m[  3.307446 0:2 axvm::runtime:70] [32mVM[2] boot success[m
+[host_monotonic_s=188165.174211] [m[37m[  3.307583 1:20 axvm::runtime::vcpus:681] [32mVM[2] VCpu[0] waiting for running[m
+[host_monotonic_s=188165.174571] [m[37m[  3.307655 2:18 axvm::runtime::vcpus:719] [32mVM[1] VCpu[0] running...[m
+[host_monotonic_s=188165.174679] [m[37m[  3.307761 1:20 axvm::runtime::vcpus:719] [32mVM[2] VCpu[0] running...[m
+[host_monotonic_s=188165.175062] [m[37m[  3.308428 0:2 axvisor:100] [32m[OK] Default guest initialized[m
+[host_monotonic_s=188165.177406] [m[37m[  3.310698 0:17 axvisor::rt_burner:41] [32mRT_BURNER_ARMED cpu=0 start_delay_ms=60000[m
+[host_monotonic_s=188165.212876] [m[VM 2] *** Booting Zephyr OS build v3.7.0 ***
+[host_monotonic_s=188165.216497] [VM 2] PERIODIC LATENCY READY
+[host_monotonic_s=188165.216882] [37m[  3.350236 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0x80000000[m
+[host_monotonic_s=188165.217698] [m[37m[  3.351067 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000001[m
+[host_monotonic_s=188165.218060] [m[37m[  3.351442 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc400000e[m
+[host_monotonic_s=188165.218345] [m[37m[  3.351740 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000012[m
+[host_monotonic_s=188165.218609] [m[37m[  3.352006 2:18 axvm::runtime::hvc:258] [32mVM[1] PSCI_FEATURES function_id=0xc4000015[m
+[host_monotonic_s=188165.398686] [m[37m[  3.531971 2:18 axvm::runtime::hvc:272] [32mVM[1] PSCI_CPU_ON target=0x1 entry=0x8228158c context=0x0[m
+[host_monotonic_s=188165.399546] [m[37m[  3.532920 2:18 axvm::runtime::vcpus:609] [32mSpawning task for VM[1] VCpu[1][m
+[host_monotonic_s=188165.399715] [m[37m[  3.533083 2:18 axvm::runtime::vcpus:627] [32mVCpu task Task(23, "VM[1]-VCpu[1]") created cpumask: [3, ][m
+[host_monotonic_s=188165.400567] [m[37m[  3.533957 3:23 axvm::runtime::vcpus:681] [32mVM[1] VCpu[1] waiting for running[m
+[host_monotonic_s=188165.401042] [m[37m[  3.534414 3:23 axvm::runtime::vcpus:719] [32mVM[1] VCpu[1] running...[m
+[host_monotonic_s=188165.617346] [m[VM 1] [    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd083]
+[host_monotonic_s=188165.652690] [VM 1] [    0.000000] Linux version 7.1.0-rc2-g74fe02ce122a (runner@s1lqc) (aarch64-linux-gnu-gcc (Ubuntu 13.3.0-6ubuntu2~24.04) 13.3.0, GNU ld (GNU Binutils for Ubuntu) 2.42) #2 SMP PREEMPT Mon Jun  8 08:07:46 UTC 2026
+[host_monotonic_s=188165.661816] [VM 1] [    0.000000] KASLR disabled due to lack of seed
+[host_monotonic_s=188165.670190] [VM 1] [    0.000000] Machine model: linux,dummy-virt
+[host_monotonic_s=188165.676836] [VM 1] [    0.000000] efi: UEFI not found.
+[host_monotonic_s=188165.691124] [VM 1] [    0.000000] OF: reserved mem: Reserved memory: No reserved-memory node in the DT
+[host_monotonic_s=188165.705977] [VM 1] [    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=188165.717667] [VM 1] [    0.000000] NODE_DATA(0) allocated [mem 0xbfe08940-0xbfe0b03f]
+[host_monotonic_s=188165.727947] [VM 1] [    0.000000] cma: Reserved 32 MiB at 0x00000000bde00000
+[host_monotonic_s=188165.738176] [VM 1] [    0.000000] psci: probing for conduit method from DT.
+[host_monotonic_s=188165.747308] [VM 1] [    0.000000] psci: PSCIv1.1 detected in firmware.
+[host_monotonic_s=188165.757703] [VM 1] [    0.000000] psci: Using standard PSCI v0.2 function IDs
+[host_monotonic_s=188165.774449] [VM 1] [    0.000000] psci: Trusted OS migration not required
+[host_monotonic_s=188165.784359] [VM 1] [    0.000000] psci: SMC Calling Convention v65535.65535
+[host_monotonic_s=188165.789443] [VM 1] [    0.000000] Zone ranges:
+[host_monotonic_s=188165.801326] [VM 1] [    0.000000]   DMA      [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=188165.807678] [VM 1] [    0.000000]   DMA32    empty
+[host_monotonic_s=188165.813835] [VM 1] [    0.000000]   Normal   empty
+[host_monotonic_s=188165.822312] [VM 1] [    0.000000] Movable zone start for each node
+[host_monotonic_s=188165.829756] [VM 1] [    0.000000] Early memory node ranges
+[host_monotonic_s=188165.841717] [VM 1] [    0.000000]   node   0: [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=188165.855653] [VM 1] [    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x00000000bfffffff]
+[host_monotonic_s=188165.868538] [VM 1] [    0.000000] percpu: Embedded 26 pages/cpu s66584 r8192 d31720 u106496
+[host_monotonic_s=188166.169016] [VM 1] [    0.000000] Detected PIPT I-cache on CPU0
+[host_monotonic_s=188166.169027] [VM 1] [    0.000000] CPU features: detected: GICv3 CPU interface
+[host_monotonic_s=188166.169031] [VM 1] [    0.000000] CPU features: detected: Spectre-v2
+[host_monotonic_s=188166.169033] [VM 1] [    0.000000] CPU features: detected: Spectre-v3a
+[host_monotonic_s=188166.169035] [VM 1] [    0.000000] CPU features: detected: Spectre-v4
+[host_monotonic_s=188166.186695] [VM 1] [    0.000000] CPU features: detected: Spectre-BHB
+[host_monotonic_s=188166.196876] [VM 1] [    0.000000] CPU features: detected: ARM erratum 1742098
+[host_monotonic_s=188166.211019] [VM 1] [    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[host_monotonic_s=188166.220708] [VM 1] [    0.000000] alternatives: applying boot alternatives
+[host_monotonic_s=188166.266525] [VM 1] [    0.000000] Kernel command line: console=ttyAMA0 devtmpfs.mount=1 loglevel=7 isolcpus=1 nohz_full=1 irqaffinity=0 rt_scenario=stress-dedicated rt_cpu=1 rt_load_cpu=0 rt_loops=0 rt_duration_sec=60 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_start_delay_sec=25
+[host_monotonic_s=188166.279670] [VM 1] [    0.000000] Housekeeping: nohz unsupported. Build with CONFIG_NO_HZ_FULL
+[host_monotonic_s=188166.330666] [VM 1] [    0.000000] Unknown kernel command line parameters "nohz_full=1 rt_scenario=stress-dedicated rt_cpu=1 rt_load_cpu=0 rt_loops=0 rt_duration_sec=60 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_start_delay_sec=25", will be passed to user space.
+[host_monotonic_s=188166.345407] [VM 1] [    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[host_monotonic_s=188166.363142] [VM 1] [    0.000000] Dentry cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[host_monotonic_s=188166.378873] [VM 1] [    0.000000] Inode-cache hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[host_monotonic_s=188166.393944] [VM 1] [    0.000000] software IO TLB: SWIOTLB bounce buffer size adjusted to 1MB
+[host_monotonic_s=188166.403865] [VM 1] [    0.000000] software IO TLB: area num 2.
+[host_monotonic_s=188166.720730] [VM 1] [    0.000000] software IO TLB: mapped [mem 0x00000000bcb00000-0x00000000bcc00000] (1MB)
+[host_monotonic_s=188166.720741] [VM 1] [    0.000000] Fallback order for Node 0: 0 
+[host_monotonic_s=188166.720744] [VM 1] [    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 262144
+[host_monotonic_s=188166.720747] [VM 1] [    0.000000] Policy zone: DMA
+[host_monotonic_s=188166.720749] [VM 1] [    0.000000] mem auto-init: stack:all(zero), heap alloc:off, heap free:off
+[host_monotonic_s=188166.741266] [VM 1] [    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=2, Nodes=1
+[host_monotonic_s=188166.752670] [VM 1] [    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[host_monotonic_s=188166.762406] [VM 1] [    0.000000] rcu: 	RCU event tracing is enabled.
+[host_monotonic_s=188166.775558] [VM 1] [    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=512 to nr_cpu_ids=2.
+[host_monotonic_s=188166.785395] [VM 1] [    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[host_monotonic_s=188166.795013] [VM 1] [    0.000000] 	Tracing variant of Tasks RCU enabled.
+[host_monotonic_s=188166.810611] [VM 1] [    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[host_monotonic_s=188166.824700] [VM 1] [    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=2
+[host_monotonic_s=188166.841606] [VM 1] [    0.000000] RCU Tasks: Setting shift to 1 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=2.
+[host_monotonic_s=188166.852730] [VM 1] [    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[host_monotonic_s=188166.860746] [VM 1] [    0.000000] GICv3: 256 SPIs implemented
+[host_monotonic_s=188166.869928] [VM 1] [    0.000000] GICv3: 0 Extended SPIs implemented
+[host_monotonic_s=188166.879019] [VM 1] [    0.000000] Root IRQ handler: gic_handle_irq
+[host_monotonic_s=188166.888062] [VM 1] [    0.000000] GICv3: GICv3 features: 16 PPIs, RSS
+[host_monotonic_s=188166.897874] [VM 1] [    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=0
+[host_monotonic_s=188166.911461] [VM 1] [    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[host_monotonic_s=188166.920376] [VM 1] [    0.000000] ITS [mem 0x08080000-0x0809ffff]
+[host_monotonic_s=188166.938609] [VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Devices @83860000 (indirect, esz 8, psz 64K, shr 1)
+[host_monotonic_s=188166.961286] [VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Interrupt Collections @83870000 (flat, esz 8, psz 64K, shr 1)
+[host_monotonic_s=188166.973190] [VM 1] [    0.000000] GICv3: using LPI property table @0x0000000083880000
+[host_monotonic_s=188167.273676] [VM 1] [    0.000000] GICv3: CPU0: using allocated LPI pending table @0x0000000083890000
+[host_monotonic_s=188167.273688] [VM 1] [    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[host_monotonic_s=188167.273691] [VM 1] [    0.000000] arch_timer: cp15 timer running at 62.50MHz (virt).
+[host_monotonic_s=188167.274866] [VM 1] [    0.000000] clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[host_monotonic_s=188167.296112] [VM 1] [    0.000059] sched_clock: 57 bits at 63MHz, resolution 16ns, wraps every 4398046511096ns
+[host_monotonic_s=188167.304987] [VM 1] [    0.008867] Console: colour dummy device 80x25
+[host_monotonic_s=188167.324893] [VM 1] [    0.012158] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[host_monotonic_s=188167.334273] [VM 1] [    0.012258] pid_max: default: 32768 minimum: 301
+[host_monotonic_s=188167.348647] [VM 1] [    0.016631] Mount-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[host_monotonic_s=188167.364288] [VM 1] [    0.016670] Mountpoint-cache hash table entries: 2048 (order: 2, 16384 bytes, linear)
+[host_monotonic_s=188167.373908] [VM 1] [    0.025493] VFS: Finished mounting rootfs on nullfs
+[host_monotonic_s=188167.386191] [VM 1] [    0.046051] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[host_monotonic_s=188167.396244] [VM 1] [    0.060583] rcu: Hierarchical SRCU implementation.
+[host_monotonic_s=188167.407127] [VM 1] [    0.060618] rcu: 	Max phase no-delay instances is 1000.
+[host_monotonic_s=188167.424245] [VM 1] [    0.061738] Timer migration: 1 hierarchy levels; 8 children per group; 1 crossnode level
+[host_monotonic_s=188167.434037] [VM 1] [    0.063880] fsl-mc MSI: its@8080000 domain created
+[host_monotonic_s=188167.443302] [VM 1] [    0.065584] EFI services will not be available.
+[host_monotonic_s=188167.452592] [VM 1] [    0.066463] smp: Bringing up secondary CPUs ...
+[host_monotonic_s=188167.461428] [VM 1] [    0.073620] Detected PIPT I-cache on CPU1
+[host_monotonic_s=188167.476934] [VM 1] [    0.074922] GICv3: CPU1: found redistributor 1 region 0:0x00000000080c0000
+[host_monotonic_s=188167.493291] [VM 1] [    0.077063] GICv3: CPU1: using allocated LPI pending table @0x00000000838a0000
+[host_monotonic_s=188167.506606] [VM 1] [    0.079363] CPU1: Booted secondary processor 0x0000000001 [0x410fd083]
+[host_monotonic_s=188167.515338] [VM 1] [    0.086543] smp: Brought up 1 node, 2 CPUs
+[host_monotonic_s=188167.825874] [VM 1] [    0.086584] SMP: Total of 2 processors activated.
+[host_monotonic_s=188167.825889] [VM 1] [    0.086609] CPU: All CPU(s) started at EL1
+[host_monotonic_s=188167.825892] [VM 1] [    0.086852] CPU features: detected: 32-bit EL0 Support
+[host_monotonic_s=188167.825894] [VM 1] [    0.086863] CPU features: detected: 32-bit EL1 Support
+[host_monotonic_s=188167.825897] [VM 1] [    0.086926] CPU features: detected: CRC32 instructions
+[host_monotonic_s=188167.844211] [VM 1] [    0.087089] CPU features: detected: PMUv3
+[host_monotonic_s=188167.855481] [VM 1] [    0.098774] alternatives: applying system-wide alternatives
+[host_monotonic_s=188167.883036] [VM 1] [    0.127020] Memory: 919888K/1048576K available (18688K kernel code, 5242K rwdata, 14480K rodata, 12672K init, 718K bss, 92528K reserved, 32768K cma-reserved)
+[host_monotonic_s=188167.889821] [VM 1] [    0.152881] devtmpfs: initialized
+[host_monotonic_s=188167.909191] [VM 1] [    0.173619] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[host_monotonic_s=188167.923809] [VM 1] [    0.174947] posixtimers hash table entries: 1024 (order: 2, 16384 bytes, linear)
+[host_monotonic_s=188167.941151] [VM 1] [    0.175612] futex hash table entries: 512 (32768 bytes on 1 NUMA nodes, total 32 KiB, linear).
+[host_monotonic_s=188167.950845] [VM 1] [    0.177938] 19744 pages in range for non-PLT usage
+[host_monotonic_s=188167.960148] [VM 1] [    0.177989] 511264 pages in range for PLT usage
+[host_monotonic_s=188167.968055] [VM 1] [    0.194831] DMI: not present or invalid.
+[host_monotonic_s=188167.980269] [VM 1] [    0.219177] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[host_monotonic_s=188167.996089] [VM 1] [    0.232076] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[host_monotonic_s=188168.007652] [VM 1] [    0.232388] audit: initializing netlink subsys (disabled)
+[host_monotonic_s=188168.023183] [VM 1] [    0.233895] audit: type=2000 audit(0.204:1): state=initialized audit_enabled=0 res=1
+[host_monotonic_s=188168.035649] [VM 1] [    0.238914] thermal_sys: Registered thermal governor 'step_wise'
+[host_monotonic_s=188168.048641] [VM 1] [    0.238946] thermal_sys: Registered thermal governor 'power_allocator'
+[host_monotonic_s=188168.056877] [VM 1] [    0.239257] cpuidle: using governor menu
+[host_monotonic_s=188168.070854] [VM 1] [    0.240776] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[host_monotonic_s=188168.081793] [VM 1] [    0.242161] ASID allocator initialised with 65536 entries
+[host_monotonic_s=188168.382296] [VM 1] [    0.247975] Serial: AMBA PL011 UART driver
+[host_monotonic_s=188168.382308] [VM 1] [    0.271677] 9000000.pl011: ttyAMA0 at MMIO 0x9000000 (irq = 13, base_baud = 0) is a PL011 rev1
+[host_monotonic_s=188168.382311] [VM 1] [    0.275777] printk: console [ttyAMA0] enabled
+[host_monotonic_s=188168.382728] [VM 1] [    1.612119] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[host_monotonic_s=188168.400903] [VM 1] [    1.612147] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[host_monotonic_s=188168.414473] [VM 1] [    1.612170] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[host_monotonic_s=188168.426262] [VM 1] [    1.612174] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[host_monotonic_s=188168.439615] [VM 1] [    1.612179] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[host_monotonic_s=188168.452068] [VM 1] [    1.612182] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[host_monotonic_s=188168.465296] [VM 1] [    1.612187] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[host_monotonic_s=188168.477624] [VM 1] [    1.612190] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[host_monotonic_s=188168.495193] [VM 1] [    3.153353] ACPI: Interpreter disabled.
+[host_monotonic_s=188168.509857] [VM 1] [    3.172454] iommu: Default domain type: Translated
+[host_monotonic_s=188168.522097] [VM 1] [    3.182546] iommu: DMA domain TLB invalidation policy: strict mode
+[host_monotonic_s=188168.533953] [VM 1] [    3.197675] SCSI subsystem initialized
+[host_monotonic_s=188168.548372] [VM 1] [    3.209036] usbcore: registered new interface driver usbfs
+[host_monotonic_s=188168.559681] [VM 1] [    3.221305] usbcore: registered new interface driver hub
+[host_monotonic_s=188168.570516] [VM 1] [    3.232675] usbcore: registered new device driver usb
+[host_monotonic_s=188168.581804] [VM 1] [    3.244103] pps_core: LinuxPPS API ver. 1 registered
+[host_monotonic_s=188168.599876] [VM 1] [    3.254348] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[host_monotonic_s=188168.608221] [VM 1] [    3.272545] PTP clock support registered
+[host_monotonic_s=188168.615959] [VM 1] [    3.281336] EDAC MC: Ver: 3.0.0
+[host_monotonic_s=188168.627904] [VM 1] [    3.289915] scmi_core: SCMI protocol bus registered
+[host_monotonic_s=188168.637371] [VM 1] [    3.302492] FPGA manager framework
+[host_monotonic_s=188168.937947] [VM 1] [    3.319914] vgaarb: loaded
+[host_monotonic_s=188168.937962] [VM 1] [    3.330837] clocksource: Switched to clocksource arch_sys_counter
+[host_monotonic_s=188168.937967] [VM 1] [    3.345955] VFS: Disk quotas dquot_6.6.0
+[host_monotonic_s=188168.937970] [VM 1] [    3.355778] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[host_monotonic_s=188168.938082] [VM 1] [    3.371901] pnp: PnP ACPI: disabled
+[host_monotonic_s=188168.974395] [VM 1] [    3.636955] NET: Registered PF_INET protocol family
+[host_monotonic_s=188168.990142] [VM 1] [    3.648236] IP idents hash table entries: 16384 (order: 5, 131072 bytes, linear)
+[host_monotonic_s=188169.011983] [VM 1] [    3.667154] tcp_listen_portaddr_hash hash table entries: 512 (order: 1, 8192 bytes, linear)
+[host_monotonic_s=188169.028212] [VM 1] [    3.684617] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[host_monotonic_s=188169.046199] [VM 1] [    3.700905] TCP established hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[host_monotonic_s=188169.060387] [VM 1] [    3.701132] TCP bind hash table entries: 8192 (order: 6, 262144 bytes, linear)
+[host_monotonic_s=188169.072790] [VM 1] [    3.701305] TCP: Hash tables configured (established 8192 bind 8192)
+[host_monotonic_s=188169.085965] [VM 1] [    3.702457] UDP hash table entries: 512 (order: 3, 32768 bytes, linear)
+[host_monotonic_s=188169.098976] [VM 1] [    3.760100] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[host_monotonic_s=188169.114248] [VM 1] [    3.774140] RPC: Registered named UNIX socket transport module.
+[host_monotonic_s=188169.123691] [VM 1] [    3.786897] RPC: Registered udp transport module.
+[host_monotonic_s=188169.133784] [VM 1] [    3.796531] RPC: Registered tcp transport module.
+[host_monotonic_s=188169.145245] [VM 1] [    3.806369] RPC: Registered tcp-with-tls transport module.
+[host_monotonic_s=188169.163061] [VM 1] [    3.817773] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[host_monotonic_s=188169.171121] [VM 1] [    3.817931] PCI: CLS 0 bytes, default 64
+[host_monotonic_s=188169.178349] [VM 1] [    3.822183] Unpacking initramfs...
+[host_monotonic_s=188169.191950] [VM 1] [    3.855739] kvm [1]: HYP mode not available
+[host_monotonic_s=188169.492511] [VM 1] [    3.868266] Initialise system trusted keyrings
+[host_monotonic_s=188169.492525] [VM 1] [    3.884530] workingset: timestamp_bits=42 (anon: 38) max_order=18 bucket_order=0 (anon: 0)
+[host_monotonic_s=188169.492528] [VM 1] [    3.908383] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[host_monotonic_s=188169.492628] [VM 1] [    3.923448] NFS: Registering the id_resolver key type
+[host_monotonic_s=188169.513638] [VM 1] [    4.175686] Key type id_resolver registered
+[host_monotonic_s=188169.521770] [VM 1] [    4.175951] Key type id_legacy registered
+[host_monotonic_s=188169.535105] [VM 1] [    4.176536] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[host_monotonic_s=188169.549651] [VM 1] [    4.176825] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[host_monotonic_s=188169.565484] [VM 1] [    4.222539] 9p: Installing v9fs 9p2000 file system support
+[host_monotonic_s=188169.574050] [VM 1] [    4.225031] Key type asymmetric registered
+[host_monotonic_s=188169.584105] [VM 1] [    4.225552] Asymmetric key parser 'x509' registered
+[host_monotonic_s=188169.598804] [VM 1] [    4.226018] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 244)
+[host_monotonic_s=188169.607970] [VM 1] [    4.226308] io scheduler mq-deadline registered
+[host_monotonic_s=188169.616254] [VM 1] [    4.226539] io scheduler kyber registered
+[host_monotonic_s=188169.631776] [VM 1] [    4.295825] io scheduler bfq registered
+[host_monotonic_s=188169.671498] [VM 1] [    4.331572] ledtrig-cpu: registered to indicate activity on CPUs
+[host_monotonic_s=188169.776024] [VM 1] [    4.435649] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[host_monotonic_s=188170.076608] [VM 1] [    4.462250] msm_serial: driver initialized
+[host_monotonic_s=188170.076624] [VM 1] [    4.476349] SuperH (H)SCI(F) driver initialized
+[host_monotonic_s=188170.076627] [VM 1] [    4.487361] STM32 USART driver initialized
+[host_monotonic_s=188170.076630] [VM 1] [    4.544014] loop: module loaded
+[host_monotonic_s=188170.076632] [VM 1] [    4.546458] megasas: 07.734.00.00-rc1
+[host_monotonic_s=188170.077047] [VM 1] [    4.584511] tun: Universal TUN/TAP device driver, 1.6
+[host_monotonic_s=188170.131408] [VM 1] [    4.796880] thunder_xcv, ver 1.0
+[host_monotonic_s=188170.139129] [VM 1] [    4.804493] thunder_bgx, ver 1.0
+[host_monotonic_s=188170.145202] [VM 1] [    4.811798] nicpf, ver 1.0
+[host_monotonic_s=188170.163166] [VM 1] [    4.825442] e1000: Intel(R) PRO/1000 Network Driver
+[host_monotonic_s=188170.181604] [VM 1] [    4.839032] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[host_monotonic_s=188170.192218] [VM 1] [    4.839444] e1000e: Intel(R) PRO/1000 Network Driver
+[host_monotonic_s=188170.204052] [VM 1] [    4.839616] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[host_monotonic_s=188170.214776] [VM 1] [    4.839932] igb: Intel(R) Gigabit Ethernet Network Driver
+[host_monotonic_s=188170.225649] [VM 1] [    4.840121] igb: Copyright (c) 2007-2014 Intel Corporation.
+[host_monotonic_s=188170.238222] [VM 1] [    4.840438] igbvf: Intel(R) Gigabit Virtual Function Network Driver
+[host_monotonic_s=188170.249828] [VM 1] [    4.840631] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[host_monotonic_s=188170.257416] [VM 1] [    4.841313] sky2: driver version 1.30
+[host_monotonic_s=188170.276842] [VM 1] [    4.936565] VFIO - User Level meta-driver version: 0.3
+[host_monotonic_s=188170.293320] [VM 1] [    4.953384] usbcore: registered new interface driver usb-storage
+[host_monotonic_s=188170.317352] [VM 1] [    4.980866] i2c_dev: i2c /dev entries driver
+[host_monotonic_s=188170.370100] [VM 1] [    5.028927] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[host_monotonic_s=188170.670582] [VM 1] [    5.044921] usbcore: registered new interface driver usbhid
+[host_monotonic_s=188170.670594] [VM 1] [    5.059057] usbhid: USB HID core driver
+[host_monotonic_s=188170.670597] [VM 1] [    5.085654] NET: Registered PF_INET6 protocol family
+[host_monotonic_s=188170.670599] [VM 1] [    5.111833] Segment Routing with IPv6
+[host_monotonic_s=188170.670601] [VM 1] [    5.120033] In-situ OAM (IOAM) with IPv6
+[host_monotonic_s=188170.691855] [VM 1] [    5.348826] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[host_monotonic_s=188170.705639] [VM 1] [    5.367994] NET: Registered PF_PACKET protocol family
+[host_monotonic_s=188170.722835] [VM 1] [    5.383655] 9pnet: Installing 9P2000 support
+[host_monotonic_s=188170.731569] [VM 1] [    5.384179] Key type dns_resolver registered
+[host_monotonic_s=188170.788347] [VM 1] [    5.452028] registered taskstats version 1
+[host_monotonic_s=188170.800097] [VM 1] [    5.462233] Loading compiled-in X.509 certificates
+[host_monotonic_s=188170.843092] [VM 1] [    5.503145] Demotion targets for Node 0: null
+[host_monotonic_s=188170.857069] [VM 1] [    5.521089] clk: Disabling unused clocks
+[host_monotonic_s=188170.873301] [VM 1] [    5.535415] PM: genpd: Disabling unused power domains
+[host_monotonic_s=188171.257911] [VM 1] [    5.921496] Freeing initrd memory: 19160K
+[host_monotonic_s=188171.558210] [VM 1] [    6.020766] Freeing unused kernel memory: 12672K
+[host_monotonic_s=188171.558216] [VM 1] [    6.031926] Run /init as init process
+[host_monotonic_s=188172.359375] [VM 1] RT_INIT scenario=stress-dedicated cpu=1 load_cpu=0 loops=0 duration_sec=60 interval_us=1000 maxlat_us=20000 priority=90 start_delay_sec=25
+[host_monotonic_s=188172.359387] [VM 1] RT_CPUS total=2
+[host_monotonic_s=188172.359390] [VM 1] RT_SCHED_PROBE_START
+[host_monotonic_s=188172.359393] [VM 1] pid 1's current scheduling policy: SCHED_OTHER
+[host_monotonic_s=188172.359640] [VM 1] pid 1's current scheduling priority: 0
+[host_monotonic_s=188172.369359] [VM 1] RT_SCHED_PROBE_OK
+[host_monotonic_s=188172.375197] [VM 1] RT_WAIT_BEFORE_TEST seconds=25
+[host_monotonic_s=188196.574936] [VM 1] RT_STRESS_START cpu=0 workers=2 vm=1
+[host_monotonic_s=188196.580154] [VM 1] RT_CYCLICTEST_START
+[host_monotonic_s=188196.669887] [VM 1] RT_CYCLICTEST_TIMING_START uptime_s=28.73
+[host_monotonic_s=188196.674961] [VM 1] RT_PROGRESS uptime_s=28.77
+[host_monotonic_s=188196.687062] [VM 1] stress-ng: info:  [69] defaulting to a 1 day run per stressor
+[host_monotonic_s=188196.708328] [VM 1] stress-ng: info:  [69] dispatching hogs: 2 cpu, 1 vm
+[host_monotonic_s=188196.791469] [VM 1] stress-ng: info:  [78] vm: non-temporal memory stores not supported, dropping back to plain memory stores
+[host_monotonic_s=188196.863771] [VM 1] stress-ng: info:  [78] vm: using 64MB per stressor instance (total 64MB of 871.47MB available memory)
+[host_monotonic_s=188197.664681] 
+[host_monotonic_s=188197.664695] [Axvisor] detached VM[1] console
+[host_monotonic_s=188197.664698] Welcome to AxVisor Shell!
+[host_monotonic_s=188197.664701] Type 'help' to see available commands
+[host_monotonic_s=188197.664704] Use UP/DOWN arrows to navigate command history
+[host_monotonic_s=188197.664706] Console shortcuts:
+[host_monotonic_s=188197.664708]   Ctrl+X, then h  return to the Axvisor shell
+[host_monotonic_s=188197.664710]   Ctrl+X, then [  attach the previous running guest
+[host_monotonic_s=188197.665926]   Ctrl+X, then ]  attach the next running guest
+[host_monotonic_s=188197.666899] Note: Running with limited features (filesystem support disabled).
+[host_monotonic_s=188197.667061] 
+[host_monotonic_s=188198.469301] [2Kaxvisor:$ [2Kaxvisor:$ v[2Kaxvisor:$ vm[2Kaxvisor:$ vm [2Kaxvisor:$ vm c[2Kaxvisor:$ vm co[2Kaxvisor:$ vm con[2Kaxvisor:$ vm cons[2Kaxvisor:$ vm conso[2Kaxvisor:$ vm consol[2Kaxvisor:$ vm console[2Kaxvisor:$ vm console [2Kaxvisor:$ vm console 2
+[host_monotonic_s=188198.470016] ✓ Attached VM[2] console; use Ctrl+X, then h to return to the shell
+[host_monotonic_s=188199.477250] PERIODIC LATENCY START
+[host_monotonic_s=188199.483533] PERIODIC LATENCY SETTLE delay_ms=45000
+[host_monotonic_s=188225.478170] [37m[ 63.311195 0:17 axvisor::rt_burner:48] [32mRT_BURNER_READY cpu=0 busy_ms=10 idle_ms=53 start_delay_ms=60000[m
+[host_monotonic_s=188247.787293] [msequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns
+[host_monotonic_s=188247.787307] 0,10762544,79569025312,79569787856,762544
+[host_monotonic_s=188247.787309] 1,20809120,79579025312,79579834432,809120
+[host_monotonic_s=188247.787312] 2,31046784,79589025312,79590072096,1046784
+[host_monotonic_s=188247.787314] 3,40916688,79599025312,79599942000,916688
+[host_monotonic_s=188247.787315] 4,50972592,79609025312,79609997904,972592
+[host_monotonic_s=188247.797866] 5,60854496,79619025312,79619879808,854496
+[host_monotonic_s=188247.804048] 6,70932304,79629025312,79629957616,932304
+[host_monotonic_s=188247.810407] 7,80845632,79639025312,79639870944,845632
+[host_monotonic_s=188247.816810] 8,90909360,79649025312,79649934672,909360
+[host_monotonic_s=188247.823468] 9,100524464,79659025312,79659549776,524464
+[host_monotonic_s=188247.830222] 10,110703184,79669025312,79669728496,703184
+[host_monotonic_s=188247.836903] 11,120527296,79679025312,79679552608,527296
+[host_monotonic_s=188247.843696] 12,130460800,79689025312,79689486112,460800
+[host_monotonic_s=188247.850630] 13,140568368,79699025312,79699593680,568368
+[host_monotonic_s=188247.860977] 14,150652400,79709025312,79709677712,652400
+[host_monotonic_s=188247.865132] 15,160596240,79719025312,79719621552,596240
+[host_monotonic_s=188247.872790] 16,170786336,79729025312,79729811648,786336
+[host_monotonic_s=188247.879909] 17,180978816,79739025312,79740004128,978816
+[host_monotonic_s=188247.886568] 18,190798320,79749025312,79749823632,798320
+[host_monotonic_s=188247.893369] 19,200821440,79759025312,79759846752,821440
+[host_monotonic_s=188247.900069] 20,210856640,79769025312,79769881952,856640
+[host_monotonic_s=188247.906896] 21,220756048,79779025312,79779781360,756048
+[host_monotonic_s=188247.913384] 22,230925120,79789025312,79789950432,925120
+[host_monotonic_s=188247.923936] 23,240783328,79799025312,79799808640,783328
+[host_monotonic_s=188247.927330] 24,250903360,79809025312,79809928672,903360
+[host_monotonic_s=188247.934021] 25,260834256,79819025312,79819859568,834256
+[host_monotonic_s=188247.940652] 26,270722000,79829025312,79829747312,722000
+[host_monotonic_s=188247.947329] 27,280812560,79839025312,79839837872,812560
+[host_monotonic_s=188247.954022] 28,290812800,79849025312,79849838112,812800
+[host_monotonic_s=188247.960829] 29,300800768,79859025312,79859826080,800768
+[host_monotonic_s=188247.967897] 30,310916896,79869025312,79869942208,916896
+[host_monotonic_s=188247.976379] 31,320816624,79879025312,79879841936,816624
+[host_monotonic_s=188247.987090] 32,330796208,79889025312,79889821520,796208
+[host_monotonic_s=188247.991125] 33,340791440,79899025312,79899816752,791440
+[host_monotonic_s=188247.998045] 34,350818896,79909025312,79909844208,818896
+[host_monotonic_s=188248.005189] 35,360814768,79919025312,79919840080,814768
+[host_monotonic_s=188248.012072] 36,370822432,79929025312,79929847744,822432
+[host_monotonic_s=188248.019194] 37,381039488,79939025312,79940064800,1039488
+[host_monotonic_s=188248.025955] 38,390897280,79949025312,79949922592,897280
+[host_monotonic_s=188248.032900] 39,400964352,79959025312,79959989664,964352
+[host_monotonic_s=188248.337236] 40,410785616,79969025312,79969810928,785616
+[host_monotonic_s=188248.337241] 41,420844928,79979025312,79979870240,844928
+[host_monotonic_s=188248.337243] 42,430755808,79989025312,79989781120,755808
+[host_monotonic_s=188248.337243] 43,440849504,79999025312,79999874816,849504
+[host_monotonic_s=188248.337244] 44,450911664,80009025312,80009936976,911664
+[host_monotonic_s=188248.337245] 45,460832416,80019025312,80019857728,832416
+[host_monotonic_s=188248.347670] 46,470791152,80029025312,80029816464,791152
+[host_monotonic_s=188248.347698] 47,480804608,80039025312,80039829920,804608
+[host_monotonic_s=188248.354016] 48,490822768,80049025312,80049848080,822768
+[host_monotonic_s=188248.360841] 49,500968848,80059025312,80059994160,968848
+[host_monotonic_s=188248.367860] 50,511110848,80069025312,80070136160,1110848
+[host_monotonic_s=188248.374784] 51,520908640,80079025312,80079933952,908640
+[host_monotonic_s=188248.381623] 52,530786800,80089025312,80089812112,786800
+[host_monotonic_s=188248.388490] 53,540892624,80099025312,80099917936,892624
+[host_monotonic_s=188248.395616] 54,550895728,80109025312,80109921040,895728
+[host_monotonic_s=188248.410710] 55,560996752,80119025312,80120022064,996752
+[host_monotonic_s=188248.410783] 56,570976560,80129025312,80130001872,976560
+[host_monotonic_s=188248.417160] 57,580821472,80139025312,80139846784,821472
+[host_monotonic_s=188248.424159] 58,590814080,80149025312,80149839392,814080
+[host_monotonic_s=188248.431160] 59,600912528,80159025312,80159937840,912528
+[host_monotonic_s=188248.438079] 60,610801824,80169025312,80169827136,801824
+[host_monotonic_s=188248.445078] 61,620919488,80179025312,80179944800,919488
+[host_monotonic_s=188248.452205] 62,631032448,80189025312,80190057760,1032448
+[host_monotonic_s=188248.459200] 63,640784656,80199025312,80199809968,784656
+[host_monotonic_s=188248.473760] 64,650796512,80209025312,80209821824,796512
+[host_monotonic_s=188248.473814] 65,660893552,80219025312,80219918864,893552
+[host_monotonic_s=188248.480516] 66,670814320,80229025312,80229839632,814320
+[host_monotonic_s=188248.487386] 67,680842240,80239025312,80239867552,842240
+[host_monotonic_s=188248.494341] 68,690880848,80249025312,80249906160,880848
+[host_monotonic_s=188248.501335] 69,700780480,80259025312,80259805792,780480
+[host_monotonic_s=188248.508458] 70,710752512,80269025312,80269777824,752512
+[host_monotonic_s=188248.515541] 71,720741888,80279025312,80279767200,741888
+[host_monotonic_s=188248.522526] 72,730745040,80289025312,80289770352,745040
+[host_monotonic_s=188248.536983] 73,740758352,80299025312,80299783664,758352
+[host_monotonic_s=188248.538085] 74,750762208,80309025312,80309787520,762208
+[host_monotonic_s=188248.545208] 75,760597616,80319025312,80319622928,597616
+[host_monotonic_s=188248.552207] 76,770599600,80329025312,80329624912,599600
+[host_monotonic_s=188248.559240] 77,780495488,80339025312,80339520800,495488
+[host_monotonic_s=188248.566228] 78,790522864,80349025312,80349548176,522864
+[host_monotonic_s=188248.573209] 79,800486672,80359025312,80359511984,486672
+[host_monotonic_s=188248.580270] 80,810538736,80369025312,80369564048,538736
+[host_monotonic_s=188248.887481] 81,820606272,80379025312,80379631584,606272
+[host_monotonic_s=188248.887493] 82,830528400,80389025312,80389553712,528400
+[host_monotonic_s=188248.887495] 83,840709184,80399025312,80399734496,709184
+[host_monotonic_s=188248.887497] 84,850523632,80409025312,80409548944,523632
+[host_monotonic_s=188248.887499] 85,860703088,80419025312,80419728400,703088
+[host_monotonic_s=188248.887500] 86,870531808,80429025312,80429557120,531808
+[host_monotonic_s=188248.887502] 87,880655168,80439025312,80439680480,655168
+[host_monotonic_s=188248.898806] 88,890596544,80449025312,80449621856,596544
+[host_monotonic_s=188248.905441] 89,900598464,80459025312,80459623776,598464
+[host_monotonic_s=188248.912097] 90,910599568,80469025312,80469624880,599568
+[host_monotonic_s=188248.918777] 91,920596480,80479025312,80479621792,596480
+[host_monotonic_s=188248.925467] 92,930590784,80489025312,80489616096,590784
+[host_monotonic_s=188248.932106] 93,940557632,80499025312,80499582944,557632
+[host_monotonic_s=188248.938862] 94,950731328,80509025312,80509756640,731328
+[host_monotonic_s=188248.945570] 95,960654336,80519025312,80519679648,654336
+[host_monotonic_s=188248.961221] 96,970741568,80529025312,80529766880,741568
+[host_monotonic_s=188248.961267] 97,980570032,80539025312,80539595344,570032
+[host_monotonic_s=188248.966235] 98,990654240,80549025312,80549679552,654240
+[host_monotonic_s=188248.973178] 99,1000612528,80559025312,80559637840,612528
+[host_monotonic_s=188248.980406] 100,1010528272,80569025312,80569553584,528272
+[host_monotonic_s=188248.987569] 101,1020633536,80579025312,80579658848,633536
+[host_monotonic_s=188248.994643] 102,1030502688,80589025312,80589528000,502688
+[host_monotonic_s=188249.001894] 103,1040500816,80599025312,80599526128,500816
+[host_monotonic_s=188249.009147] 104,1050625248,80609025312,80609650560,625248
+[host_monotonic_s=188249.024306] 105,1060601024,80619025312,80619626336,601024
+[host_monotonic_s=188249.024429] 106,1070655664,80629025312,80629680976,655664
+[host_monotonic_s=188249.031555] 107,1080470768,80639025312,80639496080,470768
+[host_monotonic_s=188249.038890] 108,1090497808,80649025312,80649523120,497808
+[host_monotonic_s=188249.046183] 109,1100474896,80659025312,80659500208,474896
+[host_monotonic_s=188249.053526] 110,1110466096,80669025312,80669491408,466096
+[host_monotonic_s=188249.060865] 111,1120541952,80679025312,80679567264,541952
+[host_monotonic_s=188249.068080] 112,1130682752,80689025312,80689708064,682752
+[host_monotonic_s=188249.075162] 113,1140400848,80699025312,80699426160,400848
+[host_monotonic_s=188249.087405] 114,1150495664,80709025312,80709520976,495664
+[host_monotonic_s=188249.089909] 115,1160455248,80719025312,80719480560,455248
+[host_monotonic_s=188249.096952] 116,1170469936,80729025312,80729495248,469936
+[host_monotonic_s=188249.103884] 117,1180537824,80739025312,80739563136,537824
+[host_monotonic_s=188249.110840] 118,1190528864,80749025312,80749554176,528864
+[host_monotonic_s=188249.117779] 119,1200477328,80759025312,80759502640,477328
+[host_monotonic_s=188249.124818] 120,1210470368,80769025312,80769495680,470368
+[host_monotonic_s=188249.131819] 121,1220483408,80779025312,80779508720,483408
+[host_monotonic_s=188249.437779] 122,1230582240,80789025312,80789607552,582240
+[host_monotonic_s=188249.437785] 123,1240675568,80799025312,80799700880,675568
+[host_monotonic_s=188249.437786] 124,1250540192,80809025312,80809565504,540192
+[host_monotonic_s=188249.437787] 125,1260711264,80819025312,80819736576,711264
+[host_monotonic_s=188249.437788] 126,1270716464,80829025312,80829741776,716464
+[host_monotonic_s=188249.437788] 127,1280576192,80839025312,80839601504,576192
+[host_monotonic_s=188249.448298] 128,1290575440,80849025312,80849600752,575440
+[host_monotonic_s=188249.448339] 129,1300508032,80859025312,80859533344,508032
+[host_monotonic_s=188249.454865] 130,1310531936,80869025312,80869557248,531936
+[host_monotonic_s=188249.461918] 131,1320478560,80879025312,80879503872,478560
+[host_monotonic_s=188249.469022] 132,1330507296,80889025312,80889532608,507296
+[host_monotonic_s=188249.476197] 133,1340456160,80899025312,80899481472,456160
+[host_monotonic_s=188249.483384] 134,1350458384,80909025312,80909483696,458384
+[host_monotonic_s=188249.490453] 135,1360522624,80919025312,80919547936,522624
+[host_monotonic_s=188249.497708] 136,1370502912,80929025312,80929528224,502912
+[host_monotonic_s=188249.511324] 137,1380517648,80939025312,80939542960,517648
+[host_monotonic_s=188249.512507] 138,1390537312,80949025312,80949562624,537312
+[host_monotonic_s=188249.519416] 139,1400479872,80959025312,80959505184,479872
+[host_monotonic_s=188249.526456] 140,1410671648,80969025312,80969696960,671648
+[host_monotonic_s=188249.533697] 141,1420513440,80979025312,80979538752,513440
+[host_monotonic_s=188249.540884] 142,1430436304,80989025312,80989461616,436304
+[host_monotonic_s=188249.548473] 143,1440705104,80999025312,80999730416,705104
+[host_monotonic_s=188249.556022] 144,1450518032,81009025312,81009543344,518032
+[host_monotonic_s=188249.563723] 145,1460511520,81019025312,81019536832,511520
+[host_monotonic_s=188249.574471] 146,1470495856,81029025312,81029521168,495856
+[host_monotonic_s=188249.579182] 147,1480460112,81039025312,81039485424,460112
+[host_monotonic_s=188249.586788] 148,1490482800,81049025312,81049508112,482800
+[host_monotonic_s=188249.594447] 149,1500458944,81059025312,81059484256,458944
+[host_monotonic_s=188249.602200] 150,1510523072,81069025312,81069548384,523072
+[host_monotonic_s=188249.609734] 151,1520467936,81079025312,81079493248,467936
+[host_monotonic_s=188249.617317] 152,1530474128,81089025312,81089499440,474128
+[host_monotonic_s=188249.624748] 153,1540689472,81099025312,81099714784,689472
+[host_monotonic_s=188249.637498] 154,1550460384,81109025312,81109485696,460384
+[host_monotonic_s=188249.640513] 155,1560509744,81119025312,81119535056,509744
+[host_monotonic_s=188249.648012] 156,1570584256,81129025312,81129609568,584256
+[host_monotonic_s=188249.655898] 157,1580740080,81139025312,81139765392,740080
+[host_monotonic_s=188249.663492] 158,1590788848,81149025312,81149814160,788848
+[host_monotonic_s=188249.671224] 159,1600938752,81159025312,81159964064,938752
+[host_monotonic_s=188249.679630] 160,1610915520,81169025312,81169940832,915520
+[host_monotonic_s=188249.988445] 161,1620848688,81179025312,81179874000,848688
+[host_monotonic_s=188249.988461] 162,1630959456,81189025312,81189984768,959456
+[host_monotonic_s=188249.988465] 163,1640723120,81199025312,81199748432,723120
+[host_monotonic_s=188249.988468] 164,1650849584,81209025312,81209874896,849584
+[host_monotonic_s=188249.988470] 165,1660821776,81219025312,81219847088,821776
+[host_monotonic_s=188249.988473] 166,1670850464,81229025312,81229875776,850464
+[host_monotonic_s=188249.998778] 167,1680928144,81239025312,81239953456,928144
+[host_monotonic_s=188250.002635] 168,1690987328,81249025312,81250012640,987328
+[host_monotonic_s=188250.009572] 169,1700968080,81259025312,81259993392,968080
+[host_monotonic_s=188250.016451] 170,1710922928,81269025312,81269948240,922928
+[host_monotonic_s=188250.023361] 171,1720885648,81279025312,81279910960,885648
+[host_monotonic_s=188250.030218] 172,1730853840,81289025312,81289879152,853840
+[host_monotonic_s=188250.037151] 173,1740742048,81299025312,81299767360,742048
+[host_monotonic_s=188250.044055] 174,1750796656,81309025312,81309821968,796656
+[host_monotonic_s=188250.050988] 175,1760899760,81319025312,81319925072,899760
+[host_monotonic_s=188250.061872] 176,1770887856,81329025312,81329913168,887856
+[host_monotonic_s=188250.065452] 177,1780820784,81339025312,81339846096,820784
+[host_monotonic_s=188250.072291] 178,1790798864,81349025312,81349824176,798864
+[host_monotonic_s=188250.079614] 179,1801081120,81359025312,81360106432,1081120
+[host_monotonic_s=188250.086542] 180,1810865280,81369025312,81369890592,865280
+[host_monotonic_s=188250.093802] 181,1821058688,81379025312,81380084000,1058688
+[host_monotonic_s=188250.100747] 182,1830898976,81389025312,81389924288,898976
+[host_monotonic_s=188250.107804] 183,1840922656,81399025312,81399947968,922656
+[host_monotonic_s=188250.124884] 184,1850939008,81409025312,81409964320,939008
+[host_monotonic_s=188250.124947] 185,1860835888,81419025312,81419861200,835888
+[host_monotonic_s=188250.129435] 186,1870805520,81429025312,81429830832,805520
+[host_monotonic_s=188250.136629] 187,1881136224,81439025312,81440161536,1136224
+[host_monotonic_s=188250.143750] 188,1890914768,81449025312,81449940080,914768
+[host_monotonic_s=188250.151010] 189,1901043616,81459025312,81460068928,1043616
+[host_monotonic_s=188250.157970] 190,1910856720,81469025312,81469882032,856720
+[host_monotonic_s=188250.165031] 191,1920816176,81479025312,81479841488,816176
+[host_monotonic_s=188250.172092] 192,1930846112,81489025312,81489871424,846112
+[host_monotonic_s=188250.187955] 193,1940872080,81499025312,81499897392,872080
+[host_monotonic_s=188250.188036] 194,1950990864,81509025312,81510016176,990864
+[host_monotonic_s=188250.193970] 195,1960841920,81519025312,81519867232,841920
+[host_monotonic_s=188250.201039] 196,1970844000,81529025312,81529869312,844000
+[host_monotonic_s=188250.208123] 197,1980835664,81539025312,81539860976,835664
+[host_monotonic_s=188250.215282] 198,1990999216,81549025312,81550024528,999216
+[host_monotonic_s=188250.222405] 199,2000908432,81559025312,81559933744,908432
+[host_monotonic_s=188250.229706] 200,2010989328,81569025312,81570014640,989328
+[host_monotonic_s=188250.237086] 201,2020917424,81579025312,81579942736,917424
+[host_monotonic_s=188250.538242] 202,2030850160,81589025312,81589875472,850160
+[host_monotonic_s=188250.538248] 203,2040854128,81599025312,81599879440,854128
+[host_monotonic_s=188250.538249] 204,2050866192,81609025312,81609891504,866192
+[host_monotonic_s=188250.538249] 205,2060874080,81619025312,81619899392,874080
+[host_monotonic_s=188250.538250] 206,2070797488,81629025312,81629822800,797488
+[host_monotonic_s=188250.538251] 207,2081112032,81639025312,81640137344,1112032
+[host_monotonic_s=188250.548753] 208,2090880832,81649025312,81649906144,880832
+[host_monotonic_s=188250.553108] 209,2100985696,81659025312,81660011008,985696
+[host_monotonic_s=188250.560449] 210,2110860128,81669025312,81669885440,860128
+[host_monotonic_s=188250.567378] 211,2120953920,81679025312,81679979232,953920
+[host_monotonic_s=188250.574426] 212,2130934768,81689025312,81689960080,934768
+[host_monotonic_s=188250.581546] 213,2140890768,81699025312,81699916080,890768
+[host_monotonic_s=188250.588738] 214,2150988976,81709025312,81710014288,988976
+[host_monotonic_s=188250.595902] 215,2160930992,81719025312,81719956304,930992
+[host_monotonic_s=188250.611711] 216,2170845248,81729025312,81729870560,845248
+[host_monotonic_s=188250.612442] 217,2180948256,81739025312,81739973568,948256
+[host_monotonic_s=188250.619764] 218,2190900880,81749025312,81749926192,900880
+[host_monotonic_s=188250.627362] 219,2201224464,81759025312,81760249776,1224464
+[host_monotonic_s=188250.635650] 220,2210815792,81769025312,81769841104,815792
+[host_monotonic_s=188250.643405] 221,2220841376,81779025312,81779866688,841376
+[host_monotonic_s=188250.651102] 222,2230809296,81789025312,81789834608,809296
+[host_monotonic_s=188250.658815] 223,2240846400,81799025312,81799871712,846400
+[host_monotonic_s=188250.674791] 224,2250903632,81809025312,81809928944,903632
+[host_monotonic_s=188250.674853] 225,2260998576,81819025312,81820023888,998576
+[host_monotonic_s=188250.681148] 226,2270863824,81829025312,81829889136,863824
+[host_monotonic_s=188250.689642] 227,2280928560,81839025312,81839953872,928560
+[host_monotonic_s=188250.697295] 228,2290944288,81849025312,81849969600,944288
+[host_monotonic_s=188250.704478] 229,2300882240,81859025312,81859907552,882240
+[host_monotonic_s=188250.711628] 230,2310828448,81869025312,81869853760,828448
+[host_monotonic_s=188250.719333] 231,2320832784,81879025312,81879858096,832784
+[host_monotonic_s=188250.726532] 232,2330973968,81889025312,81889999280,973968
+[host_monotonic_s=188250.737890] 233,2340805392,81899025312,81899830704,805392
+[host_monotonic_s=188250.741388] 234,2350828880,81909025312,81909854192,828880
+[host_monotonic_s=188250.748374] 235,2360817824,81919025312,81919843136,817824
+[host_monotonic_s=188250.755654] 236,2370848112,81929025312,81929873424,848112
+[host_monotonic_s=188250.762855] 237,2380925184,81939025312,81939950496,925184
+[host_monotonic_s=188250.769948] 238,2390952512,81949025312,81949977824,952512
+[host_monotonic_s=188250.777260] 239,2400686928,81959025312,81959712240,686928
+[host_monotonic_s=188250.784613] 240,2410952976,81969025312,81969978288,952976
+[host_monotonic_s=188251.088511] 241,2420977968,81979025312,81980003280,977968
+[host_monotonic_s=188251.088516] 242,2430856192,81989025312,81989881504,856192
+[host_monotonic_s=188251.088517] 243,2440880208,81999025312,81999905520,880208
+[host_monotonic_s=188251.088518] 244,2450888688,82009025312,82009914000,888688
+[host_monotonic_s=188251.088518] 245,2460799792,82019025312,82019825104,799792
+[host_monotonic_s=188251.088519] 246,2470840032,82029025312,82029865344,840032
+[host_monotonic_s=188251.099150] 247,2480942672,82039025312,82039967984,942672
+[host_monotonic_s=188251.100950] 248,2490926432,82049025312,82049951744,926432
+[host_monotonic_s=188251.108008] 249,2500826784,82059025312,82059852096,826784
+[host_monotonic_s=188251.115265] 250,2510928096,82069025312,82069953408,928096
+[host_monotonic_s=188251.122389] 251,2520868448,82079025312,82079893760,868448
+[host_monotonic_s=188251.129540] 252,2530848144,82089025312,82089873456,848144
+[host_monotonic_s=188251.136987] 253,2540927760,82099025312,82099953072,927760
+[host_monotonic_s=188251.144507] 254,2550915440,82109025312,82109940752,915440
+[host_monotonic_s=188251.162051] 255,2561009856,82119025312,82120035168,1009856
+[host_monotonic_s=188251.162115] 256,2571082864,82129025312,82130108176,1082864
+[host_monotonic_s=188251.167669] 257,2580927120,82139025312,82139952432,927120
+[host_monotonic_s=188251.175383] 258,2591119936,82149025312,82150145248,1119936
+[host_monotonic_s=188251.183184] 259,2600693504,82159025312,82159718816,693504
+[host_monotonic_s=188251.190726] 260,2610671440,82169025312,82169696752,671440
+[host_monotonic_s=188251.198298] 261,2620502912,82179025312,82179528224,502912
+[host_monotonic_s=188251.205968] 262,2630611024,82189025312,82189636336,611024
+[host_monotonic_s=188251.213332] 263,2640791408,82199025312,82199816720,791408
+[host_monotonic_s=188251.225221] 264,2650748352,82209025312,82209773664,748352
+[host_monotonic_s=188251.229715] 265,2660646576,82219025312,82219671888,646576
+[host_monotonic_s=188251.237671] 266,2670486944,82229025312,82229512256,486944
+[host_monotonic_s=188251.245645] 267,2680578240,82239025312,82239603552,578240
+[host_monotonic_s=188251.253825] 268,2690603904,82249025312,82249629216,603904
+[host_monotonic_s=188251.261963] 269,2700817152,82259025312,82259842464,817152
+[host_monotonic_s=188251.269872] 270,2710675024,82269025312,82269700336,675024
+[host_monotonic_s=188251.277554] 271,2720719504,82279025312,82279744816,719504
+[host_monotonic_s=188251.288278] 272,2730685744,82289025312,82289711056,685744
+[host_monotonic_s=188251.293392] 273,2740584784,82299025312,82299610096,584784
+[host_monotonic_s=188251.301482] 274,2750584864,82309025312,82309610176,584864
+[host_monotonic_s=188251.309330] 275,2760766016,82319025312,82319791328,766016
+[host_monotonic_s=188251.316936] 276,2770783168,82329025312,82329808480,783168
+[host_monotonic_s=188251.324637] 277,2780619808,82339025312,82339645120,619808
+[host_monotonic_s=188251.332571] 278,2790581632,82349025312,82349606944,581632
+[host_monotonic_s=188251.638821] 279,2800744992,82359025312,82359770304,744992
+[host_monotonic_s=188251.638826] 280,2810609632,82369025312,82369634944,609632
+[host_monotonic_s=188251.638827] 281,2820757024,82379025312,82379782336,757024
+[host_monotonic_s=188251.638828] 282,2830663056,82389025312,82389688368,663056
+[host_monotonic_s=188251.638829] 283,2840613152,82399025312,82399638464,613152
+[host_monotonic_s=188251.638829] 284,2850593728,82409025312,82409619040,593728
+[host_monotonic_s=188251.649175] 285,2860617424,82419025312,82419642736,617424
+[host_monotonic_s=188251.650483] 286,2870712320,82429025312,82429737632,712320
+[host_monotonic_s=188251.658677] 287,2880711776,82439025312,82439737088,711776
+[host_monotonic_s=188251.666878] 288,2890681664,82449025312,82449706976,681664
+[host_monotonic_s=188251.675259] 289,2900871488,82459025312,82459896800,871488
+[host_monotonic_s=188251.683224] 290,2910621824,82469025312,82469647136,621824
+[host_monotonic_s=188251.690894] 291,2920638960,82479025312,82479664272,638960
+[host_monotonic_s=188251.698595] 292,2930665408,82489025312,82489690720,665408
+[host_monotonic_s=188251.712279] 293,2940644640,82499025312,82499669952,644640
+[host_monotonic_s=188251.714351] 294,2950711952,82509025312,82509737264,711952
+[host_monotonic_s=188251.722192] 295,2960732336,82519025312,82519757648,732336
+[host_monotonic_s=188251.729633] 296,2970711440,82529025312,82529736752,711440
+[host_monotonic_s=188251.737012] 297,2980592240,82539025312,82539617552,592240
+[host_monotonic_s=188251.744375] 298,2990742352,82549025312,82549767664,742352
+[host_monotonic_s=188251.751674] 299,3000728272,82559025312,82559753584,728272
+[host_monotonic_s=188251.757876] PERIODIC LATENCY COMPLETE samples=300
+[host_monotonic_s=188252.558755] 
+[host_monotonic_s=188252.558761] [Axvisor] detached VM[2] console
+[host_monotonic_s=188253.359776] [2Kaxvisor:$ [2Kaxvisor:$ r[2Kaxvisor:$ rt[2Kaxvisor:$ rt [2Kaxvisor:$ rt s[2Kaxvisor:$ rt st[2Kaxvisor:$ rt sta[2Kaxvisor:$ rt stat
+[host_monotonic_s=188253.359782] RT vCPU wait counters:
+[host_monotonic_s=188253.359784]   vcpu=0 parks=16040 wakes=16037 notify_woke=1
+[host_monotonic_s=188253.359785]   vcpu=1 parks=47974 wakes=42712 notify_woke=0
+[host_monotonic_s=188253.359786]   lr_skips=0
+[host_monotonic_s=188253.360215] RT device-poll counters:
+[host_monotonic_s=188253.360527]   vm=1 published=0 kicked=0 consumed=0 pending=false
+[host_monotonic_s=188253.360650]   vm=2 published=1 kicked=1 consumed=1 pending=false
+[host_monotonic_s=188253.360719] RT AxVM timer counters:
+[host_monotonic_s=188253.360864]   cpu=0 registered=0 cancelled=0 expired=0 worker_wakes=9469
+[host_monotonic_s=188253.361017]   cpu=1 registered=31831 cancelled=15959 expired=15871 worker_wakes=15872
+[host_monotonic_s=188253.361145]   cpu=2 registered=246 cancelled=133 expired=113 worker_wakes=9413
+[host_monotonic_s=188253.361241]   cpu=3 registered=87627 cancelled=44592 expired=43035 worker_wakes=52894
+[host_monotonic_s=188253.361355] RT host hardware timer IRQ counters:
+[host_monotonic_s=188253.361421]   cpu=0 irqs=9731
+[host_monotonic_s=188253.361462]   cpu=1 irqs=15872
+[host_monotonic_s=188253.361496]   cpu=2 irqs=9455
+[host_monotonic_s=188253.361536]   cpu=3 irqs=53386
+[host_monotonic_s=188253.362026] RT console counters: attached=None flush_calls=5943438 host_write_bytes=30617
+[host_monotonic_s=188253.362320]   vm=1 active=true input_enqueued=0 input_drained=0 input_dropped=0 input_pending=0 output_enqueued=15062 output_drained=15062 output_dropped=0 output_pending=0
+[host_monotonic_s=188253.362594]   vm=2 active=true input_enqueued=1 input_drained=1 input_dropped=0 input_pending=0 output_enqueued=14117 output_drained=14117 output_dropped=0 output_pending=0
+[host_monotonic_s=188257.565889] axvisor:$ 

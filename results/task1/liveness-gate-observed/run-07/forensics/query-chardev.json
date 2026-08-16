@@ -1,0 +1,19 @@
+{
+  "return": [
+    {
+      "filename": "vc",
+      "frontend-open": false,
+      "label": "parallel0"
+    },
+    {
+      "filename": "unix:/home/huhu/tgoskits-rt/results/task1/liveness-gate-observed/run-07/qmp.sock,server=on",
+      "frontend-open": true,
+      "label": "compat_monitor0"
+    },
+    {
+      "filename": "unix:/home/huhu/tgoskits-rt/results/task1/liveness-gate-observed/run-07/serial.sock,server=on",
+      "frontend-open": true,
+      "label": "serial0"
+    }
+  ]
+}

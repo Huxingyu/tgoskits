@@ -1,0 +1,14 @@
+expect 120 Default guest initialized
+expect 300 RT_CYCLICTEST_START
+expect 60 RT_PROGRESS uptime_s=
+detach
+expect 10 \[Axvisor\] detached VM\[1\] console
+cmd vm console 2
+expect 10 Attached VM\[2\] console
+expect 10 PERIODIC LATENCY READY
+send-until 60 0.5 g PERIODIC LATENCY START
+detach
+expect 10 \[Axvisor\] detached VM\[2\] console
+cmd rt stat
+sleep 2
+qmp-quit /home/huhu/tgoskits-rt/results/task1/liveness-gate-postkick/run-09/qmp.sock

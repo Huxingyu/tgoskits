@@ -1,0 +1,11 @@
+run=01 status=PASS passes=1 failures=0
+run=02 status=PASS passes=2 failures=0
+run=03 status=PASS passes=3 failures=0
+run=04 status=PASS passes=4 failures=0
+run=05 status=PASS passes=5 failures=0
+run=06 status=PASS passes=6 failures=0
+run=07 status=FAIL passes=6 failures=1
+run=08 status=PASS passes=7 failures=1
+run=09 status=PASS passes=8 failures=1
+run=10 status=FAIL passes=8 failures=2
+total=10 passes=8 failures=2

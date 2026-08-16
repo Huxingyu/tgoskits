@@ -1,0 +1,6 @@
+sent: detach to Axvisor shell
+sent: RT snapshot 1
+sent: VM-exit snapshot 1
+sent: RT snapshot 2
+sent: VM-exit snapshot 2
+sent: reattach Linux VM

@@ -1,0 +1,56 @@
+{
+  "return": [
+    {
+      "cpu-index": 0,
+      "props": {
+        "cluster-id": 0,
+        "core-id": 0,
+        "socket-id": 0,
+        "thread-id": 0
+      },
+      "qom-path": "/machine/unattached/device[0]",
+      "qom-type": "cortex-a72-arm-cpu",
+      "target": "aarch64",
+      "thread-id": 407388
+    },
+    {
+      "cpu-index": 1,
+      "props": {
+        "cluster-id": 0,
+        "core-id": 1,
+        "socket-id": 0,
+        "thread-id": 0
+      },
+      "qom-path": "/machine/unattached/device[1]",
+      "qom-type": "cortex-a72-arm-cpu",
+      "target": "aarch64",
+      "thread-id": 407389
+    },
+    {
+      "cpu-index": 2,
+      "props": {
+        "cluster-id": 0,
+        "core-id": 2,
+        "socket-id": 0,
+        "thread-id": 0
+      },
+      "qom-path": "/machine/unattached/device[2]",
+      "qom-type": "cortex-a72-arm-cpu",
+      "target": "aarch64",
+      "thread-id": 407390
+    },
+    {
+      "cpu-index": 3,
+      "props": {
+        "cluster-id": 0,
+        "core-id": 3,
+        "socket-id": 0,
+        "thread-id": 0
+      },
+      "qom-path": "/machine/unattached/device[3]",
+      "qom-type": "cortex-a72-arm-cpu",
+      "target": "aarch64",
+      "thread-id": 407391
+    }
+  ]
+}
