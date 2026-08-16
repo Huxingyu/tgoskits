@@ -54,52 +54,85 @@ pub fn create_guest_fdt(
             &machine_interrupt_providers,
         )
     })?;
-    renumber_guest_cpu_nodes(&mut guest_tree, crate_config.base.cpu_num)?;
+    rebuild_guest_cpu_nodes(&mut guest_tree, phys_cpu_ids)?;
     prune_dangling_interrupts_extended(fdt, &mut guest_tree)?;
     Ok(guest_tree.finish())
 }
 
-/// Rewrites the `reg` of every kept CPU node so the guest sees MPIDR
-/// 0..n in vCPU order instead of the host physical CPU IDs.
+/// Rebuilds the CPU subtree so node names and `reg` values both match the
+/// guest-visible MPIDR sequence, in configured vCPU order.
 ///
 /// The guest-visible MPIDR is decoupled from the physical placement
 /// (vCPU i always sees affinity i, no matter which pCPU it runs on), so the
 /// FDT handed to the guest must follow the same numbering; otherwise the
 /// boot CPU and PSCI CPU_ON targets (which the guest derives from the FDT
 /// `reg` cells) never match the vCPUs that exist.
-fn renumber_guest_cpu_nodes(guest_tree: &mut FdtTree, cpu_count: usize) -> AxVmResult {
-    let mut kept_cpu_nodes = guest_tree
-        .inner()
-        .iter_node_ids()
-        .filter(|node_id| {
-            guest_tree
-                .inner()
-                .path_of(*node_id)
-                .starts_with("/cpus/cpu@")
-        })
-        .collect::<Vec<_>>();
-    if kept_cpu_nodes.len() > cpu_count {
-        warn!(
-            "guest FDT keeps {} CPU nodes for {} vCPUs; truncating",
-            kept_cpu_nodes.len(),
-            cpu_count
-        );
-        kept_cpu_nodes.truncate(cpu_count);
+fn rebuild_guest_cpu_nodes(guest_tree: &mut FdtTree, phys_cpu_ids: &[usize]) -> AxVmResult {
+    let snapshot = guest_tree.inner().clone();
+    let cpus_id = snapshot
+        .get_by_path_id("/cpus")
+        .ok_or_else(|| ax_err_type!(InvalidData, "guest FDT has no /cpus node"))?;
+    let mut selected = Vec::with_capacity(phys_cpu_ids.len());
+    for phys_cpu_id in phys_cpu_ids {
+        let source_id = snapshot
+            .iter_node_ids()
+            .find(|node_id| {
+                let path = snapshot.path_of(*node_id);
+                path.starts_with("/cpus/cpu@") && cpu_node_id(&path) == Some(*phys_cpu_id)
+            })
+            .or_else(|| {
+                snapshot.iter_node_ids().find(|node_id| {
+                    snapshot.path_of(*node_id).starts_with("/cpus/cpu@")
+                        && cpu_reg_address(&snapshot, *node_id) == Some(*phys_cpu_id)
+                })
+            })
+            .ok_or_else(|| {
+                ax_err_type!(
+                    InvalidData,
+                    std::format!("guest FDT has no CPU node for physical CPU {phys_cpu_id}")
+                )
+            })?;
+        selected.push(source_id);
     }
-    if kept_cpu_nodes.len() != cpu_count {
+    if selected.len() != phys_cpu_ids.len() {
         return Err(ax_err_type!(
             InvalidData,
             std::format!(
-                "guest FDT keeps {} CPU nodes but the VM has {cpu_count} vCPUs",
-                kept_cpu_nodes.len()
+                "guest FDT selected {} CPU nodes but the VM has {} vCPUs",
+                selected.len(),
+                phys_cpu_ids.len()
             )
         ));
     }
-    for (index, node_id) in kept_cpu_nodes.into_iter().enumerate() {
+
+    let old_cpu_paths = guest_tree
+        .inner()
+        .iter_node_ids()
+        .map(|node_id| guest_tree.inner().path_of(node_id))
+        .filter(|path| path.starts_with("/cpus/cpu@"))
+        .collect::<Vec<_>>();
+    for path in old_cpu_paths {
+        guest_tree.inner_mut().remove_by_path(&path);
+    }
+    guest_tree.inner_mut().remove_by_path("/cpus/cpu-map");
+
+    let guest_cpus_id = guest_tree
+        .inner()
+        .get_by_path_id("/cpus")
+        .ok_or_else(|| ax_err_type!(InvalidData, "guest FDT lost /cpus while rebuilding"))?;
+    debug_assert_eq!(snapshot.path_of(cpus_id), "/cpus");
+    for (index, source_id) in selected.into_iter().enumerate() {
+        let node_id = guest_tree.copy_subtree_named_from(
+            &snapshot,
+            source_id,
+            guest_cpus_id,
+            &std::format!("cpu@{index:x}"),
+            true,
+        )?;
         guest_tree
             .inner_mut()
             .view_typed_mut(node_id)
-            .ok_or_else(|| ax_err_type!(InvalidData, "kept CPU node vanished while renumbering"))?
+            .ok_or_else(|| ax_err_type!(InvalidData, "rebuilt CPU node is missing"))?
             .set_regs(&[RegInfo::new(index as u64, None)]);
     }
     Ok(())
@@ -118,8 +151,12 @@ fn should_keep_generated_node(
         return false;
     }
 
-    if node_path == "/cpus" || node_path.starts_with("/cpus/cpu-map") {
+    if node_path == "/cpus" {
         return true;
+    }
+
+    if node_path.starts_with("/cpus/cpu-map") {
+        return false;
     }
 
     if node_path.starts_with("/cpus/cpu@") {
@@ -716,6 +753,11 @@ mod tests {
         let guest_bytes = create_guest_fdt(&fdt, &[], &config).unwrap();
         let guest = Fdt::from_bytes(&guest_bytes).unwrap();
 
+        assert!(guest.get_by_path_id("/cpus/cpu@0").is_some());
+        assert!(guest.get_by_path_id("/cpus/cpu@1").is_some());
+        assert!(guest.get_by_path_id("/cpus/cpu@2").is_none());
+        assert!(guest.get_by_path_id("/cpus/cpu@3").is_none());
+
         let regs: std::vec::Vec<_> = guest
             .iter_node_ids()
             .map(|id| (id, guest.path_of(id)))
@@ -826,9 +868,38 @@ mod tests {
         let dtb = super::create_guest_fdt(&fdt, &[], &cfg).unwrap();
         let reparsed = Fdt::from_bytes(&dtb).unwrap();
 
-        assert!(reparsed.get_by_path_id("/cpus/cpu@100").is_some());
-        assert!(reparsed.get_by_path_id("/cpus/cpu@0").is_none());
+        assert!(reparsed.get_by_path_id("/cpus/cpu@0").is_some());
+        assert_eq!(
+            reparsed
+                .view_typed(reparsed.get_by_path_id("/cpus/cpu@0").unwrap())
+                .unwrap()
+                .regs()[0]
+                .address,
+            0
+        );
         assert!(reparsed.get_by_path_id("/cpus/cpu@101").is_none());
+    }
+
+    #[test]
+    fn generated_fdt_removes_stale_host_cpu_map() {
+        let mut fdt = test_fdt("cpu@0=0\ncpu@1=1\ncpu@2=2\ncpu@3=3");
+        let cpus = fdt.get_by_path_id("/cpus").unwrap();
+        let cpu_map = fdt.add_node(cpus, Node::new("cpu-map"));
+        let cluster = fdt.add_node(cpu_map, Node::new("cluster0"));
+        fdt.add_node(cluster, Node::new("core0"));
+        let cfg = GuestConfig {
+            base: axvmconfig::VMBaseConfig {
+                cpu_num: 2,
+                phys_cpu_ids: Some(std::vec![2, 3]),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+
+        let dtb = super::create_guest_fdt(&fdt, &[], &cfg).unwrap();
+        let reparsed = Fdt::from_bytes(&dtb).unwrap();
+
+        assert!(reparsed.get_by_path_id("/cpus/cpu-map").is_none());
     }
 
     #[test]
