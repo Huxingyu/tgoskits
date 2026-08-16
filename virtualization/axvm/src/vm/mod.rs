@@ -187,6 +187,9 @@ pub(crate) struct VmRuntimeHandle {
     pending_interrupts: Mutex<BTreeMap<usize, Vec<PendingInterrupt>>>,
     irq_dispatcher: crate::runtime::VcpuIrqDispatcher,
     device_poll_requested: AtomicBool,
+    device_poll_published: AtomicUsize,
+    device_poll_kicked: AtomicUsize,
+    device_poll_consumed: AtomicUsize,
     #[cfg(feature = "realtime-trace")]
     virq_trace: crate::runtime::VirqTraceRing,
     trace_vm_id: AtomicUsize,
@@ -253,6 +256,9 @@ impl VmRuntimeHandle {
             pending_interrupts: Mutex::new(BTreeMap::new()),
             irq_dispatcher: crate::runtime::VcpuIrqDispatcher::new(),
             device_poll_requested: AtomicBool::new(false),
+            device_poll_published: AtomicUsize::new(0),
+            device_poll_kicked: AtomicUsize::new(0),
+            device_poll_consumed: AtomicUsize::new(0),
             #[cfg(feature = "realtime-trace")]
             virq_trace: crate::runtime::VirqTraceRing::new(),
             trace_vm_id: AtomicUsize::new(0),
@@ -516,11 +522,6 @@ impl VmRuntimeHandle {
         }
     }
 
-    pub(crate) fn notify_one(&self) {
-        self.notification_generation.fetch_add(1, Ordering::Release);
-        self.wait_queue.notify_one(false);
-    }
-
     pub(crate) fn notify_all(&self) {
         self.notification_generation.fetch_add(1, Ordering::Release);
         self.wait_queue.notify_all(false);
@@ -592,10 +593,26 @@ impl VmRuntimeHandle {
 
     /// Publishes pending device work before waking the primary vCPU.
     pub(crate) fn notify_device_poll(&self) {
+        self.notify_device_poll_with(|| self.vcpu_cpu_id(0), crate::host::task::send_ipi);
+    }
+
+    fn notify_device_poll_with(
+        &self,
+        target_cpu: impl FnOnce() -> AxVmResult<usize>,
+        kick: impl FnOnce(usize),
+    ) {
+        self.device_poll_published.fetch_add(1, Ordering::Relaxed);
         self.device_poll_requested.store(true, Ordering::Release);
         // vCPU0 is the only vCPU that polls devices; wake its task on the
         // per-vCPU queue (or the legacy queue before it is published).
         self.notify_vcpu_unconditional(0);
+        // A dedicated CPU has no periodic scheduler tick to recover a task that
+        // became ready at the switch-to-idle boundary. Kick the registered pCPU
+        // after publishing the request so its IRQ exit must revisit the run queue.
+        if let Ok(cpu_id) = target_cpu() {
+            self.device_poll_kicked.fetch_add(1, Ordering::Relaxed);
+            kick(cpu_id);
+        }
     }
 
     #[cfg(any(target_arch = "aarch64", test))]
@@ -604,7 +621,20 @@ impl VmRuntimeHandle {
     }
 
     pub(crate) fn take_device_poll_request(&self) -> bool {
-        self.device_poll_requested.swap(false, Ordering::AcqRel)
+        let consumed = self.device_poll_requested.swap(false, Ordering::AcqRel);
+        if consumed {
+            self.device_poll_consumed.fetch_add(1, Ordering::Relaxed);
+        }
+        consumed
+    }
+
+    fn device_poll_counts(&self) -> crate::DevicePollRuntimeCounts {
+        crate::DevicePollRuntimeCounts {
+            published: self.device_poll_published.load(Ordering::Relaxed),
+            kicked: self.device_poll_kicked.load(Ordering::Relaxed),
+            consumed: self.device_poll_consumed.load(Ordering::Relaxed),
+            pending: self.device_poll_requested.load(Ordering::Acquire),
+        }
     }
 
     pub(crate) fn mark_vcpu_running(&self) {
@@ -746,6 +776,54 @@ mod runtime_handle_tests {
         assert!(runtime.take_deferred_reset_request());
         assert!(!runtime.take_deferred_reset_request());
         assert!(runtime.request_deferred_reset());
+    }
+
+    #[test]
+    fn runtime_device_poll_counts_track_coalesced_requests() {
+        let runtime = VmRuntimeHandle::new();
+
+        runtime.notify_device_poll();
+        runtime.notify_device_poll();
+        assert_eq!(
+            runtime.device_poll_counts(),
+            crate::DevicePollRuntimeCounts {
+                published: 2,
+                kicked: 0,
+                consumed: 0,
+                pending: true,
+            }
+        );
+
+        assert!(runtime.take_device_poll_request());
+        assert!(!runtime.take_device_poll_request());
+        assert_eq!(
+            runtime.device_poll_counts(),
+            crate::DevicePollRuntimeCounts {
+                published: 2,
+                kicked: 0,
+                consumed: 1,
+                pending: false,
+            }
+        );
+    }
+
+    #[test]
+    fn runtime_device_poll_kicks_the_registered_target_after_publication() {
+        let runtime = VmRuntimeHandle::new();
+        let observed_cpu = core::cell::Cell::new(None);
+
+        runtime.notify_device_poll_with(|| Ok(3), |cpu_id| observed_cpu.set(Some(cpu_id)));
+
+        assert_eq!(observed_cpu.get(), Some(3));
+        assert_eq!(
+            runtime.device_poll_counts(),
+            crate::DevicePollRuntimeCounts {
+                published: 1,
+                kicked: 1,
+                consumed: 0,
+                pending: true,
+            }
+        );
     }
 
     #[test]
@@ -1060,6 +1138,11 @@ impl AxVM {
     /// Returns the current lifecycle status.
     pub fn status(&self) -> VmStatus {
         self.machine.lock().status()
+    }
+
+    /// Snapshots device-poll publication and consumption for the active runtime.
+    pub fn device_poll_runtime_counts(&self) -> AxVmResult<crate::DevicePollRuntimeCounts> {
+        self.with_runtime(|runtime| Ok(runtime.device_poll_counts()))
     }
 
     /// Returns whether the guest address space starts from host identity mappings.
@@ -2210,7 +2293,7 @@ mod tests {
         let runtime = VmRuntimeHandle::new();
         let observed = runtime.notification_generation();
 
-        runtime.notify_one();
+        runtime.notify_vcpu_unconditional(0);
 
         assert_ne!(runtime.notification_generation(), observed);
     }

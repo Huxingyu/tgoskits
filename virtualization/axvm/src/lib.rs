@@ -108,6 +108,15 @@ pub struct TimerRuntimeCounts {
     pub worker_wakes: usize,
 }
 
+/// Per-VM device-poll request counters used by console stall diagnostics.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct DevicePollRuntimeCounts {
+    pub published: usize,
+    pub kicked: usize,
+    pub consumed: usize,
+    pub pending: bool,
+}
+
 /// Snapshot of counters whose deltas distinguish vCPU, timer, and wake stalls.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RtRuntimeStats {
