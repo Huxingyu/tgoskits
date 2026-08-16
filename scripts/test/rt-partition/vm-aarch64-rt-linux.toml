@@ -2,9 +2,9 @@
 #
 # Load addresses follow the validated gicv3-timer-stress layout
 # (linux-qemu at 0x8020_0000, DTB at 0x8000_0000, initramfs at 0x8400_0000).
-# Guest CPU 0 runs the measurement task; guest CPU 1 is isolated from the
-# kernel scheduler (`isolcpus=1 nohz_full=1 irqaffinity=0`) so the
-# measurement vCPU has no kernel timers or IRQ affinity to contend with.
+# Guest CPU 1 is isolated from the kernel scheduler and runs the measurement
+# task; guest CPU 0 handles stress workers and kernel IRQs. The runner derives
+# `isolcpus`, `nohz_full`, and `irqaffinity` from its RT_CPU setting.
 [base]
 id = 1
 name = "rt-partition-linux"

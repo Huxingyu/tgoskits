@@ -3,16 +3,20 @@
 #
 # Runs inside the Linux guest initramfs. Controlled by kernel cmdline
 # placeholders replaced by run-cyclictest.sh via the `cmdline` field:
-#   rt_scenario=idle|stress-noiso|stress-rt
-#   rt_cpu=N            measurement vCPU (default 0)
-#   rt_loops=N          cyclictest loop count (default 1800000 = 30 min at 1 ms)
+#   rt_scenario=idle|stress-noiso|stress-dedicated|stress-rt
+#   rt_cpu=N            isolated measurement vCPU (default 1)
+#   rt_load_cpu=N       housekeeping/load vCPU (default 0)
+#   rt_loops=N          cyclictest loop count (0 = endless when duration is set)
+#   rt_duration_sec=N   stop after this guest duration; 0 uses exact loop mode
 #   rt_interval_us=N    cyclictest interval (default 1000)
 #   rt_maxlat_us=N      histogram max latency (default 400)
 #   rt_priority=N       cyclictest SCHED_FIFO priority (default 90)
+#   rt_start_delay_sec=N delay before workload start so the runner can sample
+#                        the pre-test VM-exit counters
 #
-# The measurement task is pinned to the isolated vCPU (guest CPU 0 by
-# default) so kernel timers and IRQ affinity (irqaffinity=0) do not compete
-# with the sampler; guest CPU 1 stays isolated via isolcpus.
+# The measurement task is pinned to the isolated guest CPU. Stress stays on the
+# other housekeeping CPU, so the Linux workload is identical between the
+# no-isolation and RT-partition scenarios while host placement policy changes.
 
 set -u
 
@@ -24,56 +28,137 @@ exec </dev/console >/dev/console 2>&1
 /bin/busybox mount -t proc proc /proc
 /bin/busybox mount -t sysfs sysfs /sys
 /bin/busybox mkdir -p /tmp
+/bin/busybox mkdir -p /dev/shm
+/bin/busybox mount -t tmpfs tmpfs /dev/shm
 
 scenario=idle
-cpu=0
+cpu=1
+load_cpu=0
 loops=1800000
+duration_sec=0
 interval_us=1000
 maxlat_us=400
 priority=90
+start_delay_sec=25
 
-for arg in $(cat /proc/cmdline); do
+for arg in $(/bin/busybox cat /proc/cmdline); do
     case "$arg" in
         rt_scenario=*) scenario="${arg#rt_scenario=}" ;;
         rt_cpu=*) cpu="${arg#rt_cpu=}" ;;
+        rt_load_cpu=*) load_cpu="${arg#rt_load_cpu=}" ;;
         rt_loops=*) loops="${arg#rt_loops=}" ;;
+        rt_duration_sec=*) duration_sec="${arg#rt_duration_sec=}" ;;
         rt_interval_us=*) interval_us="${arg#rt_interval_us=}" ;;
         rt_maxlat_us=*) maxlat_us="${arg#rt_maxlat_us=}" ;;
         rt_priority=*) priority="${arg#rt_priority=}" ;;
+        rt_start_delay_sec=*) start_delay_sec="${arg#rt_start_delay_sec=}" ;;
     esac
 done
 
-echo "RT_INIT scenario=$scenario cpu=$cpu loops=$loops interval_us=$interval_us maxlat_us=$maxlat_us priority=$priority"
-echo "RT_CPUS total=$(/bin/busybox grep -c ^processor /proc/cpuinfo)"
+cpu_total=$(/bin/busybox grep -c ^processor /proc/cpuinfo)
+case "$cpu:$load_cpu" in
+    *[!0-9:]*|:*|*:)
+        echo "RT_AFFINITY_ERROR invalid cpu=$cpu load_cpu=$load_cpu"
+        /bin/busybox poweroff -f
+        ;;
+esac
+if [ "$cpu" -eq "$load_cpu" ] || [ "$cpu" -ge "$cpu_total" ] || [ "$load_cpu" -ge "$cpu_total" ]; then
+    echo "RT_AFFINITY_ERROR cpu=$cpu load_cpu=$load_cpu total=$cpu_total"
+    /bin/busybox poweroff -f
+fi
+case "$loops:$duration_sec" in
+    *[!0-9:]*|:*|*:)
+        echo "RT_DURATION_ERROR invalid loops=$loops duration_sec=$duration_sec"
+        /bin/busybox poweroff -f
+        ;;
+esac
+if [ "$loops" -eq 0 ] && [ "$duration_sec" -eq 0 ]; then
+    echo "RT_DURATION_ERROR loops and duration cannot both be zero"
+    /bin/busybox poweroff -f
+fi
 
-# Record a load snapshot every 5 s during the run (task2-style markers are
-# not used here; the console log is the evidence).
-/bin/busybox top -b -d 5 > /tmp/rt-top.log &
+echo "RT_INIT scenario=$scenario cpu=$cpu load_cpu=$load_cpu loops=$loops duration_sec=$duration_sec interval_us=$interval_us maxlat_us=$maxlat_us priority=$priority start_delay_sec=$start_delay_sec"
+echo "RT_CPUS total=$cpu_total"
+echo "RT_SCHED_PROBE_START"
+if /bin/busybox chrt -p $$; then
+    echo "RT_SCHED_PROBE_OK"
+else
+    echo "RT_SCHED_PROBE_ERROR status=$?"
+fi
+echo "RT_WAIT_BEFORE_TEST seconds=$start_delay_sec"
+/bin/busybox sleep "$start_delay_sec"
+
+# Record compact per-CPU counters every 5 seconds. They are emitted only after
+# cyclictest prints its histogram so the histogram rows cannot be interleaved.
+(
+    sample=0
+    while :; do
+        /bin/busybox awk -v sample="$sample" '
+            /^cpu[0-9]+ / {
+                printf "RT_CPUSTAT sample=%d cpu=%s user=%s nice=%s system=%s idle=%s iowait=%s irq=%s softirq=%s steal=%s\n",
+                    sample, $1, $2, $3, $4, $5, $6, $7, $8, $9
+            }
+        ' /proc/stat
+        sample=$((sample + 1))
+        /bin/busybox sleep 5
+    done
+) > /tmp/rt-cpustat.log &
+load_pid=$!
 
 case "$scenario" in
     stress-noiso)
-        echo "RT_STRESS_START workers=2 vm=1"
-        /bin/stress-ng --taskset "$cpu" --cpu 2 --vm 1 --vm-bytes 64M &
+        echo "RT_STRESS_START cpu=$load_cpu workers=2 vm=1"
+        /bin/busybox taskset -c "$load_cpu" /bin/stress-ng --cpu 2 --vm 1 --vm-bytes 64M &
         stress_pid=$!
         ;;
-    stress-rt)
-        echo "RT_STRESS_START workers=2 vm=1"
-        /bin/stress-ng --taskset "$cpu" --cpu 2 --vm 1 --vm-bytes 64M &
+    stress-dedicated|stress-rt)
+        echo "RT_STRESS_START cpu=$load_cpu workers=2 vm=1"
+        /bin/busybox taskset -c "$load_cpu" /bin/stress-ng --cpu 2 --vm 1 --vm-bytes 64M &
         stress_pid=$!
         ;;
 esac
 
 echo "RT_CYCLICTEST_START"
-/bin/cyclictest -a "$cpu" \
-    -m -p "$priority" -i "$interval_us" -l "$loops" -h "$maxlat_us" -q
+IFS=' ' read -r start_uptime_s _ < /proc/uptime
+echo "RT_CYCLICTEST_TIMING_START uptime_s=$start_uptime_s"
+(
+    while :; do
+        IFS=' ' read -r progress_uptime_s _ < /proc/uptime
+        echo "RT_PROGRESS uptime_s=$progress_uptime_s"
+        /bin/busybox sleep 10
+    done
+) &
+progress_pid=$!
+all_cpus="0-$((cpu_total - 1))"
+if [ "$duration_sec" -gt 0 ]; then
+    /bin/busybox taskset -c "$all_cpus" /bin/cyclictest -a "$cpu" \
+        -m -p "$priority" -i "$interval_us" -l "$loops" \
+        -D "${duration_sec}s" -h "$maxlat_us" -q > /tmp/cyclictest.log 2>&1
+else
+    /bin/busybox taskset -c "$all_cpus" /bin/cyclictest -a "$cpu" \
+        -m -p "$priority" -i "$interval_us" -l "$loops" -h "$maxlat_us" -q \
+        > /tmp/cyclictest.log 2>&1
+fi
+status=$?
+/bin/busybox kill "$progress_pid" 2>/dev/null || true
+/bin/busybox wait "$progress_pid" 2>/dev/null || true
+/bin/busybox cat /tmp/cyclictest.log
+IFS=' ' read -r end_uptime_s _ < /proc/uptime
+echo "RT_CYCLICTEST_TIMING_END uptime_s=$end_uptime_s"
+if [ "$status" -ne 0 ]; then
+    echo "RT_CYCLICTEST_ERROR status=$status"
+fi
 echo "RT_CYCLICTEST_COMPLETE"
 
 if [ -n "${stress_pid:-}" ]; then
     /bin/busybox kill "$stress_pid" 2>/dev/null || true
+    echo "RT_STRESS_STOP"
 fi
-/bin/busybox kill %1 2>/dev/null || true
+/bin/busybox kill "$load_pid" 2>/dev/null || true
+/bin/busybox wait "$load_pid" 2>/dev/null || true
+/bin/busybox cat /tmp/rt-cpustat.log
 
 # Keep the console alive briefly so the runner can capture the tail.
 /bin/busybox sleep 2
 echo "RT_INIT_DONE scenario=$scenario"
-poweroff -f 2>/dev/null || /bin/busybox sleep 30
+/bin/busybox poweroff -f 2>/dev/null || /bin/busybox sleep 30

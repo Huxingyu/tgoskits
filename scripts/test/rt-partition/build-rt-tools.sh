@@ -22,8 +22,12 @@ rt_tests_src="${RTTESTS_SRC:-$src_root/rt-tests}"
 numa_src="${NUMA_SRC:-$src_root/numactl-2.0.18}"
 stress_ng_src="${STRESS_NG_SRC:-$src_root/stress-ng}"
 base_initramfs="${BASE_INITRAMFS:-$HOME/tgoskits-realtime/tmp/initramfs-custom}"
+sched_compat_src="$repo_root/scripts/test/rt-partition/musl-sched-compat.c"
+musl_sigev_patch="$repo_root/scripts/test/rt-partition/rt-tests-musl-sigev.patch"
+musl_stack_patch="$repo_root/scripts/test/rt-partition/rt-tests-musl-stack.patch"
 
-for path in "$cross_cc" "$rt_tests_src" "$numa_src" "$stress_ng_src" "$base_initramfs"; do
+for path in "$cross_cc" "$rt_tests_src" "$numa_src" "$stress_ng_src" "$base_initramfs" \
+    "$sched_compat_src" "$musl_sigev_patch" "$musl_stack_patch"; do
     [[ -e "$path" ]] || {
         printf 'error: required input is missing: %s\n' "$path" >&2
         exit 1
@@ -34,18 +38,26 @@ mkdir -p "$out_dir/tools"
 export PATH="$(dirname "$cross_cc"):$PATH"
 
 # --- cyclictest (rt-tests) ------------------------------------------------
-if [[ ! -x "$out_dir/tools/cyclictest" ]]; then
-    printf 'building cyclictest from %s\n' "$rt_tests_src"
-    make -C "$rt_tests_src" clean >/dev/null 2>&1 || true
-    make -C "$rt_tests_src" cyclictest \
-        CC="$(basename "$cross_cc")" \
-        LDFLAGS="-static" \
-        CPPFLAGS="-D_GNU_SOURCE -Isrc/include -I$numa_src" \
-        RTTESTNUMA="-lrttestnuma -Lbld -lnuma -L$numa_src/.libs"
-    cp "$rt_tests_src/cyclictest" "$out_dir/tools/cyclictest"
-    chmod 0755 "$out_dir/tools/cyclictest"
-    printf 'cyclictest=%s\n' "$out_dir/tools/cyclictest"
+printf 'building cyclictest from %s\n' "$rt_tests_src"
+if ! rg -U -F $'#ifdef __GLIBC__\n#define sigev_notify_thread_id' \
+    "$rt_tests_src/src/cyclictest/cyclictest.c" >/dev/null; then
+    patch -d "$rt_tests_src" -p1 < "$musl_sigev_patch"
 fi
+if rg -F 'pthread_attr_getstack(&attr, &currstk, &stksize)' \
+    "$rt_tests_src/src/cyclictest/cyclictest.c" >/dev/null; then
+    patch -d "$rt_tests_src" -p1 < "$musl_stack_patch"
+fi
+sched_compat_obj="$out_dir/tools/musl-sched-compat.o"
+"$cross_cc" -O2 -c "$sched_compat_src" -o "$sched_compat_obj"
+make -C "$rt_tests_src" clean >/dev/null 2>&1 || true
+make -C "$rt_tests_src" cyclictest \
+    CC="$(basename "$cross_cc")" \
+    LDFLAGS="-static $sched_compat_obj" \
+    CPPFLAGS="-D_GNU_SOURCE -Isrc/include -I$numa_src" \
+    RTTESTNUMA="-lrttestnuma -Lbld -lnuma -L$numa_src/.libs"
+cp "$rt_tests_src/cyclictest" "$out_dir/tools/cyclictest"
+chmod 0755 "$out_dir/tools/cyclictest"
+printf 'cyclictest=%s\n' "$out_dir/tools/cyclictest"
 
 # --- stress-ng -------------------------------------------------------------
 if [[ ! -x "$out_dir/tools/stress-ng" ]]; then
