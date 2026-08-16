@@ -89,6 +89,41 @@ pub use vmexit_stats::{
     CpuExitCounts, ExitReason, MAX_TRACKED_CPUS, vmexit_stats_reset, vmexit_stats_snapshot,
 };
 
+/// Low-overhead vCPU wait counters used by post-stall diagnostics.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct VcpuRuntimeCounts {
+    pub vcpu_id: usize,
+    pub parks: usize,
+    pub wakes: usize,
+    pub notify_woke: usize,
+}
+
+/// Low-overhead AxVM timer-wheel counters used by post-stall diagnostics.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct TimerRuntimeCounts {
+    pub cpu_id: usize,
+    pub registered: usize,
+    pub cancelled: usize,
+    pub expired: usize,
+    pub worker_wakes: usize,
+}
+
+/// Snapshot of counters whose deltas distinguish vCPU, timer, and wake stalls.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct RtRuntimeStats {
+    pub vcpus: Vec<VcpuRuntimeCounts>,
+    pub timers: Vec<TimerRuntimeCounts>,
+    pub lr_skips: usize,
+}
+
+pub fn rt_runtime_stats_snapshot() -> RtRuntimeStats {
+    RtRuntimeStats {
+        vcpus: runtime::vcpus::rt_vcpu_stats_snapshot(),
+        timers: timer::rt_timer_stats_snapshot(),
+        lr_skips: runtime::vcpus::LR_SKIP_COUNT.load(core::sync::atomic::Ordering::Relaxed),
+    }
+}
+
 /// The architecture-independent per-CPU type.
 pub(crate) type AxVMPerCpu = vcpu::AxPerCpu<arch::ArchPerCpu>;
 

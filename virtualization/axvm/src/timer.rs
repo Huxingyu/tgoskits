@@ -23,6 +23,28 @@ use crate::host::{HostTime, default_host, task};
 static TOKEN: AtomicUsize = AtomicUsize::new(0);
 const TIMER_WORKER_STACK_SIZE: usize = 0x20_000;
 const NO_PUBLISHED_DEADLINE: u64 = 0;
+const MAX_RT_STATS_CPUS: usize = 8;
+
+static TIMER_REGISTER_COUNTS: [AtomicUsize; MAX_RT_STATS_CPUS] =
+    [const { AtomicUsize::new(0) }; MAX_RT_STATS_CPUS];
+static TIMER_CANCEL_COUNTS: [AtomicUsize; MAX_RT_STATS_CPUS] =
+    [const { AtomicUsize::new(0) }; MAX_RT_STATS_CPUS];
+static TIMER_EXPIRE_COUNTS: [AtomicUsize; MAX_RT_STATS_CPUS] =
+    [const { AtomicUsize::new(0) }; MAX_RT_STATS_CPUS];
+static TIMER_WORKER_WAKE_COUNTS: [AtomicUsize; MAX_RT_STATS_CPUS] =
+    [const { AtomicUsize::new(0) }; MAX_RT_STATS_CPUS];
+
+pub(crate) fn rt_timer_stats_snapshot() -> Vec<crate::TimerRuntimeCounts> {
+    (0..MAX_RT_STATS_CPUS)
+        .map(|cpu_id| crate::TimerRuntimeCounts {
+            cpu_id,
+            registered: TIMER_REGISTER_COUNTS[cpu_id].load(Ordering::Relaxed),
+            cancelled: TIMER_CANCEL_COUNTS[cpu_id].load(Ordering::Relaxed),
+            expired: TIMER_EXPIRE_COUNTS[cpu_id].load(Ordering::Relaxed),
+            worker_wakes: TIMER_WORKER_WAKE_COUNTS[cpu_id].load(Ordering::Relaxed),
+        })
+        .collect()
+}
 
 /// Lock-free publication of one CPU's earliest AxVM timer deadline.
 ///
@@ -220,6 +242,9 @@ pub(crate) fn register_timer_handle(
         );
         (cpu_id, next_deadline)
     });
+    if let Some(count) = TIMER_REGISTER_COUNTS.get(owner_cpu) {
+        count.fetch_add(1, Ordering::Relaxed);
+    }
     rearm_host_timer(next_deadline);
     VmTimerHandle { token, owner_cpu }
 }
@@ -229,6 +254,9 @@ pub(crate) fn cancel_timer_handle(handle: VmTimerHandle) {
     let current_cpu = current_cpu_id();
     let next_deadline = with_timer_wheels(|timer_wheels| timer_wheels.cancel_handle(handle));
     if let Some(next_deadline) = next_deadline {
+        if let Some(count) = TIMER_CANCEL_COUNTS.get(handle.owner_cpu) {
+            count.fetch_add(1, Ordering::Relaxed);
+        }
         rearm_owner_host_timer(handle.owner_cpu, current_cpu, next_deadline);
     }
 }
@@ -256,6 +284,9 @@ pub(crate) fn check_events() {
             (expired, next_deadline)
         });
         if let Some((deadline, event)) = expired {
+            if let Some(count) = TIMER_EXPIRE_COUNTS.get(current_cpu_id()) {
+                count.fetch_add(1, Ordering::Relaxed);
+            }
             trace!("handle VM timer event scheduled at {deadline:#?}");
             event.callback(now);
         } else {
@@ -325,6 +356,9 @@ pub(crate) fn init_percpu() {
     let worker = crate::host::task::TaskInner::new(
         move || loop {
             worker_notify.wait();
+            if let Some(count) = TIMER_WORKER_WAKE_COUNTS.get(cpu_id) {
+                count.fetch_add(1, Ordering::Relaxed);
+            }
             check_events();
         },
         std::format!("axvm-timer-{cpu_id}"),
@@ -442,6 +476,23 @@ mod tests {
             with_timer_wheels(|timer_wheels| timer_wheels.handle(token)),
             None
         );
+    }
+
+    #[test]
+    fn timer_snapshot_observes_registration_and_expiration() {
+        let _guard = lock_test_mutex(&TEST_LOCK);
+        reset_global_timer_state();
+        set_current_cpu_for_test(2);
+        TEST_NOW_NS.store(1_000, Ordering::Release);
+        let before = crate::rt_runtime_stats_snapshot();
+
+        register_timer(2_000, Box::new(|_| {}));
+        TEST_NOW_NS.store(2_000, Ordering::Release);
+        check_events();
+
+        let after = crate::rt_runtime_stats_snapshot();
+        assert_eq!(after.timers[2].registered, before.timers[2].registered + 1);
+        assert_eq!(after.timers[2].expired, before.timers[2].expired + 1);
     }
 
     #[test]

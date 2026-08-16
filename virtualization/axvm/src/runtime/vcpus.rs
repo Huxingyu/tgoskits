@@ -79,6 +79,33 @@ pub(crate) fn note_vcpu_wake(vcpu_id: usize) {
         .map(|count| count.fetch_add(1, Ordering::Relaxed));
 }
 
+pub(crate) fn rt_vcpu_stats_snapshot() -> Vec<crate::VcpuRuntimeCounts> {
+    (0..VCPU_PARK_COUNTS.len())
+        .map(|vcpu_id| crate::VcpuRuntimeCounts {
+            vcpu_id,
+            parks: VCPU_PARK_COUNTS[vcpu_id].load(Ordering::Relaxed),
+            wakes: VCPU_WAKE_COUNTS[vcpu_id].load(Ordering::Relaxed),
+            notify_woke: NOTIFY_WOKE_COUNTS[vcpu_id].load(Ordering::Relaxed),
+        })
+        .collect()
+}
+
+#[cfg(test)]
+mod rt_stats_tests {
+    use super::*;
+
+    #[test]
+    fn vcpu_runtime_snapshot_observes_park_and_wake_edges() {
+        let before = crate::rt_runtime_stats_snapshot();
+        note_vcpu_park(3);
+        note_vcpu_wake(3);
+        let after = crate::rt_runtime_stats_snapshot();
+
+        assert_eq!(after.vcpus[3].parks, before.vcpus[3].parks + 1);
+        assert_eq!(after.vcpus[3].wakes, before.vcpus[3].wakes + 1);
+    }
+}
+
 /// Spawn the common host-side periodic injector used by both A and B.
 pub(crate) fn spawn_periodic_virq_injector(
     vm: VMRef,

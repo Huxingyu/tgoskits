@@ -16,12 +16,14 @@ mod base;
 #[cfg(feature = "fs")]
 mod fs;
 mod history;
+mod rt;
 mod virtnet;
 mod vm;
 mod vmexit;
 
 pub use base::*;
 pub use history::*;
+pub use rt::*;
 pub use virtnet::*;
 pub use vm::*;
 pub use vmexit::*;
@@ -381,6 +383,7 @@ fn build_command_tree() -> BTreeMap<String, CommandNode> {
     build_vm_cmd(&mut tree);
     build_virtnet_cmd(&mut tree);
     build_vmexit_cmd(&mut tree);
+    build_rt_cmd(&mut tree);
 
     tree
 }
@@ -615,6 +618,12 @@ mod tests {
         let tokens = CommandParser::tokenize("echo\u{2003}value").unwrap();
 
         assert_eq!(tokens, ["echo\u{2003}value"]);
+    }
+
+    #[test]
+    fn rt_stat_is_registered() {
+        let parsed = CommandParser::parse("rt stat").unwrap();
+        assert_eq!(parsed.command_path, ["rt", "stat"]);
     }
 
     #[test]

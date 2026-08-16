@@ -25,11 +25,17 @@ use axvm::{CpuExitCounts, ExitReason, vmexit_stats_snapshot};
 
 use crate::shell::command::{CommandNode, ParsedCommand};
 
-static LAST_STAT: Mutex<Option<(Instant, Vec<CpuExitCounts>)>> = Mutex::new(None);
+static LAST_STAT: Mutex<Option<(Instant, Vec<CpuExitCounts>, Vec<u64>)>> = Mutex::new(None);
 
 fn vmexit_stat(_cmd: &ParsedCommand) {
     let now = Instant::now();
     let snapshot = vmexit_stats_snapshot();
+    let host_periodic_ticks = (0..ax_std::os::arceos::modules::ax_runtime::hal::cpu_num())
+        .map(|cpu_id| {
+            ax_std::os::arceos::modules::ax_runtime::periodic_scheduler_tick_count(cpu_id)
+                .unwrap_or(0)
+        })
+        .collect::<Vec<_>>();
 
     let mut last = LAST_STAT
         .lock()
@@ -37,7 +43,7 @@ fn vmexit_stat(_cmd: &ParsedCommand) {
     let previous = last.take();
     let elapsed_secs = previous
         .as_ref()
-        .map(|(instant, _)| now.duration_since(*instant).as_secs_f64())
+        .map(|(instant, _, _)| now.duration_since(*instant).as_secs_f64())
         .unwrap_or(0.0);
 
     println!(
@@ -52,7 +58,7 @@ fn vmexit_stat(_cmd: &ParsedCommand) {
     for entry in &snapshot {
         let previous_counts = previous
             .as_ref()
-            .and_then(|(_, entries)| entries.iter().find(|old| old.cpu_id == entry.cpu_id))
+            .and_then(|(_, entries, _)| entries.iter().find(|old| old.cpu_id == entry.cpu_id))
             .map(|old| &old.counts);
         let any_counted = entry.counts.iter().any(|count| *count != 0);
         if !any_counted {
@@ -75,7 +81,27 @@ fn vmexit_stat(_cmd: &ParsedCommand) {
         println!();
     }
 
-    *last = Some((now, snapshot));
+    println!("Host periodic scheduler ticks (event-driven timer IRQs excluded):");
+    for (cpu_id, count) in host_periodic_ticks.iter().copied().enumerate() {
+        let previous_count = previous
+            .as_ref()
+            .and_then(|(_, _, counts)| counts.get(cpu_id))
+            .copied()
+            .unwrap_or(0);
+        let delta = count.saturating_sub(previous_count);
+        if elapsed_secs > 0.0 && delta > 0 {
+            println!(
+                "  cpu {:>3}: {:>10} ({:.3}/s)",
+                cpu_id,
+                count,
+                delta as f64 / elapsed_secs
+            );
+        } else {
+            println!("  cpu {:>3}: {:>10}", cpu_id, count);
+        }
+    }
+
+    *last = Some((now, snapshot, host_periodic_ticks));
 }
 
 pub fn build_vmexit_cmd(tree: &mut std::collections::BTreeMap<String, CommandNode>) {
