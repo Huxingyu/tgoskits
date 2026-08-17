@@ -375,7 +375,7 @@ impl<H: ArmHostOps> ArmVcpu<H> {
             + HCR_EL2::IMO::EnableVirtualIRQ
             + HCR_EL2::FMO::EnableVirtualFIQ;
         if config.trap_wfi() {
-            hcr_el2 = hcr_el2 + HCR_EL2::TWI::SET;
+            hcr_el2 += HCR_EL2::TWI::SET;
         }
 
         self.guest_system_regs.hcr_el2 = hcr_el2.into();
@@ -567,40 +567,40 @@ impl<H: ArmHostOps> ArmVcpu<H> {
                     .timer
                     .guest_counter(ArmTimerKind::Physical, physical_counter())?;
                 self.set_gpr(reg, counter as usize);
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTP_TVAL_EL0, false) => {
                 let value = self
                     .timer
                     .read_tval(ArmTimerKind::Physical, physical_counter())?;
                 self.set_gpr(reg, value as usize);
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTP_CTL_EL0, false) => {
                 let value = self
                     .timer
                     .read_control(ArmTimerKind::Physical, physical_counter())?;
                 self.set_gpr(reg, value as usize);
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTP_CVAL_EL0, false) => {
                 let value = self.timer.read_compare(ArmTimerKind::Physical)?;
                 self.set_gpr(reg, value as usize);
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTP_TVAL_EL0, true) => {
                 self.timer
                     .write_tval(ArmTimerKind::Physical, physical_counter(), value as u32)?;
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTP_CTL_EL0, true) => {
                 self.timer
                     .write_control(ArmTimerKind::Physical, value as u32)?;
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTP_CVAL_EL0, true) => {
                 self.timer.write_compare(ArmTimerKind::Physical, value)?;
-                Ok(Some(ArmVmExit::Nothing))
+                Ok(Some(ArmVmExit::PhysicalTimerSysReg))
             }
             (SYSREG_CNTFRQ_EL0 | SYSREG_CNTPCT_EL0, true) => Err(crate::ArmVcpuError::InvalidInput),
             (SYSREG_ICC_SGI1R_EL1, true) => {

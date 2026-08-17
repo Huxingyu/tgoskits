@@ -84,6 +84,86 @@ def_test_sched!(fifo, FifoScheduler::<usize>, FifoTask::<usize>);
 def_test_sched!(rr, RRScheduler::<usize, 5>, RRTask::<usize, 5>);
 def_test_sched!(cfs, CFScheduler::<usize>, CFSTask::<usize>);
 
+struct PriorityTestTask {
+    value: usize,
+    priority: core::sync::atomic::AtomicIsize,
+}
+
+impl PriorityTestTask {
+    const fn new(value: usize) -> Self {
+        Self {
+            value,
+            priority: core::sync::atomic::AtomicIsize::new(0),
+        }
+    }
+}
+
+impl crate::SchedPriority for PriorityTestTask {
+    fn sched_priority(&self) -> isize {
+        self.priority.load(core::sync::atomic::Ordering::Acquire)
+    }
+
+    fn set_sched_priority(&self, priority: isize) {
+        self.priority
+            .store(priority, core::sync::atomic::Ordering::Release);
+    }
+}
+
+#[test]
+fn fixed_priority_runs_highest_first_and_preserves_fifo() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityScheduler, PriorityTask};
+
+    let mut scheduler = PriorityScheduler::<PriorityTestTask>::new();
+    let low = Arc::new(PriorityTask::new(PriorityTestTask::new(0)));
+    let high_first = Arc::new(PriorityTask::new(PriorityTestTask::new(1)));
+    let high_second = Arc::new(PriorityTask::new(PriorityTestTask::new(2)));
+    assert!(scheduler.set_priority(&low, 10));
+    assert!(scheduler.set_priority(&high_first, 90));
+    assert!(scheduler.set_priority(&high_second, 90));
+
+    scheduler.add_task(low);
+    scheduler.add_task(high_first);
+    scheduler.add_task(high_second);
+
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 1);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 2);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 0);
+}
+
+#[test]
+fn fixed_priority_preemption_preserves_same_class_position() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityScheduler, PriorityTask};
+
+    let mut scheduler = PriorityScheduler::<PriorityTestTask>::new();
+    let current = Arc::new(PriorityTask::new(PriorityTestTask::new(0)));
+    let peer = Arc::new(PriorityTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&current, 90));
+    assert!(scheduler.set_priority(&peer, 90));
+    scheduler.add_task(peer);
+    scheduler.put_prev_task(current, true);
+
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 0);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 1);
+}
+
+#[test]
+fn fixed_priority_rejects_out_of_range_values() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, MAX_PRIORITY, MIN_PRIORITY, PriorityScheduler, PriorityTask};
+
+    let mut scheduler = PriorityScheduler::<PriorityTestTask>::new();
+    let task = Arc::new(PriorityTask::new(PriorityTestTask::new(0)));
+
+    assert!(!scheduler.set_priority(&task, MIN_PRIORITY - 1));
+    assert!(!scheduler.set_priority(&task, MAX_PRIORITY + 1));
+    assert!(scheduler.set_priority(&task, MAX_PRIORITY));
+}
+
 #[test]
 fn rr_preempt_preserves_slice_but_forced_reschedule_rotates() {
     use alloc::sync::Arc;

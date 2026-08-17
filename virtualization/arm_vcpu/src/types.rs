@@ -303,6 +303,8 @@ pub enum ArmVmExit {
         /// Guest-visible INTID carried by `ICC_DIR_EL1`.
         intid: u32,
     },
+    /// A trapped guest access to the emulated physical timer (`CNTP_*`).
+    PhysicalTimerSysReg,
     /// The vCPU handled the event internally.
     Nothing,
 }

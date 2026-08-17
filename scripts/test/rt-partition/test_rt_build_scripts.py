@@ -7,8 +7,26 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[3]
 BUILD_ZEPHYR = (ROOT / "scripts/test/rt-partition/build-zephyr-periodic.sh").read_text()
+BUILD_TRACE_LINUX = (
+    ROOT / "scripts/test/rt-partition/build-linux-trace-kernel.sh"
+).read_text()
 NATIVE_RUNNER_PATH = ROOT / "scripts/test/rt-partition/run-native-zephyr.sh"
 MATRIX_RUNNER = (ROOT / "scripts/test/rt-partition/run-cyclictest.sh").read_text()
+PRIORITY_AB_RUNNER_PATH = (
+    ROOT / "scripts/test/rt-partition/run-priority-scheduler-ab.sh"
+)
+TIMER_LOCK_AB_RUNNER_PATH = (
+    ROOT / "scripts/test/rt-partition/run-timer-wheel-lock-ab.sh"
+)
+WFI_ISOLATION_RUNNER_PATH = (
+    ROOT / "scripts/test/rt-partition/run-linux-wfi-isolation.sh"
+)
+EXIT_YIELD_AB_RUNNER_PATH = (
+    ROOT / "scripts/test/rt-partition/run-vcpu-exit-yield-ab.sh"
+)
+TIMER_WORKER_AB_RUNNER_PATH = (
+    ROOT / "scripts/test/rt-partition/run-timer-worker-priority-ab.sh"
+)
 ZEPHYR_MAIN = (ROOT / "scripts/test/zephyr-periodic/src/main.c").read_text()
 
 
@@ -52,13 +70,53 @@ class RtBuildScriptsTest(unittest.TestCase):
         self.assertIn("print_samples(samples)", ZEPHYR_MAIN)
 
     def test_matrix_runner_hashes_archived_build_inputs(self):
-        self.assertIn('cp "$work/linux-qemu" "$out_dir/"', MATRIX_RUNNER)
+        self.assertIn(
+            'linux_image="${RT_LINUX_KERNEL_OVERRIDE:-${repo_root}/tmp/rt-partition/linux-qemu}"',
+            MATRIX_RUNNER,
+        )
+        self.assertIn('cp "$linux_image" "$out_dir/linux-qemu"', MATRIX_RUNNER)
+        self.assertIn('printf \'linux_kernel=%s\\n\' "$linux_image"', MATRIX_RUNNER)
+        self.assertIn('lines[index] = f\'kernel_path = "{linux_image}"\'', MATRIX_RUNNER)
         self.assertIn('cp "$work/rt-linux-initramfs.cpio.gz" "$out_dir/"', MATRIX_RUNNER)
-        self.assertIn('cp "$work/zephyr-periodic.bin" "$out_dir/"', MATRIX_RUNNER)
+        self.assertIn('linux_trace="${RT_LINUX_TRACE:-disabled}"', MATRIX_RUNNER)
+        self.assertIn('linux_virtual_timer_only="${RT_LINUX_VIRTUAL_TIMER_ONLY:-0}"', MATRIX_RUNNER)
+        self.assertIn('linux_wfi_policy="${RT_LINUX_WFI_POLICY:-auto}"', MATRIX_RUNNER)
+        self.assertIn('dedicated_cpus_override="${RT_DEDICATED_CPUS_OVERRIDE:-}"', MATRIX_RUNNER)
+        self.assertIn('aarch64_virtual_timer_only = ', MATRIX_RUNNER)
+        self.assertIn('aarch64_wfi_policy = ', MATRIX_RUNNER)
+        self.assertIn('linux-ftrace.txt', MATRIX_RUNNER)
+        self.assertIn('linux-ftrace-latency.csv', MATRIX_RUNNER)
+        self.assertIn('linux-ftrace-latency-summary.txt', MATRIX_RUNNER)
+        self.assertIn('linux-timerlat.txt', MATRIX_RUNNER)
+        self.assertIn('linux-timerlat-latency.csv', MATRIX_RUNNER)
+        self.assertIn('linux-timerlat-latency-summary.txt', MATRIX_RUNNER)
+        self.assertIn('RT_FTRACE_DUMP_READY encoding=gzip-base64', MATRIX_RUNNER)
+        self.assertIn('cmd dump', MATRIX_RUNNER)
+        self.assertIn('gzip.decompress(base64.b64decode', MATRIX_RUNNER)
+        self.assertIn('linux-ftrace-latency.py', MATRIX_RUNNER)
+        self.assertIn('linux-timerlat-latency.py', MATRIX_RUNNER)
+        self.assertIn(
+            'cp "$zephyr_image" "$out_dir/zephyr-periodic.bin"', MATRIX_RUNNER
+        )
+        self.assertIn(
+            'zephyr_image="${RT_ZEPHYR_IMAGE:-${work}/zephyr-periodic.bin}"',
+            MATRIX_RUNNER,
+        )
         self.assertIn('cp "$axvisor_bin" "$out_dir/"', MATRIX_RUNNER)
         hash_block = MATRIX_RUNNER.rsplit("sha256sum", 1)[1]
         self.assertNotIn("$work", hash_block)
         self.assertNotIn("$axvisor_bin", hash_block)
+
+    def test_trace_linux_build_preserves_scheduling_config(self):
+        self.assertIn("scripts/extract-ikconfig", BUILD_TRACE_LINUX)
+        self.assertIn('command -v "${cross_prefix}gcc"', BUILD_TRACE_LINUX)
+        self.assertIn("--enable OSNOISE_TRACER", BUILD_TRACE_LINUX)
+        self.assertIn("--enable TIMERLAT_TRACER", BUILD_TRACE_LINUX)
+        self.assertIn('assert_config_unchanged PREEMPT', BUILD_TRACE_LINUX)
+        self.assertIn('assert_config_unchanged NO_HZ_FULL', BUILD_TRACE_LINUX)
+        self.assertIn('assert_config_unchanged SHADOW_CALL_STACK', BUILD_TRACE_LINUX)
+        self.assertIn('assert_config_unchanged INIT_STACK_ALL_ZERO', BUILD_TRACE_LINUX)
+        self.assertIn("trace-kernel.manifest", BUILD_TRACE_LINUX)
 
     def test_matrix_runner_allows_stress_results_to_drain_after_cyclictest(self):
         self.assertIn(
@@ -70,6 +128,96 @@ class RtBuildScriptsTest(unittest.TestCase):
             MATRIX_RUNNER,
         )
         self.assertNotIn("expect 30 RT_INIT_DONE", MATRIX_RUNNER)
+
+    def test_matrix_runner_bounds_qmp_shutdown_hangs(self):
+        self.assertIn(
+            'qemu_exit_grace_sec="${RT_QEMU_EXIT_GRACE_SEC:-10}"',
+            MATRIX_RUNNER,
+        )
+        self.assertIn('wait_for_run_exit "$qemu_exit_grace_sec"', MATRIX_RUNNER)
+        self.assertIn('kill -TERM "$run_pid"', MATRIX_RUNNER)
+        self.assertIn('kill -KILL "$run_pid"', MATRIX_RUNNER)
+        self.assertIn('qemu_shutdown="forced-term"', MATRIX_RUNNER)
+        self.assertIn('qemu_shutdown="qmp"', MATRIX_RUNNER)
+
+    def test_timer_lock_ab_runner_is_host_only_and_single_variable(self):
+        runner = TIMER_LOCK_AB_RUNNER_PATH.read_text()
+        self.assertIn('"-smp", "4"', runner)
+        self.assertIn("rt timer-storm --cpus 0xe", runner)
+        self.assertIn("host_only=1", runner)
+        self.assertIn("RT_TIMER_STORM_COMPLETE", runner)
+        self.assertIn("summarize-timer-wheel-ab.py", runner)
+        self.assertNotIn("--vmconfigs", runner)
+
+    def test_priority_ab_runner_counterbalances_order_and_collects_diagnostics(self):
+        runner = PRIORITY_AB_RUNNER_PATH.read_text()
+        self.assertIn('repeats="${RT_PRIORITY_AB_REPEATS:-4}"', runner)
+        self.assertIn('order="${RT_PRIORITY_AB_ORDER:-counterbalanced}"', runner)
+        self.assertIn("repeats % 2 == 0", runner)
+        self.assertIn('for run_number in $(seq 1 "$repeats")', runner)
+        self.assertIn("printf -v run_id 'run-%02d'", runner)
+        self.assertIn("run_number % 2", runner)
+        self.assertIn('sequence+=("rr")', runner)
+        self.assertIn('sequence+=("fixed-priority")', runner)
+        self.assertIn("sequence=${sequence_csv}", runner)
+        self.assertIn("RT_RUNTIME_DIAGNOSTICS=1", runner)
+        self.assertIn("compare-rt-runs.py", runner)
+        self.assertIn("deduplicate_archive", runner)
+        self.assertIn('cmp -s "$canonical" "$candidate"', runner)
+        self.assertIn('ln -f "$canonical" "$candidate"', runner)
+
+    def test_wfi_isolation_runner_defines_three_legal_single_variable_cells(self):
+        runner = WFI_ISOLATION_RUNNER_PATH.read_text()
+        self.assertIn("cntp-trap cntv-trap cntv-passthrough", runner)
+        self.assertIn('run_cell "$cell" "$run_id" 0 trap', runner)
+        self.assertIn('run_cell "$cell" "$run_id" 1 trap', runner)
+        self.assertIn('run_cell "$cell" "$run_id" 1 passthrough', runner)
+        self.assertNotIn('run_cell "$cell" "$run_id" 0 passthrough', runner)
+        self.assertIn("timer-contract-comparison.txt", runner)
+        self.assertIn("wfi-path-comparison.txt", runner)
+        self.assertIn("legacy-coupled-comparison.txt", runner)
+        self.assertIn("RT_RUNTIME_DIAGNOSTICS=1", runner)
+        self.assertIn("linux-qemu-trace", runner)
+        self.assertIn('RT_LINUX_KERNEL_OVERRIDE="$linux_kernel"', runner)
+        self.assertIn("RT_DEDICATED_CPUS_OVERRIDE=1,2,3", runner)
+        self.assertIn("dedicated_cpus=1,2,3", runner)
+        dedup_block = runner.split("deduplicate_archive()", 1)[1].split(
+            "run_cell()", 1
+        )[0]
+        self.assertNotIn("axvisor.bin", dedup_block)
+        self.assertIn("linux-qemu rt-linux-initramfs.cpio.gz", dedup_block)
+
+    def test_exit_yield_runner_is_single_variable_and_counterbalanced(self):
+        runner = EXIT_YIELD_AB_RUNNER_PATH.read_text()
+        self.assertIn("no-vcpu-exit-yield", runner)
+        self.assertIn("differ outside features", runner)
+        self.assertIn("modified board must add only no-vcpu-exit-yield", runner)
+        self.assertIn("run_number % 2", runner)
+        self.assertIn("RT_LINUX_VIRTUAL_TIMER_ONLY=1", runner)
+        self.assertIn("RT_LINUX_WFI_POLICY=trap", runner)
+        self.assertIn("RT_DEDICATED_CPUS_OVERRIDE=1,2,3", runner)
+        self.assertIn("RT_RUNTIME_DIAGNOSTICS=1", runner)
+        self.assertIn("post-vmexit-yield", runner)
+        self.assertIn("no-post-vmexit-yield", runner)
+        self.assertIn("summarize-vcpu-exit-yield-ab.py", runner)
+        self.assertIn("mechanism-comparison.txt", runner)
+
+    def test_timer_worker_runner_is_single_variable_bounded_and_counterbalanced(self):
+        runner = TIMER_WORKER_AB_RUNNER_PATH.read_text()
+        self.assertIn("timer-worker-priority-boost", runner)
+        self.assertIn("differ outside features", runner)
+        self.assertIn(
+            "modified board must add only timer-worker-priority-boost", runner
+        )
+        self.assertIn("run_number % 2", runner)
+        self.assertIn("RT_TIMER_WORKER_AB_START_CELL", runner)
+        self.assertIn("modified_event_budget_per_wake=1", runner)
+        self.assertIn("RT_LINUX_VIRTUAL_TIMER_ONLY=1", runner)
+        self.assertIn("RT_LINUX_WFI_POLICY=trap", runner)
+        self.assertIn("RT_DEDICATED_CPUS_OVERRIDE=1,2,3", runner)
+        self.assertIn("RT_RUNTIME_DIAGNOSTICS=1", runner)
+        self.assertIn("timer-worker-priority-89", runner)
+        self.assertIn("bounded-timer-worker-priority-91", runner)
 
 
 if __name__ == "__main__":

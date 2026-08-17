@@ -198,6 +198,10 @@ pub(crate) struct VmRuntimeHandle {
     deferred_reset_requested: AtomicBool,
 }
 
+// A vCPU wake publishes latency-critical work. Request rescheduling so a
+// fixed-priority host can immediately preempt lower-priority background work.
+const PREEMPT_ON_VCPU_WAKE: bool = true;
+
 #[cfg(any(target_arch = "aarch64", test))]
 pub(crate) struct VcpuEventWaitSnapshot {
     notification_generation: usize,
@@ -226,6 +230,16 @@ pub(crate) fn dispatch_vcpu_interrupt_with(
     notify();
     send_ipi(pcpu_id);
     Ok(())
+}
+
+fn runtime_snapshot_from_machine<R>(
+    machine: &Mutex<Machine<R, Arc<VmRuntimeHandle>>>,
+) -> AxVmResult<Arc<VmRuntimeHandle>> {
+    machine
+        .lock()
+        .runtime()
+        .cloned()
+        .ok_or_else(|| ax_err_type!(BadState, "VM runtime is not available"))
 }
 
 fn pulse_interrupt_with_snapshot(
@@ -527,7 +541,7 @@ impl VmRuntimeHandle {
         self.wait_queue.notify_all(false);
         let wait_queues: Vec<_> = self.vcpu_wait_queues.lock().values().cloned().collect();
         for wait_queue in wait_queues {
-            wait_queue.notify_all(false);
+            wait_queue.notify_all(PREEMPT_ON_VCPU_WAKE);
         }
     }
 
@@ -568,7 +582,7 @@ impl VmRuntimeHandle {
         // only for the lookup, never across the wake itself.
         let wait_queue = self.vcpu_wait_queues.lock().get(&vcpu_id).cloned();
         if let Some(wait_queue) = wait_queue {
-            let woke = wait_queue.notify_one(false);
+            let woke = wait_queue.notify_one(PREEMPT_ON_VCPU_WAKE);
             if woke && let Some(count) = crate::runtime::vcpus::notify_woke_count(vcpu_id) {
                 count.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
             }
@@ -577,7 +591,7 @@ impl VmRuntimeHandle {
             // startup wait before `add_vcpu_task` publishes its private
             // queue. Wake the legacy queue for that short publication
             // window; steady-state vIRQ delivery always has a private queue.
-            if self.wait_queue.notify_one(false)
+            if self.wait_queue.notify_one(PREEMPT_ON_VCPU_WAKE)
                 && let Some(count) = crate::runtime::vcpus::notify_woke_count(vcpu_id)
             {
                 count.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
@@ -1028,14 +1042,12 @@ impl WakeAccessPort for AxVmDeviceAccessPorts {
                 ),
             });
         }
-        vm.with_runtime(|runtime| {
-            runtime.notify_all();
-            Ok(())
-        })
-        .map_err(|error| axdevice::DeviceManagerError::InvalidState {
-            operation: "wake vCPU from device access",
-            detail: format!("{error}"),
-        })
+        vm.runtime_snapshot()
+            .map(|runtime| runtime.notify_all())
+            .map_err(|error| axdevice::DeviceManagerError::InvalidState {
+                operation: "wake vCPU from device access",
+                detail: format!("{error}"),
+            })
     }
 }
 
@@ -1049,10 +1061,9 @@ impl StopAccessPort for AxVmDeviceAccessPorts {
             operation: "request VM stop from device access",
             detail: format!("{error}"),
         })?;
-        if let Ok(()) = vm.with_runtime(|runtime| {
+        if let Ok(runtime) = vm.runtime_snapshot() {
             runtime.notify_all();
-            Ok(())
-        }) {}
+        }
         Ok(())
     }
 }
@@ -1204,6 +1215,12 @@ impl AxVM {
             .runtime()
             .ok_or_else(|| ax_err_type!(BadState, "VM runtime is not available"))?;
         f(runtime)
+    }
+
+    /// Clones the runtime handle while holding the lifecycle lock, then
+    /// releases that lock before the caller performs wakeups or callbacks.
+    pub(crate) fn runtime_snapshot(&self) -> AxVmResult<Arc<VmRuntimeHandle>> {
+        runtime_snapshot_from_machine(&self.machine)
     }
 
     #[cfg_attr(
@@ -1474,17 +1491,15 @@ impl AxVM {
         match self.status() {
             VmStatus::Running | VmStatus::Paused => {
                 self.stop(reason)?;
-                if let Ok(()) = self.with_runtime(|runtime| {
+                if let Ok(runtime) = self.runtime_snapshot() {
                     runtime.notify_all();
-                    Ok(())
-                }) {}
+                }
                 self.wait_until_stopped()?;
             }
             VmStatus::Stopping => {
-                if let Ok(()) = self.with_runtime(|runtime| {
+                if let Ok(runtime) = self.runtime_snapshot() {
                     runtime.notify_all();
-                    Ok(())
-                }) {}
+                }
                 self.wait_until_stopped()?;
             }
             VmStatus::Stopped | VmStatus::Ready => {}
@@ -2296,6 +2311,28 @@ mod tests {
         runtime.notify_vcpu_unconditional(0);
 
         assert_ne!(runtime.notification_generation(), observed);
+    }
+
+    #[test]
+    fn runtime_snapshot_releases_lifecycle_lock_before_wakeups() {
+        let runtime = Arc::new(VmRuntimeHandle::new());
+        let machine = Mutex::new(Machine::Running {
+            resources: (),
+            runtime: runtime.clone(),
+        });
+
+        let snapshot = runtime_snapshot_from_machine(&machine).unwrap();
+
+        assert!(Arc::ptr_eq(&snapshot, &runtime));
+        assert!(
+            machine.try_lock().is_some(),
+            "runtime wakeups must run after releasing the lifecycle lock"
+        );
+    }
+
+    #[test]
+    fn directed_vcpu_wake_requests_reschedule() {
+        assert!(PREEMPT_ON_VCPU_WAKE);
     }
 
     #[test]

@@ -331,6 +331,12 @@ pub(crate) fn build_axvm_config(cfg: &GuestConfig) -> AxVMConfig {
             cfg.base.phys_cpu_sets.clone(),
         ),
         advance_hvc_smc_pc: cfg.base.advance_hvc_smc_pc,
+        aarch64_virtual_timer_only: cfg.base.aarch64_virtual_timer_only,
+        aarch64_wfi_policy: match cfg.base.aarch64_wfi_policy {
+            axvmconfig::Aarch64WfiPolicy::Auto => axvm::Aarch64WfiPolicy::Auto,
+            axvmconfig::Aarch64WfiPolicy::Trap => axvm::Aarch64WfiPolicy::Trap,
+            axvmconfig::Aarch64WfiPolicy::Passthrough => axvm::Aarch64WfiPolicy::Passthrough,
+        },
         cpu_config: AxVCpuConfig {
             bsp_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
             ap_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
@@ -481,6 +487,26 @@ mod tests {
         let vm_config = build_axvm_config(&crate_config);
 
         assert_eq!(vm_config.pass_through_irqs(), &vec![4, 17]);
+    }
+
+    #[test]
+    fn build_axvm_config_copies_virtual_timer_only_contract() {
+        let mut crate_config = GuestConfig::default();
+        crate_config.base.aarch64_virtual_timer_only = true;
+
+        let vm_config = build_axvm_config(&crate_config);
+
+        assert!(vm_config.aarch64_virtual_timer_only());
+    }
+
+    #[test]
+    fn build_axvm_config_copies_explicit_wfi_policy() {
+        let mut crate_config = GuestConfig::default();
+        crate_config.base.aarch64_wfi_policy = axvmconfig::Aarch64WfiPolicy::Trap;
+
+        let vm_config = build_axvm_config(&crate_config);
+
+        assert_eq!(vm_config.aarch64_wfi_policy(), axvm::Aarch64WfiPolicy::Trap);
     }
 
     #[test]

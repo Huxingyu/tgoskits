@@ -52,6 +52,8 @@ fn parses_structured_guest_config() {
     assert_eq!(config.base.cpu_num, 2);
     assert_eq!(config.base.phys_cpu_ids, Some(vec![0x500, 0x501]));
     assert_eq!(config.base.phys_cpu_sets, Some(vec![3, 4]));
+    assert!(!config.base.aarch64_virtual_timer_only);
+    assert_eq!(config.base.aarch64_wfi_policy, Aarch64WfiPolicy::Auto);
     assert_eq!(config.devices.inherit_host_devices, Some(false));
 
     assert_eq!(config.kernel.entry_point, 0xdeadbeef);
@@ -73,6 +75,32 @@ fn parses_structured_guest_config() {
             path: "/soc/gpio@2000".into(),
         }]
     );
+}
+
+#[test]
+fn parses_virtual_timer_only_contract() {
+    let config = GuestConfig::from_toml(
+        r#"
+[base]
+aarch64_virtual_timer_only = true
+"#,
+    )
+    .unwrap();
+
+    assert!(config.base.aarch64_virtual_timer_only);
+}
+
+#[test]
+fn parses_explicit_wfi_policy() {
+    let config = GuestConfig::from_toml(
+        r#"
+[base]
+aarch64_wfi_policy = "trap"
+"#,
+    )
+    .unwrap();
+
+    assert_eq!(config.base.aarch64_wfi_policy, Aarch64WfiPolicy::Trap);
 }
 
 #[test]
@@ -299,6 +327,7 @@ fn menuconfig_schema_exposes_only_structured_device_selectors() {
         .and_then(|value| value.as_object())
         .unwrap();
     assert!(base_properties.contains_key("guest_type"));
+    assert!(base_properties.contains_key("aarch64_virtual_timer_only"));
     assert!(!base_properties.contains_key("vm_type"));
 
     let root_properties = schema

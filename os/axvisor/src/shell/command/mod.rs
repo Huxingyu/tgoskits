@@ -627,6 +627,25 @@ mod tests {
     }
 
     #[test]
+    fn rt_timer_storm_options_are_registered() {
+        let parsed = CommandParser::parse(
+            "rt timer-storm --cpus 0xf --iterations 100 --expiry-samples 8 \
+             --expiry-delay-us 50000",
+        )
+        .unwrap();
+        assert_eq!(parsed.command_path, ["rt", "timer-storm"]);
+        assert_eq!(parsed.options.get("cpus").map(String::as_str), Some("0xf"));
+        assert_eq!(
+            parsed.options.get("iterations").map(String::as_str),
+            Some("100")
+        );
+        assert_eq!(
+            parsed.options.get("expiry-samples").map(String::as_str),
+            Some("8")
+        );
+    }
+
+    #[test]
     fn shlex_preserves_an_escaped_trailing_space() {
         let tokens = CommandParser::tokenize("echo value\\ ").unwrap();
 

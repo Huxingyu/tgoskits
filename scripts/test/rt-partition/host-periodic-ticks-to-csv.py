@@ -103,14 +103,14 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("log", type=Path)
     parser.add_argument("output", type=Path)
-    parser.add_argument("--require-zero-cpu", type=int)
+    parser.add_argument("--require-zero-cpu", type=int, action="append", default=[])
     args = parser.parse_args()
 
     try:
         snapshots = parse_snapshots(args.log.read_text(errors="replace"))
         rows = write_csv(args.output, snapshots)
-        if args.require_zero_cpu is not None:
-            require_zero_cpu(rows, args.require_zero_cpu)
+        for cpu in args.require_zero_cpu:
+            require_zero_cpu(rows, cpu)
     except ValueError as error:
         raise SystemExit(f"error: {error}") from error
 

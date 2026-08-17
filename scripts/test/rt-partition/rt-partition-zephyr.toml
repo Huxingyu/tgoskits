@@ -22,6 +22,7 @@ name = "rt-partition-zephyr"
 guest_type = "passthrough"
 cpu_num = 1
 phys_cpu_ids = [1]
+aarch64_virtual_timer_only = true
 
 [kernel]
 entry_point = 0xA000_1044

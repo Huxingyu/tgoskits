@@ -64,6 +64,7 @@ pub use axvm_types::{
     AccessWidth, GuestPhysAddr, HostPhysAddr, InterruptTriggerMode, MappingFlags, Port, SysRegAddr,
     VMId, VmVcpuState,
 };
+pub use config::Aarch64WfiPolicy;
 pub use configured::{
     ConfiguredDeviceCatalog, ConfiguredDeviceError, ConfiguredModelConstructor,
     ConfiguredModelRegistration, DefaultVirtualDeviceIntent, DeviceInstantiationContext,
@@ -93,19 +94,108 @@ pub use vmexit_stats::{
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct VcpuRuntimeCounts {
     pub vcpu_id: usize,
+    pub post_vmexit_yields: usize,
     pub parks: usize,
     pub wakes: usize,
     pub notify_woke: usize,
+    pub vtimer_arms: usize,
+    pub vtimer_immediate: usize,
+    pub vtimer_no_deadline: usize,
+    pub vtimer_registered: usize,
+    pub vtimer_callbacks: usize,
+    pub vtimer_stale_callbacks: usize,
+    pub vtimer_notifications: usize,
+    pub vtimer_invalidations: usize,
+    pub vtimer_direct_acks: usize,
+    pub vtimer_direct_overlaps: usize,
+    pub vtimer_callback_to_wake_samples: usize,
+    pub vtimer_callback_to_wake_overflow: usize,
+    pub vtimer_callback_to_wake_p50_ns: u64,
+    pub vtimer_callback_to_wake_p99_ns: u64,
+    pub vtimer_callback_to_wake_p99_9_ns: u64,
+    pub vtimer_callback_to_wake_max_ns: u64,
+    /// Callback-to-`run_vcpu` dispatch latency, before architecture entry preparation.
+    pub vtimer_callback_to_entry_samples: usize,
+    pub vtimer_callback_to_entry_overflow: usize,
+    pub vtimer_callback_to_entry_p50_ns: u64,
+    pub vtimer_callback_to_entry_p99_ns: u64,
+    pub vtimer_callback_to_entry_p99_9_ns: u64,
+    pub vtimer_callback_to_entry_max_ns: u64,
+    /// Callback-to-Guest backend entry latency, after VGIC load.
+    pub vtimer_callback_to_guest_entry_samples: usize,
+    pub vtimer_callback_to_guest_entry_overflow: usize,
+    pub vtimer_callback_to_guest_entry_p50_ns: u64,
+    pub vtimer_callback_to_guest_entry_p99_ns: u64,
+    pub vtimer_callback_to_guest_entry_p99_9_ns: u64,
+    pub vtimer_callback_to_guest_entry_max_ns: u64,
+    /// Direct CNTV acknowledge/publish completion to the next vCPU run dispatch.
+    pub vtimer_direct_to_entry_samples: usize,
+    pub vtimer_direct_to_entry_overflow: usize,
+    pub vtimer_direct_to_entry_p50_ns: u64,
+    pub vtimer_direct_to_entry_p99_ns: u64,
+    pub vtimer_direct_to_entry_p99_9_ns: u64,
+    pub vtimer_direct_to_entry_max_ns: u64,
+    /// Direct CNTV acknowledge/publish completion to Guest backend entry.
+    pub vtimer_direct_to_guest_entry_samples: usize,
+    pub vtimer_direct_to_guest_entry_overflow: usize,
+    pub vtimer_direct_to_guest_entry_p50_ns: u64,
+    pub vtimer_direct_to_guest_entry_p99_ns: u64,
+    pub vtimer_direct_to_guest_entry_p99_9_ns: u64,
+    pub vtimer_direct_to_guest_entry_max_ns: u64,
+    /// Host CNTV PPI activation lifetime from acceptance until guest EOI.
+    pub vtimer_activation_hold_samples: usize,
+    pub vtimer_activation_hold_overflow: usize,
+    pub vtimer_activation_hold_p50_ns: u64,
+    pub vtimer_activation_hold_p99_ns: u64,
+    pub vtimer_activation_hold_p99_9_ns: u64,
+    pub vtimer_activation_hold_max_ns: u64,
 }
 
 /// Low-overhead AxVM timer-wheel counters used by post-stall diagnostics.
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct TimerRuntimeCounts {
     pub cpu_id: usize,
+    pub snapshot_now_ns: u64,
+    pub wheel_next_deadline_ns: u64,
+    pub published_deadline_ns: u64,
     pub registered: usize,
     pub cancelled: usize,
     pub expired: usize,
     pub worker_wakes: usize,
+    pub expiry_batches: usize,
+    pub expiry_late_samples: usize,
+    pub expiry_late_overflow: usize,
+    pub expiry_late_p50_ns: u64,
+    pub expiry_late_p99_ns: u64,
+    pub expiry_late_p99_9_ns: u64,
+    pub expiry_late_max_ns: u64,
+    pub lock_acquisitions: usize,
+    pub lock_wait_total_ns: u64,
+    pub lock_wait_max_ns: u64,
+    pub lock_hold_total_ns: u64,
+    pub lock_hold_max_ns: u64,
+}
+
+/// Result of a concurrent AxVM software-timer register/cancel/expiry run.
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct TimerStormResult {
+    pub implementation: &'static str,
+    pub cpu_mask: usize,
+    pub workers: usize,
+    pub iterations_per_worker: usize,
+    pub register_cancel_pairs: usize,
+    pub elapsed_ns: u64,
+    pub pairs_per_second: u64,
+    pub expiry_samples: usize,
+    pub expiry_completed: usize,
+    pub expiry_p50_late_ns: u64,
+    pub expiry_p99_late_ns: u64,
+    pub expiry_max_late_ns: u64,
+    pub lock_acquisitions: usize,
+    pub lock_wait_total_ns: u64,
+    pub lock_wait_max_ns: u64,
+    pub lock_hold_total_ns: u64,
+    pub lock_hold_max_ns: u64,
 }
 
 /// Per-VM device-poll request counters used by console stall diagnostics.
@@ -139,6 +229,22 @@ pub(crate) type AxVMPerCpu = vcpu::AxPerCpu<arch::ArchPerCpu>;
 /// Check and dispatch pending AxVM timer events on the current CPU.
 pub fn check_timer_events() {
     timer::check_events();
+}
+
+/// Run a bounded, multi-CPU software-timer storm for timer-wheel A/B testing.
+#[cfg(not(test))]
+pub fn run_timer_storm(
+    cpu_mask: usize,
+    iterations_per_worker: usize,
+    expiry_samples_per_worker: usize,
+    expiry_delay: core::time::Duration,
+) -> Result<TimerStormResult, &'static str> {
+    timer::run_timer_storm(
+        cpu_mask,
+        iterations_per_worker,
+        expiry_samples_per_worker,
+        expiry_delay,
+    )
 }
 
 /// Clean data cache lines covering a host virtual address range.

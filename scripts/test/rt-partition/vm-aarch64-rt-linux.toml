@@ -11,6 +11,8 @@ name = "rt-partition-linux"
 guest_type = "virtualized"
 cpu_num = 2
 phys_cpu_ids = [2, 3]
+aarch64_virtual_timer_only = false
+aarch64_wfi_policy = "auto"
 
 [kernel]
 entry_point = 0x8020_0000

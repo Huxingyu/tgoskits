@@ -18,6 +18,12 @@ class RunMetrics:
     p99_9_jitter_ns: int
     max_jitter_ns: int
     deadline_misses_tolerance: int
+    linux_avg_latency_us: int
+    linux_p99_latency_us: int
+    linux_p99_9_latency_us: int
+    linux_max_latency_us: int
+    linux_overflow_samples: int
+    linux_total_samples: int
 
 
 def read_key_values(path: Path) -> dict[str, str]:
@@ -42,8 +48,10 @@ def required(values: dict[str, str], name: str, path: Path) -> str:
 def read_run(path: Path) -> RunMetrics:
     meta_path = path / "meta.txt"
     stats_path = path / "zephyr-stats.txt"
+    linux_stats_path = path / "cyclictest-summary.txt"
     meta = read_key_values(meta_path)
     stats = read_key_values(stats_path)
+    linux_stats = read_key_values(linux_stats_path)
     return RunMetrics(
         path=path,
         git_commit=required(meta, "git_commit", meta_path),
@@ -52,6 +60,24 @@ def read_run(path: Path) -> RunMetrics:
         max_jitter_ns=int(required(stats, "max_jitter_ns", stats_path)),
         deadline_misses_tolerance=int(
             required(stats, "deadline_misses_tolerance", stats_path)
+        ),
+        linux_avg_latency_us=int(
+            required(linux_stats, "avg_latency_us", linux_stats_path)
+        ),
+        linux_p99_latency_us=int(
+            required(linux_stats, "p99_latency_us", linux_stats_path)
+        ),
+        linux_p99_9_latency_us=int(
+            required(linux_stats, "p99_9_latency_us", linux_stats_path)
+        ),
+        linux_max_latency_us=int(
+            required(linux_stats, "max_latency_us", linux_stats_path)
+        ),
+        linux_overflow_samples=int(
+            required(linux_stats, "overflow_samples", linux_stats_path)
+        ),
+        linux_total_samples=int(
+            required(linux_stats, "total_samples", linux_stats_path)
         ),
     )
 
@@ -114,12 +140,66 @@ def build_summary(
             [getattr(run, metric_name) for run in modified],
         )
 
+        # Explicit aliases keep old consumers working while making the RTOS
+        # scope unambiguous beside the Linux cyclictest metrics below.
+        append_metric_summary(
+            lines,
+            "baseline_zephyr",
+            metric_name,
+            [getattr(run, metric_name) for run in baseline],
+        )
+        append_metric_summary(
+            lines,
+            "modified_zephyr",
+            metric_name,
+            [getattr(run, metric_name) for run in modified],
+        )
+
+    for metric_name in (
+        "linux_avg_latency_us",
+        "linux_p99_latency_us",
+        "linux_p99_9_latency_us",
+        "linux_max_latency_us",
+        "linux_overflow_samples",
+        "linux_total_samples",
+    ):
+        append_metric_summary(
+            lines,
+            "baseline",
+            metric_name,
+            [getattr(run, metric_name) for run in baseline],
+        )
+        append_metric_summary(
+            lines,
+            "modified",
+            metric_name,
+            [getattr(run, metric_name) for run in modified],
+        )
+
     baseline_p99 = statistics.median(run.p99_jitter_ns for run in baseline)
     modified_p99 = statistics.median(run.p99_jitter_ns for run in modified)
     if modified_p99 == 0:
         lines.append("p99_improvement_ratio=not-computable")
+        lines.append("zephyr_p99_improvement_ratio=not-computable")
     else:
         lines.append(f"p99_improvement_ratio={baseline_p99 / modified_p99:.6f}")
+        lines.append(
+            f"zephyr_p99_improvement_ratio={baseline_p99 / modified_p99:.6f}"
+        )
+
+    baseline_linux_p99 = statistics.median(
+        run.linux_p99_latency_us for run in baseline
+    )
+    modified_linux_p99 = statistics.median(
+        run.linux_p99_latency_us for run in modified
+    )
+    if modified_linux_p99 == 0:
+        lines.append("linux_p99_improvement_ratio=not-computable")
+    else:
+        lines.append(
+            "linux_p99_improvement_ratio="
+            f"{baseline_linux_p99 / modified_linux_p99:.6f}"
+        )
 
     if len(baseline) == len(modified):
         paired_ratios = [
@@ -131,6 +211,21 @@ def build_summary(
             lines.append(
                 "paired_p99_improvement_ratio_median="
                 f"{statistics.median(paired_ratios):.6f}"
+            )
+            lines.append(
+                "paired_zephyr_p99_improvement_ratio_median="
+                f"{statistics.median(paired_ratios):.6f}"
+            )
+
+        paired_linux_ratios = [
+            before.linux_p99_latency_us / after.linux_p99_latency_us
+            for before, after in zip(baseline, modified)
+            if after.linux_p99_latency_us > 0
+        ]
+        if len(paired_linux_ratios) == len(baseline):
+            lines.append(
+                "paired_linux_p99_improvement_ratio_median="
+                f"{statistics.median(paired_linux_ratios):.6f}"
             )
 
     return "\n".join(lines) + "\n"

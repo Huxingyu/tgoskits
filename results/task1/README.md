@@ -10,7 +10,7 @@
 | Item | Purpose | Data / status |
 |---|---|---|
 | `24h-exploration-retrospective.md` | full exploration, failures, fixes, experiments, scoring, and remaining work | current end-to-end retrospective |
-| `phase2-plan.md` | next-phase execution plan: statistics protocol, contention baseline, WFI fast path, timer-lock split, deferred preemption, board port | supersedes retrospective section 14 |
+| `phase2-plan.md` | Phase 2 execution record: statistics, contention, WFI, timer lock, preemption, rejected candidates, and closure | closed for the QEMU mainline; board port remains external |
 | `SESSION-SUMMARY.md` | current implementation and remaining work | updated after code audit |
 | `WORKLOG.md` | chronological implementation/debug record | includes failed preempt/IPI paths |
 | `allocation-table.md` | CPU, memory, device, interrupt ownership | current measurement/load topology |
@@ -21,6 +21,54 @@
 | `virq-ab/` | recovered historical Task1 vIRQ assets | local assets verified; experiment `/tmp` logs missing |
 | `matrix/` | formal idle/stress/RT matrix and stall diagnostics | four 1800-second duration scenarios passed |
 | `stability/` | one-hour stability | functionally passed; long-tail latency stability not established |
+| `priority-scheduler/` | fixed-priority FIFO, deferred kick priority, and ready-path A/B | formal software-mechanism result; Zephyr P99 10.494x |
+| `wfi-fastpath-ab/` | dedicated Zephyr CNTV/WFI fast path | mechanism count proof plus single-pair latency observation |
+| `percpu-timer-wheel/` | per-CPU timer-wheel lock A/B | host-only lock/throughput result; no end-to-end latency claim |
+| `linux-guest-trace-gate/` | optional Linux Guest ftrace diagnosis | identifies Guest wake-to-switch tail; not a performance A/B |
+| `timer-worker-priority/` | bounded priority-91 timer-worker candidate | rejected for formal improvement; measurement-only |
+
+## Final Mechanism Results
+
+These are the numbers that may be used for the Task1 software-mechanism claim.
+The A/B variables are held at the same topology and offered load unless the
+row explicitly says otherwise.
+
+| Mechanism | Measured result | What it proves | Evidence |
+|---|---:|---|---|
+| Fixed-priority FIFO + ready-path preemption | Zephyr P99 `10.721 ms -> 1.022 ms`, **90.47% lower / 10.494x**; 1 ms misses `56 -> 5` | A real scheduler, target-vCPU wake, deferred-kick priority, and same-core low-priority interference improvement; not static partitioning | `priority-scheduler/final-kick91-ababab-90s/` |
+| Dedicated Zephyr WFI/CNTV fast path | WFI exits `1952 -> 0`; single-pair P99 **19.2% lower**; 1 ms misses `3 -> 0` | Deterministically removes the trapped-WFI plus software park/wake path; the latency percentage remains a one-pair observation | `wfi-fastpath-ab/` |
+| Per-CPU timer wheel | Register/cancel throughput **1.774x**; total lock wait **90.10% lower**; max lock wait **63.44% lower** | Global IRQ-safe timer-wheel lock was removed from the cross-pCPU path | `percpu-timer-wheel/formal-host-lock-ab-priority89-aggregate.md` |
+
+The `10.494x` figure is the strongest independent software result in this
+repository. It is a Zephyr/common-core interference result, not a Linux-wide
+P99 result and not a static CPU-partition result. The `18.29x` result in
+`p1-interleaved-2026-08-16/` is reported separately because it changes CPU
+placement/dedicated no-tick isolation relative to the official DEV shared-core
+baseline. The timer-wheel `1.774x` is throughput, not latency acceleration.
+
+## Task1 Requirement Coverage
+
+| Requirement | Current evidence | Status |
+|---|---|---|
+| AxVisor real-time path changes | WFI/CNTV fast path, fixed-priority FIFO + ready wake, deferred-kick priority contract, per-CPU timer wheel, bounded vIRQ and no-tick isolation | **Delivered**; Linux tail remains a documented limitation |
+| At least 2-vCPU Linux Guest | 2-vCPU Linux on pCPU2/3, QEMU AArch64 SMP4, reproducible config/build/start commands | **Delivered** |
+| vCPU/pCPU, memory, devices, IRQ routing, boot args | `allocation-table.md`, generated TOML and per-run `meta.txt` | **Delivered** |
+| Jitter, scheduling, IRQ response, max latency, long stability | formal 1800 s four-scenario matrix, timerlat/ftrace gates, one-hour `stress-rt` stability | **Delivered with limits**: QEMU TCG max is not WCET; one-hour P99 worsens |
+| RTOS baseline | native Zephyr, 300/300 samples, reproducible image/hash/command | **Delivered** |
+| Reproducibility | runner scripts, configs, build logs, raw logs, CSV/statistics, manifests and SHA256 | **Delivered for tracked QEMU evidence** |
+| Physical-board hard bound | OrangePi-5-Plus port/run | **External blocker**: no board allocation in this environment |
+
+## Result Classification
+
+The following Linux candidates are intentionally **not** included in the
+formal improvement percentage: direct per-vCPU CNTV/WFI (IRQ P99 worsened
+67.32% in the repeated pilot), unconditional post-VM-exit yield, timer-worker
+priority 91, and timer-contract-only pilots. They demonstrate real mechanism
+effects or useful diagnosis, but fail directional or worst-tail acceptance.
+The Linux Guest trace gate shows `sched_wakeup -> sched_switch` is 95.6% of the
+observed IRQ-to-switch P99, so further Linux improvement requires a separate
+Guest scheduling/IRQ investigation rather than relabelling the current AxVisor
+numbers.
 
 ## Native Zephyr
 

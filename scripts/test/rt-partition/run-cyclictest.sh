@@ -21,8 +21,17 @@ result_drain_timeout="${RT_RESULT_DRAIN_TIMEOUT_SEC:-180}"
 zephyr_timeout="${RT_ZEPHYR_TIMEOUT_SEC:-180}"
 burner_config="${RT_BURNER:-}"
 vmexit_diagnostics="${RT_VMEXIT_DIAGNOSTICS:-1}"
+runtime_diagnostics="${RT_RUNTIME_DIAGNOSTICS:-0}"
+timer_storm_command="${RT_TIMER_STORM_COMMAND:-}"
 rootfs_override="${RT_ROOTFS:-}"
+linux_image="${RT_LINUX_KERNEL_OVERRIDE:-${repo_root}/tmp/rt-partition/linux-qemu}"
+linux_trace="${RT_LINUX_TRACE:-disabled}"
+linux_trace_buffer_kb="${RT_LINUX_TRACE_BUFFER_KB:-8192}"
+linux_virtual_timer_only="${RT_LINUX_VIRTUAL_TIMER_ONLY:-0}"
+linux_wfi_policy="${RT_LINUX_WFI_POLICY:-auto}"
+dedicated_cpus_override="${RT_DEDICATED_CPUS_OVERRIDE:-}"
 require_init_done="${RT_REQUIRE_INIT_DONE:-1}"
+qemu_exit_grace_sec="${RT_QEMU_EXIT_GRACE_SEC:-10}"
 
 git -C "$source_root" rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
     printf 'error: RT_SOURCE_ROOT is not a git worktree: %s\n' "$source_root" >&2
@@ -32,16 +41,44 @@ case "$vmexit_diagnostics" in
     0|1) ;;
     *) printf 'error: RT_VMEXIT_DIAGNOSTICS must be 0 or 1\n' >&2; exit 2 ;;
 esac
+case "$runtime_diagnostics" in
+    0|1) ;;
+    *) printf 'error: RT_RUNTIME_DIAGNOSTICS must be 0 or 1\n' >&2; exit 2 ;;
+esac
 case "$require_init_done" in
     0|1) ;;
     *) printf 'error: RT_REQUIRE_INIT_DONE must be 0 or 1\n' >&2; exit 2 ;;
 esac
+case "$linux_trace" in
+    disabled|events|timerlat) ;;
+    *) printf 'error: RT_LINUX_TRACE must be disabled, events, or timerlat\n' >&2; exit 2 ;;
+esac
+case "$linux_virtual_timer_only" in
+    0|1) ;;
+    *) printf 'error: RT_LINUX_VIRTUAL_TIMER_ONLY must be 0 or 1\n' >&2; exit 2 ;;
+esac
+case "$linux_wfi_policy" in
+    auto|trap|passthrough) ;;
+    *) printf 'error: RT_LINUX_WFI_POLICY must be auto, trap, or passthrough\n' >&2; exit 2 ;;
+esac
+if [[ "$linux_wfi_policy" == "passthrough" && "$linux_virtual_timer_only" != "1" ]]; then
+    printf 'error: RT_LINUX_WFI_POLICY=passthrough requires RT_LINUX_VIRTUAL_TIMER_ONLY=1\n' >&2
+    exit 2
+fi
+if [[ -n "$dedicated_cpus_override" && ! "$dedicated_cpus_override" =~ ^[0-9]+(,[0-9]+)*$ ]]; then
+    printf 'error: RT_DEDICATED_CPUS_OVERRIDE must be a comma-separated CPU list\n' >&2
+    exit 2
+fi
 if [[ -n "$burner_config" && ! "$burner_config" =~ ^[0-9]+:[0-9]+:[0-9]+(:[0-9]+)?$ ]]; then
     printf 'error: RT_BURNER must use <cpu>:<busy_ms>:<idle_ms>[:<start_delay_ms>]\n' >&2
     exit 2
 fi
 if [[ -n "$rootfs_override" && ! -f "$rootfs_override" ]]; then
     printf 'error: RT_ROOTFS does not exist: %s\n' "$rootfs_override" >&2
+    exit 2
+fi
+if [[ ! -f "$linux_image" ]]; then
+    printf 'error: Linux kernel image does not exist: %s\n' "$linux_image" >&2
     exit 2
 fi
 
@@ -71,6 +108,9 @@ case "$scenario" in
         exit 2
         ;;
 esac
+if [[ -n "$dedicated_cpus_override" ]]; then
+    dedicated_cpus="$dedicated_cpus_override"
+fi
 calibration_file="${RT_CALIBRATION_FILE:-${repo_root}/results/task1/calibration/runtime-scales.env}"
 calibrated_scale=""
 if [[ -f "$calibration_file" ]]; then
@@ -85,18 +125,24 @@ elif [[ -n "$calibrated_scale" ]]; then
 else
     runtime_scale_source="default"
 fi
+if (( runtime_diagnostics == 1 )); then
+    runtime_final_steps=$'cmd rt stat\nsleep 2'
+else
+    runtime_final_steps=""
+fi
 host_tick_args=()
-case "$scenario" in
-    stress-dedicated|stress-rt)
-        host_tick_args=(--require-zero-cpu 1)
-        ;;
-esac
+if [[ -n "$dedicated_cpus" ]]; then
+    IFS=',' read -r -a dedicated_cpu_list <<< "$dedicated_cpus"
+    for dedicated_cpu in "${dedicated_cpu_list[@]}"; do
+        host_tick_args+=(--require-zero-cpu "$dedicated_cpu")
+    done
+fi
 
-for value in "$loops" "$duration_sec" "$interval_us" "$maxlat_us" "$deadline_tolerance_ns" "$priority" "$rt_cpu" "$start_delay_sec" "$runtime_scale" "$result_drain_timeout" "$zephyr_timeout"; do
+for value in "$loops" "$duration_sec" "$interval_us" "$maxlat_us" "$deadline_tolerance_ns" "$priority" "$rt_cpu" "$start_delay_sec" "$runtime_scale" "$result_drain_timeout" "$zephyr_timeout" "$linux_trace_buffer_kb" "$qemu_exit_grace_sec"; do
     [[ "$value" =~ ^[0-9]+$ ]] || { printf 'error: numeric RT option is invalid: %s\n' "$value" >&2; exit 2; }
 done
-(( interval_us > 0 && runtime_scale > 0 && result_drain_timeout > 0 && zephyr_timeout > 0 )) || {
-    printf 'error: interval, runtime scale, result drain timeout, and Zephyr timeout must be positive\n' >&2
+(( interval_us > 0 && runtime_scale > 0 && result_drain_timeout > 0 && zephyr_timeout > 0 && linux_trace_buffer_kb > 0 && qemu_exit_grace_sec > 0 )) || {
+    printf 'error: interval, runtime scale, result drain timeout, Zephyr timeout, trace buffer, and QEMU exit grace must be positive\n' >&2
     exit 2
 }
 (( rt_cpu <= 1 )) || { printf 'error: RT_CPU must be 0 or 1 for the two-vCPU Linux guest\n' >&2; exit 2; }
@@ -120,7 +166,7 @@ progress_timeout="${RT_PROGRESS_TIMEOUT_SEC:-300}"
 minimum_outer_timeout=$((
     serial_socket_timeout + 120 + linux_start_timeout + 60 + 10 + 2 + 10 + 10 +
     zephyr_timeout + 10 + 2 + 10 + 1 + experiment_timeout + result_drain_timeout +
-    30 + 2 + 30 + 60
+    30 + 2 + 30 + qemu_exit_grace_sec + 60
 ))
 timeout_sec="${RT_TIMEOUT_SEC:-$minimum_outer_timeout}"
 (( timeout_sec >= minimum_outer_timeout )) || {
@@ -135,10 +181,12 @@ timeout_sec="${RT_TIMEOUT_SEC:-$minimum_outer_timeout}"
 work="${repo_root}/tmp/rt-partition"
 out_root="${RT_OUTPUT_ROOT:-${repo_root}/results/task1/matrix}"
 out_dir="${out_root}/${scenario}"
-board_toml="${repo_root}/scripts/test/rt-partition/board-qemu-aarch64-rt.toml"
+board_toml="${RT_BOARD_CONFIG:-${repo_root}/scripts/test/rt-partition/board-qemu-aarch64-rt.toml}"
 linux_template="${repo_root}/scripts/test/rt-partition/vm-aarch64-rt-linux.toml"
 zephyr_template="${repo_root}/scripts/test/rt-partition/rt-partition-zephyr.toml"
 zephyr_template="${RT_ZEPHYR_TEMPLATE:-$zephyr_template}"
+zephyr_image="${RT_ZEPHYR_IMAGE:-${work}/zephyr-periodic.bin}"
+zephyr_manifest="${RT_ZEPHYR_MANIFEST:-${work}/zephyr-periodic.manifest}"
 linux_config="${work}/generated-${scenario}-linux.toml"
 zephyr_config="${work}/generated-${scenario}-zephyr.toml"
 qemu_config="${work}/generated-${scenario}-qemu.toml"
@@ -151,26 +199,26 @@ build_log="${out_dir}/build-qemu.log"
 for path in "$board_toml" "$linux_template" "$zephyr_template"; do
     [[ -f "$path" ]] || { printf 'error: missing %s\n' "$path" >&2; exit 1; }
 done
-for path in "$work/linux-qemu" "$work/rt-linux-initramfs.cpio.gz" \
-    "$work/zephyr-periodic.bin" "$work/zephyr-periodic.manifest"; do
+for path in "$linux_image" "$work/rt-linux-initramfs.cpio.gz" \
+    "$zephyr_image" "$zephyr_manifest"; do
     [[ -f "$path" ]] || {
         printf 'error: missing %s (stage the guest images and run build-rt-tools.sh)\n' "$path" >&2
         exit 1
     }
 done
 
-rg -a -F "PERIODIC LATENCY COMPLETE samples=%d" "$work/zephyr-periodic.bin" >/dev/null || {
+rg -a -F "PERIODIC LATENCY COMPLETE samples=%d" "$zephyr_image" >/dev/null || {
     printf 'error: Zephyr image is not the periodic latency sampler\n' >&2
     exit 1
 }
-if rg -a -F "TASK2_MAIN_START" "$work/zephyr-periodic.bin" >/dev/null; then
+if rg -a -F "TASK2_MAIN_START" "$zephyr_image" >/dev/null; then
     printf 'error: Zephyr image is the Task2 networking guest, not the periodic sampler\n' >&2
     exit 1
 fi
-zephyr_entry="$(sed -n 's/^entry_point=//p' "$work/zephyr-periodic.manifest")"
-zephyr_samples="$(sed -n 's/^sample_count=//p' "$work/zephyr-periodic.manifest")"
-zephyr_start_gated="$(sed -n 's/^start_gated=//p' "$work/zephyr-periodic.manifest")"
-zephyr_start_delay_ms="$(sed -n 's/^start_delay_ms=//p' "$work/zephyr-periodic.manifest")"
+zephyr_entry="$(sed -n 's/^entry_point=//p' "$zephyr_manifest")"
+zephyr_samples="$(sed -n 's/^sample_count=//p' "$zephyr_manifest")"
+zephyr_start_gated="$(sed -n 's/^start_gated=//p' "$zephyr_manifest")"
+zephyr_start_delay_ms="$(sed -n 's/^start_delay_ms=//p' "$zephyr_manifest")"
 [[ "$zephyr_entry" =~ ^0x[0-9a-fA-F]+$ ]] || {
     printf 'error: invalid Zephyr entry point in manifest: %s\n' "$zephyr_entry" >&2
     exit 1
@@ -187,7 +235,7 @@ zephyr_start_delay_ms="$(sed -n 's/^start_delay_ms=//p' "$work/zephyr-periodic.m
     printf 'error: invalid Zephyr start delay in manifest: %s\n' "$zephyr_start_delay_ms" >&2
     exit 1
 }
-rg -a -F "PERIODIC LATENCY READY" "$work/zephyr-periodic.bin" >/dev/null || {
+rg -a -F "PERIODIC LATENCY READY" "$zephyr_image" >/dev/null || {
     printf 'error: matrix Zephyr image does not contain the UART start gate\n' >&2
     exit 1
 }
@@ -200,6 +248,10 @@ rm -f "$serial_sock" "$qmp_sock" "$run_log" "$build_log" \
     "$out_dir/vmexit-before.txt" "$out_dir/vmexit-zephyr-after.txt" \
     "$out_dir/vmexit-after.txt" \
     "$out_dir/vmexit-stat.txt" "$out_dir/host-periodic-ticks.csv" \
+    "$out_dir/linux-ftrace.txt" "$out_dir/linux-ftrace-latency.csv" \
+    "$out_dir/linux-ftrace-latency-summary.txt" \
+    "$out_dir/linux-timerlat.txt" "$out_dir/linux-timerlat-latency.csv" \
+    "$out_dir/linux-timerlat-latency-summary.txt" \
     "$out_dir/meta.txt" "$out_dir/sha256sums" \
     "$out_dir/linux-qemu" "$out_dir/rt-linux-initramfs.cpio.gz" \
     "$out_dir/zephyr-periodic.bin" "$out_dir/zephyr-periodic.manifest" \
@@ -213,28 +265,52 @@ rm -f "$serial_sock" "$qmp_sock" "$run_log" "$build_log" \
     "$out_dir/post-stall/serial-actions.txt" \
     "$out_dir/post-stall/serial-tail.bin"
 
-cmdline="console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=${rt_cpu} nohz_full=${rt_cpu} irqaffinity=${load_cpu} rt_scenario=${scenario} rt_cpu=${rt_cpu} rt_load_cpu=${load_cpu} rt_loops=${cyclictest_loops} rt_duration_sec=${duration_sec} rt_interval_us=${interval_us} rt_maxlat_us=${maxlat_us} rt_priority=${priority} rt_start_delay_sec=${start_delay_sec}"
+cmdline="console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=${rt_cpu} nohz_full=${rt_cpu} irqaffinity=${load_cpu} rt_scenario=${scenario} rt_cpu=${rt_cpu} rt_load_cpu=${load_cpu} rt_loops=${cyclictest_loops} rt_duration_sec=${duration_sec} rt_interval_us=${interval_us} rt_maxlat_us=${maxlat_us} rt_priority=${priority} rt_trace=${linux_trace} rt_trace_buffer_kb=${linux_trace_buffer_kb} rt_start_delay_sec=${start_delay_sec}"
 
-python3 - "$linux_template" "$linux_config" "$cmdline" <<'PY'
+python3 - "$linux_template" "$linux_config" "$cmdline" "$linux_image" \
+    "$linux_virtual_timer_only" "$linux_wfi_policy" <<'PY'
 import sys
 from pathlib import Path
 
 source = Path(sys.argv[1])
 destination = Path(sys.argv[2])
 cmdline = sys.argv[3]
+linux_image = sys.argv[4]
+virtual_timer_only = sys.argv[5] == "1"
+wfi_policy = sys.argv[6]
 lines = source.read_text().splitlines()
-replaced = False
+cmdline_replaced = False
+kernel_replaced = False
+timer_contract_replaced = False
+wfi_policy_replaced = False
 for index, line in enumerate(lines):
     if line.startswith("cmdline = "):
         lines[index] = f'cmdline = "{cmdline}"'
-        replaced = True
-        break
-if not replaced:
+        cmdline_replaced = True
+    elif line.startswith("kernel_path = "):
+        lines[index] = f'kernel_path = "{linux_image}"'
+        kernel_replaced = True
+    elif line.startswith("aarch64_virtual_timer_only = "):
+        lines[index] = (
+            "aarch64_virtual_timer_only = "
+            + ("true" if virtual_timer_only else "false")
+        )
+        timer_contract_replaced = True
+    elif line.startswith("aarch64_wfi_policy = "):
+        lines[index] = f'aarch64_wfi_policy = "{wfi_policy}"'
+        wfi_policy_replaced = True
+if not cmdline_replaced:
     raise SystemExit("Linux VM template has no cmdline field")
+if not kernel_replaced:
+    raise SystemExit("Linux VM template has no kernel_path field")
+if not timer_contract_replaced:
+    raise SystemExit("Linux VM template has no virtual timer contract field")
+if not wfi_policy_replaced:
+    raise SystemExit("Linux VM template has no WFI policy field")
 destination.write_text("\n".join(lines) + "\n")
 PY
 
-python3 - "$zephyr_template" "$zephyr_config" "$zephyr_guest_type" "$zephyr_entry" <<'PY'
+python3 - "$zephyr_template" "$zephyr_config" "$zephyr_guest_type" "$zephyr_entry" "$zephyr_image" <<'PY'
 import sys
 from pathlib import Path
 
@@ -242,9 +318,11 @@ source = Path(sys.argv[1])
 destination = Path(sys.argv[2])
 guest_type = sys.argv[3]
 entry_point = sys.argv[4]
+image_path = sys.argv[5]
 lines = source.read_text().splitlines()
 found_guest_type = False
 found_entry_point = False
+found_kernel_path = False
 for index, line in enumerate(lines):
     if line.startswith("guest_type = "):
         lines[index] = f'guest_type = "{guest_type}"'
@@ -252,10 +330,15 @@ for index, line in enumerate(lines):
     elif line.startswith("entry_point = "):
         lines[index] = f"entry_point = {entry_point}"
         found_entry_point = True
+    elif line.startswith("kernel_path = "):
+        lines[index] = f'kernel_path = "{image_path}"'
+        found_kernel_path = True
 if not found_guest_type:
     raise SystemExit("Zephyr VM template has no guest_type field")
 if not found_entry_point:
     raise SystemExit("Zephyr VM template has no entry_point field")
+if not found_kernel_path:
+    raise SystemExit("Zephyr VM template has no kernel_path field")
 destination.write_text("\n".join(lines) + "\n")
 PY
 
@@ -302,6 +385,36 @@ if (( require_init_done == 1 )); then
 else
     init_done_step=""
 fi
+if [[ "$linux_trace" != "disabled" ]]; then
+    trace_dump_steps="$(cat <<EOF
+expect 30 RT_FTRACE_DUMP_READY encoding=gzip-base64
+cmd dump
+expect ${result_drain_timeout} RT_FTRACE_DUMP_END
+EOF
+)"
+else
+    trace_dump_steps=""
+fi
+
+if [[ -n "$timer_storm_command" ]]; then
+    zephyr_measurement_steps="$(cat <<EOF
+send-until 60 0.5 g PERIODIC LATENCY START
+detach
+expect 10 \\[Axvisor\\] detached VM\\[2\\] console
+cmd ${timer_storm_command}
+expect 300 RT_TIMER_STORM_COMPLETE
+cmd vm console 2
+expect 10 Attached VM\\[2\\] console
+expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300
+EOF
+)"
+else
+    zephyr_measurement_steps="$(cat <<EOF
+send-until 60 0.5 g PERIODIC LATENCY START
+expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300
+EOF
+)"
+fi
 
 cat > "$steps" <<EOF
 expect 120 Default guest initialized
@@ -313,8 +426,7 @@ ${vmexit_before_steps}
 cmd vm console 2
 expect 10 Attached VM\[2\] console
 expect 10 PERIODIC LATENCY READY
-send-until 60 0.5 g PERIODIC LATENCY START
-expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300
+${zephyr_measurement_steps}
 detach
 expect 10 \[Axvisor\] detached VM\[2\] console
 ${vmexit_after_zephyr_steps}
@@ -322,8 +434,10 @@ cmd vm console 1
 expect 10 Attached VM\[1\] console
 sleep 1
 expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE
+${trace_dump_steps}
 ${init_done_step}
 expect 30 \[Axvisor\] VM\[1\] stopped; returning to the management shell
+${runtime_final_steps}
 ${vmexit_final_steps}
 qmp-quit ${qmp_sock}
 EOF
@@ -355,6 +469,14 @@ cleanup() {
 }
 trap cleanup EXIT
 
+wait_for_run_exit() {
+    local deadline=$((SECONDS + $1))
+    while kill -0 "$run_pid" 2>/dev/null; do
+        (( SECONDS < deadline )) || return 1
+        sleep 0.1
+    done
+}
+
 socket_wait_deadline=$((SECONDS + 600))
 while [[ ! -S "$serial_sock" ]]; do
     if ! kill -0 "$run_pid" 2>/dev/null; then
@@ -376,16 +498,36 @@ python3 "$repo_root/scripts/test/net-dual-guest/serial_console.py" \
     --progress-timeout "$progress_timeout" --qmp-sock "$qmp_sock" \
     --forensics-dir "$out_dir/post-stall" 2>> "$build_log"
 
+forced_shutdown=0
+qemu_shutdown="qmp"
+if ! wait_for_run_exit "$qemu_exit_grace_sec"; then
+    forced_shutdown=1
+    qemu_shutdown="forced-term"
+    printf 'warning: QEMU did not exit within %ss after completed sampling; terminating run PID %s\n' \
+        "$qemu_exit_grace_sec" "$run_pid" | tee -a "$run_log" >&2
+    kill -TERM "$run_pid" 2>/dev/null || true
+    if ! wait_for_run_exit "$qemu_exit_grace_sec"; then
+        qemu_shutdown="forced-kill"
+        printf 'warning: run PID %s ignored TERM for %ss; sending KILL\n' \
+            "$run_pid" "$qemu_exit_grace_sec" | tee -a "$run_log" >&2
+        kill -KILL "$run_pid" 2>/dev/null || true
+    fi
+fi
+
 set +e
 wait "$run_pid"
 run_status=$?
 set -e
 run_pid=""
-(( run_status == 0 )) || {
+if (( forced_shutdown == 1 )); then
+    printf 'rt_experiment qemu_shutdown=%s run_status=%s\n' "$qemu_shutdown" "$run_status" | tee -a "$run_log"
+elif (( run_status != 0 )); then
     printf 'error: cargo xtask/QEMU exited with status %s\n' "$run_status" >&2
     tail -80 "$build_log" >&2
     exit 1
-}
+else
+    printf 'rt_experiment qemu_shutdown=qmp run_status=%s\n' "$run_status" | tee -a "$run_log"
+fi
 
 end_ns="$(date +%s%N)"
 elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
@@ -482,6 +624,76 @@ with (out / "linux-cpustat.csv").open("w", newline="") as stream:
     writer.writerows(cpu_rows)
 PY
 
+if [[ "$linux_trace" != "disabled" ]]; then
+    if [[ "$linux_trace" == "events" ]]; then
+        trace_output="$out_dir/linux-ftrace.txt"
+    else
+        trace_output="$out_dir/linux-timerlat.txt"
+    fi
+    python3 - "$run_log" "$trace_output" "$linux_trace" <<'PY'
+import base64
+import gzip
+import re
+import sys
+from pathlib import Path
+
+raw = Path(sys.argv[1]).read_text(errors="replace")
+trace_mode = sys.argv[3]
+log = re.sub(r"(?m)^\[host_monotonic_s=[0-9.]+\] ", "", raw)
+log = re.sub(r"(?m)^\[VM 1\] ", "", log)
+begin_marker = "RT_FTRACE_DUMP_BEGIN encoding=gzip-base64"
+end_marker = "RT_FTRACE_DUMP_END"
+begin = log.rfind(begin_marker)
+end = log.find(end_marker, begin + len(begin_marker))
+if begin < 0 or end < 0:
+    raise SystemExit("Linux ftrace dump markers are missing")
+payload = "".join(log[begin + len(begin_marker):end].split())
+try:
+    trace = gzip.decompress(base64.b64decode(payload, validate=True)).decode(
+        errors="replace"
+    )
+except (ValueError, OSError) as error:
+    raise SystemExit(f"Linux ftrace dump decoding failed: {error}") from error
+if not trace.endswith("\n"):
+    trace += "\n"
+if trace_mode == "events":
+    has_records = re.search(
+        r"(?:irq_handler_entry|hrtimer_expire_entry|sched_wakeup|sched_switch):",
+        trace,
+    )
+else:
+    has_records = re.search(r"context\s+(?:irq|thread)\s+timer_latency", trace)
+if not has_records:
+    raise SystemExit(f"Linux {trace_mode} dump contains no requested records")
+Path(sys.argv[2]).write_text(trace)
+PY
+fi
+if [[ "$linux_trace" == "events" ]]; then
+    python3 "$repo_root/scripts/test/rt-partition/linux-ftrace-latency.py" \
+        "$out_dir/linux-ftrace.txt" \
+        "$out_dir/linux-ftrace-latency-summary.txt" \
+        --csv "$out_dir/linux-ftrace-latency.csv" \
+        --kernel-prio "$((99 - priority))"
+    printf 'disabled\n' > "$out_dir/linux-timerlat.txt"
+    printf 'disabled\n' > "$out_dir/linux-timerlat-latency.csv"
+    printf 'disabled\n' > "$out_dir/linux-timerlat-latency-summary.txt"
+elif [[ "$linux_trace" == "timerlat" ]]; then
+    python3 "$repo_root/scripts/test/rt-partition/linux-timerlat-latency.py" \
+        "$out_dir/linux-timerlat.txt" \
+        "$out_dir/linux-timerlat-latency-summary.txt" \
+        --csv "$out_dir/linux-timerlat-latency.csv"
+    printf 'disabled\n' > "$out_dir/linux-ftrace.txt"
+    printf 'disabled\n' > "$out_dir/linux-ftrace-latency.csv"
+    printf 'disabled\n' > "$out_dir/linux-ftrace-latency-summary.txt"
+else
+    printf 'disabled\n' > "$out_dir/linux-ftrace.txt"
+    printf 'disabled\n' > "$out_dir/linux-ftrace-latency.csv"
+    printf 'disabled\n' > "$out_dir/linux-ftrace-latency-summary.txt"
+    printf 'disabled\n' > "$out_dir/linux-timerlat.txt"
+    printf 'disabled\n' > "$out_dir/linux-timerlat-latency.csv"
+    printf 'disabled\n' > "$out_dir/linux-timerlat-latency-summary.txt"
+fi
+
 python3 "$repo_root/scripts/test/rt-partition/cyclictest-hist-to-csv.py" \
     "$run_log" "$out_dir/cyclictest.csv" "$out_dir/cyclictest-summary.txt"
 if (( vmexit_diagnostics == 1 )); then
@@ -503,7 +715,7 @@ strings "$axvisor_bin" | rg -F "$cmdline" >/dev/null || {
 
 python3 - "$run_log" "$out_dir/cyclictest.csv" "$out_dir/cyclictest-summary.txt" \
     "$scenario" "$run_mode" "$loops" "$duration_sec" "$elapsed_ms" \
-    "$burner_config" "$require_init_done" <<'PY'
+    "$burner_config" "$require_init_done" "$linux_trace" <<'PY'
 import csv
 import re
 import sys
@@ -518,6 +730,7 @@ duration_sec = int(sys.argv[7])
 elapsed_ms = int(sys.argv[8])
 burner_config = sys.argv[9]
 require_init_done = sys.argv[10] == "1"
+linux_trace = sys.argv[11]
 log = re.sub(
     r"(?m)^\[host_monotonic_s=[0-9.]+\] ",
     "",
@@ -530,12 +743,22 @@ required = [
     "PERIODIC LATENCY START",
     "RT_CYCLICTEST_TIMING_START",
     "RT_CYCLICTEST_TIMING_END",
-    "# Histogram",
+    "# Min Latencies:",
+    "# Histogram Overflows:",
     "RT_CYCLICTEST_COMPLETE",
     "PERIODIC LATENCY COMPLETE samples=300",
 ]
 if require_init_done:
     required.append(f"RT_INIT_DONE scenario={scenario}")
+if linux_trace != "disabled":
+    required.extend(
+        [
+            f"RT_FTRACE_START mode={linux_trace}",
+            "RT_FTRACE_DUMP_READY encoding=gzip-base64",
+            "RT_FTRACE_DUMP_BEGIN encoding=gzip-base64",
+            "RT_FTRACE_DUMP_END",
+        ]
+    )
 if burner_config:
     required.append(f"RT_BURNER_READY cpu={burner_config.split(':', 1)[0]}")
 missing = [marker for marker in required if marker not in log]
@@ -543,6 +766,8 @@ if missing:
     raise SystemExit("missing acceptance markers: " + ", ".join(missing))
 if "RT_CYCLICTEST_ERROR" in log:
     raise SystemExit("cyclictest reported an execution error")
+if "RT_FTRACE_ERROR" in log:
+    raise SystemExit("Linux ftrace setup reported an execution error")
 linux_start = log.index("RT_CYCLICTEST_START")
 zephyr_start = log.index("PERIODIC LATENCY START")
 zephyr_complete = log.index("PERIODIC LATENCY COMPLETE samples=300")
@@ -609,15 +834,23 @@ PY
     printf 'dedicated_cpus=%s\n' "${dedicated_cpus:-none}"
     printf 'rt_burner=%s\n' "${burner_config:-disabled}"
     printf 'vmexit_diagnostics=%s\n' "$vmexit_diagnostics"
+    printf 'runtime_diagnostics=%s\n' "$runtime_diagnostics"
     printf 'require_init_done=%s\n' "$require_init_done"
     printf 'rootfs_override=%s\n' "${rootfs_override:-none}"
+    printf 'linux_kernel=%s\n' "$linux_image"
+    printf 'board_config=%s\n' "$board_toml"
     printf 'zephyr_guest_type=%s\n' "$zephyr_guest_type"
     printf 'zephyr_start_delay_ms=%s\n' "$zephyr_start_delay_ms"
     printf 'progress_timeout_sec=%s\n' "$progress_timeout"
     printf 'zephyr_timeout_sec=%s\n' "$zephyr_timeout"
     printf 'result_drain_timeout_sec=%s\n' "$result_drain_timeout"
+    printf 'qemu_exit_grace_sec=%s\n' "$qemu_exit_grace_sec"
+    printf 'qemu_shutdown=%s\n' "$qemu_shutdown"
     printf 'timestamp_format=host_monotonic_s=seconds\n'
-    printf 'realtime_trace=disabled\n'
+    printf 'realtime_trace=%s\n' "$linux_trace"
+    printf 'linux_trace_buffer_kb=%s\n' "$linux_trace_buffer_kb"
+    printf 'linux_virtual_timer_only=%s\n' "$linux_virtual_timer_only"
+    printf 'linux_wfi_policy=%s\n' "$linux_wfi_policy"
     printf 'host_periodic_tick_policy=%s\n' "${host_tick_args[*]:-record-only}"
     printf 'linux_rt_cpu=%s\n' "$rt_cpu"
     printf 'linux_load_cpu=%s\n' "$load_cpu"
@@ -631,16 +864,20 @@ PY
 cp "$linux_config" "$out_dir/linux.toml"
 cp "$zephyr_config" "$out_dir/zephyr.toml"
 cp "$qemu_config" "$out_dir/qemu.toml"
-cp "$work/linux-qemu" "$out_dir/"
+cp "$linux_image" "$out_dir/linux-qemu"
 cp "$work/rt-linux-initramfs.cpio.gz" "$out_dir/"
-cp "$work/zephyr-periodic.bin" "$out_dir/"
-cp "$work/zephyr-periodic.manifest" "$out_dir/"
+cp "$zephyr_image" "$out_dir/zephyr-periodic.bin"
+cp "$zephyr_manifest" "$out_dir/zephyr-periodic.manifest"
 cp "$axvisor_bin" "$out_dir/"
 (
     cd "$out_dir"
     sha256sum \
         build-qemu.log run.log cyclictest.csv cyclictest-summary.txt \
         linux-cpustat.csv zephyr.csv zephyr-stats.txt progress.txt \
+        linux-ftrace.txt linux-ftrace-latency.csv \
+        linux-ftrace-latency-summary.txt \
+        linux-timerlat.txt linux-timerlat-latency.csv \
+        linux-timerlat-latency-summary.txt \
         vmexit-before.txt vmexit-zephyr-after.txt vmexit-after.txt vmexit-stat.txt \
         host-periodic-ticks.csv \
         linux.toml zephyr.toml qemu.toml meta.txt \

@@ -3,6 +3,7 @@
 
 mod cfs;
 mod fifo;
+mod priority;
 mod round_robin;
 
 #[cfg(test)]
@@ -12,6 +13,7 @@ extern crate alloc;
 
 pub use cfs::{CFSTask, CFScheduler};
 pub use fifo::{FifoScheduler, FifoTask};
+pub use priority::{MAX_PRIORITY, MIN_PRIORITY, PriorityScheduler, PriorityTask, SchedPriority};
 pub use round_robin::{RRScheduler, RRTask};
 
 /// The base scheduler trait that all schedulers should implement.

@@ -377,6 +377,17 @@ impl TaskInner {
     }
 }
 
+#[cfg(feature = "sched-rt")]
+impl ax_sched::SchedPriority for TaskInner {
+    fn sched_priority(&self) -> isize {
+        TaskInner::sched_priority(self) as isize
+    }
+
+    fn set_sched_priority(&self, priority: isize) {
+        TaskInner::set_sched_priority(self, priority as i32);
+    }
+}
+
 // private methods
 impl TaskInner {
     fn new_common(id: TaskId, name: String, kstack: TaskStack) -> Self {
@@ -618,7 +629,15 @@ impl TaskInner {
     #[inline]
     #[cfg(feature = "preempt")]
     pub(crate) fn enable_preempt(&self, resched: bool) {
-        if self.preempt_disable_count.fetch_sub(1, Ordering::Release) == 1 && resched {
+        #[cfg(feature = "irq")]
+        let defer_for_irq = resched && ax_hal::irq::in_irq_context_preempt_disabled();
+        #[cfg(not(feature = "irq"))]
+        let defer_for_irq = false;
+
+        if self.preempt_disable_count.fetch_sub(1, Ordering::Release) == 1
+            && resched
+            && !defer_for_irq
+        {
             // Keep local IRQs masked until the preemption check has completely
             // unwound. A device IRQ may wake a pinned maintenance task and
             // immediately become pending again when that task rearms the

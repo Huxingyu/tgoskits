@@ -1,4 +1,4 @@
-# Task1 Session 总结：实时 RTOS 化改造（截至 2026-08-16）
+# Task1 Session 总结：实时 RTOS 化改造（截至 2026-08-18）
 
 > 本文件记录当前可验证事实、失败路径、证据和剩余工作。工作分支为
 > `openrace/task1-rt-partition`，工作区为 `/home/huhu/tgoskits-rt`；
@@ -163,18 +163,18 @@ UIE/NPIE/LRENPIE/TDIR；host maintenance PPI 由 FDT 发现并 per-CPU enable。
 
 ## 3. 调度失败路径与当前边界
 
-### sched-rr/preempt
+### 调度、抢占与 liveness 的当前状态
 
-启用 sched-rr/preempt 后，guest 运行期间 EL2 IRQ 进入 ArceOS 抢占检查，world
-switch 状态被任务切换破坏，出现 ESR `0x96000005` data abort 循环。FIFO+preempt
-同样回归，因此完整抢占接线已回退。
+早期 sched-rr/preempt 直接在 EL2 IRQ 尾部切任务会撕裂 world-switch 状态，曾触发
+ESR `0x96000005`；该危险接线没有恢复。当前生产实现采用稳定边界切换、固定优先级
+FIFO、目标 vCPU 定向唤醒和 deferred VGIC kick priority 91。vCPU/injector 为
+priority 90，timer worker 为 priority 89，避免 worker 压制 vCPU；固定优先级机制在
+同核低优先级干扰下已经有正式 ABABAB 证据：Zephyr P99 降低 90.47%（10.494x）。
 
-### IPI + dedicated
-
-仅保留 IPI 时常规 smoke/axtest 可过，但与 dedicated pCPU 组合后 secondary core
-enable 会在 50% 等待，CORES 无法到 4。最终回退 IPI 后 4/4 稳定。当前调度是
-协作式 FIFO；`RT_TASK_PRIORITY=90` 只是意图元数据，因为 FIFO 的
-`set_priority` 是 no-op。不能在报告中声称“就绪即优先级抢占”已经完成。
+这不是静态分区的数字：该 A/B 两侧都使用 `dedicated_cpus=none`，相同 pCPU 放置和
+相同 host burner。Linux cyclictest P99 在该批次未得到稳定改善，因此 10.494x 不能
+外推为 Linux 全局实时性提升。早期 IPI/dedicated 启动竞态已由目标 vCPU 唤醒和
+wake-before-wait 契约收口，4/4 SMP 启动与 90 秒固定优先级批次均通过。
 
 ## 4. 已完成验证
 
@@ -312,11 +312,17 @@ enable 会在 50% 等待，CORES 无法到 4。最终回退 IPI 后 4/4 稳定�
   正式矩阵、stability、native、overload、virq-ab 的 sha256 全部通过。
 - 最终跑 Python、somehal、axvm、arm_vgic、axtest、fmt、diff-check 和全部 sha256。
 
-### 外部阻塞
+### 外部阻塞与最终边界
 
 - 实验机 `/tmp/ab-*.log`、`/tmp/e1-*.log` 不在本机，无法伪造或复算；待用户
   提供后补入 `results/task1/virq-ab/raw/`。
 - 无物理板，因此 T3.5 和硬件 WCET/中断延迟上界不能完成。
+
+Linux Guest 的 `CONFIG_NO_HZ_FULL` 未启用，QEMU TCG 存在约 300 ms 宿主调度离群点，
+因此当前结果可以证明相同 QEMU 平台上的机制趋势、隔离和功能稳定性，不能作为物理硬件
+最坏情况上界。Linux P99 的主导 Guest 段已由 trace gate 定位到
+`sched_wakeup -> sched_switch`，后续若继续优化，应以独立 Guest 内核/调度实验为新
+任务，不应把未通过的候选混入当前 Task1 百分比。
 
 ## 6. 关键路径
 

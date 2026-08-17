@@ -40,6 +40,8 @@ pub enum ExitReason {
     Hvc,
     /// Trapped system-register access.
     SysReg,
+    /// Trapped guest physical-timer (`CNTP_*`) access handled by `arm_vcpu`.
+    PhysicalTimerSysReg,
     /// Trapped GIC CPU-interface register access.
     GicInterface,
     /// SGI (IPI) send.
@@ -56,7 +58,7 @@ pub enum ExitReason {
 
 impl ExitReason {
     /// Number of categories; must match the enum variant count.
-    pub const COUNT: usize = 12;
+    pub const COUNT: usize = 13;
 
     /// All categories in declaration order.
     pub const ALL: [ExitReason; Self::COUNT] = [
@@ -66,6 +68,7 @@ impl ExitReason {
         ExitReason::Wfi,
         ExitReason::Hvc,
         ExitReason::SysReg,
+        ExitReason::PhysicalTimerSysReg,
         ExitReason::GicInterface,
         ExitReason::Sgi,
         ExitReason::CpuUp,
@@ -83,6 +86,7 @@ impl ExitReason {
             ExitReason::Wfi => "wfi",
             ExitReason::Hvc => "hvc-smc",
             ExitReason::SysReg => "sysreg",
+            ExitReason::PhysicalTimerSysReg => "cntp-sysreg",
             ExitReason::GicInterface => "gic-if",
             ExitReason::Sgi => "sgi",
             ExitReason::CpuUp => "cpu-up",

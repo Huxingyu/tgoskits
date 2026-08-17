@@ -98,6 +98,29 @@ Zephyr 侧当前每场景只有 300 个样本（`scripts/test/zephyr-periodic/sr
 
 复盘文档承认正式运行全部 `realtime_trace=disabled`，关键路径分析停留在退出计数层面。第二阶段安排一组独立的 trace-enabled 运行（不与正式对比矩阵混用，因为插桩本身有开销）：启用 `realtime-trace` feature（`virtualization/axvm/src/runtime/mod.rs:33` 已门控 `VirqTraceRing`），记录中断源触发、入队、通知、LR 注入、Guest ISR 各阶段时间戳，产出每阶段 P50/P90/P99 分布。这组数据服务两个目的：为 P2 的 WFI 快路径提供改造前的路径耗时分解，以及支撑评分点"目标与关键路径分析"从 3/4 提升到 4/4。
 
+2026-08-17 已补齐 Linux Guest 内事件追踪。`RT_LINUX_TRACE=events` 在 CPU1
+采集 `irq_handler_entry/exit`、`hrtimer_expire_entry/exit`、`sched_wakeup` 与
+`sched_switch`，runner 只在重新接回 Linux console 后请求导出，并用
+gzip+base64 传输，避免原始 2 MiB trace 经串口排空触发 progress watchdog。
+归档同时自动生成逐样本 CSV 和分位数 summary；正常性能 A/B 仍默认
+`RT_LINUX_TRACE=disabled`，不得混用。
+
+通过门禁见
+`results/task1/linux-guest-trace-gate/stress-dedicated/README.md`。512 KiB
+环形缓冲得到 1,627 条完整 RT cyclictest 链，P99 为：arch timer IRQ 到
+hrtimer callback `73 us`，callback 到 `sched_wakeup` `30 us`，wakeup 到
+`sched_switch` `695 us`，IRQ 到 switch 合计 `727 us`。因此已观测 Guest
+段中，wakeup 到实际调度占 IRQ-to-switch P99 的 95.6%，是当前明确主导项；
+对应 trace-enabled cyclictest P99 为 `1390 us`。另有 10 次 hrtimer 在
+cyclictest 尚在运行时到期的 self-wakeup，分析器显式排除，避免把它错误
+配对到后续 switch 并制造虚假的几十毫秒队列。
+
+该结果仍缺 timer deadline 到 Guest IRQ entry 一段，且 ftrace 运行只作
+定位，不能声明性能改善。下一步使用同一诊断内核的 `timerlat`，在 CPU1
+分别取得 IRQ latency 与 thread latency；若 IRQ 段主导，继续优化 AxVisor
+virtual timer/LR 注入与 Guest 重入，若 thread 段主导，则把 TCG 下 Guest
+Linux scheduler 开销列为平台边界，不再用无关的 host 静态分区数字解释。
+
 ## 4. 竞争基线场景
 
 本阶段制造第一阶段始终缺失的"真正未分区"对照：让 Zephyr 与一个受控竞争者共享 pCPU1。这是整个计划的重心与第一个交付物——按第 2.2 节的分层协议，它的预期效应在倍数级，用 L1 短跑即可看见，目标是**当天出第一个数字**。它同时是"数量级"叙事唯一诚实的来源，直接对应评分表"改造前后数据"与"idle 与 stress 对比"两项的主要缺口。
@@ -154,7 +177,7 @@ RT Zephyr 的 Guest FDT 改为只暴露虚拟定时器中断（CNTV PPI），移
 2. VM 停止与暂停：`stop_vm`/`pause` 不能再依赖 vCPU 任务在 host 侧停车点检查标志，必须经 IPI 强制退出；与 `e3570a607` 已交付的 CPU enable 超时 fail-closed 逻辑联测。
 3. Console 输入：pCPU0 housekeeping 收到输入后对 pCPU1 的通知链路必须端到端可达。
 
-验收为三层：单测层（新策略测试全绿）；机制层（30 分钟 `stress-rt` 中 `vmexit stat` 显示 pCPU1 的 WFI 与 timer 退出从约 140/s 降到接近 0，且无丢唤醒、无停止挂起）；端到端层（按 P0 协议做免陷入前后 A/B，差值需超出区间重叠才声明改善）。回退方案是保留 profile 级开关强制 trap，默认保守，全部验收通过后才切换默认值。
+验收为三层：单测层（新策略测试全绿）；机制层（30 分钟 `stress-rt` 中 `vmexit stat` 显示 pCPU1 的 WFI 指令退出从约 140/s 降到 0，且无丢唤醒、无停止挂起；CNTV 到期引起的 host virtual-timer PPI 退出仍应保留，这是硬件从 Guest WFI 唤醒并进入 EL2 的正常路径）；端到端层（按 P0 协议做免陷入前后 A/B，差值需超出区间重叠才声明改善）。回退方案是保留 profile 级开关强制 trap，默认保守，全部验收通过后才切换默认值。
 
 ## 6. 定时器轮锁拆分
 
@@ -220,3 +243,178 @@ QEMU TCG 的约 400 us 噪声地板与约 300 ms 的宿主机调度离群点，�
 | RTOS native 基线可复现 | 4/5 | P5 物理板 native | 5/5 |
 
 按表汇总，P0 加 P1 两个低风险阶段完成后即可到约 23-24 分，P2 验收通过后进入 26 分区间，P4 与 P5 决定能否触及 28。评分映射每阶段验收后回填实际值，偏差超过一分时回到 1.2 的上界检查重新校准预期。
+
+## 10. 2026-08-17 实测回填
+
+以下结果替换此前的预登记预期，均来自新结果目录中的可复现实验：
+
+| 机制/对照 | 实测结果 | 合法归因 |
+|---|---|---|
+| 静态分区 | P99 约 18.29x | 仅 CPU 亲和性、vCPU/pCPU 绑定和后台负载隔离 |
+| WFI/CNTV 快路径 | P99 降 19.2%，P99.9/max 降 22.3%，1 ms miss 3 -> 0 | WFI trap、软件 timer park/wake 路径消除 |
+| 固定优先级 FIFO + 就绪抢占 | 最终 3 轮 ABABAB：Zephyr P99 中位数 `10.721 ms -> 1.022 ms`，降 90.47%，约 10.494x；1 ms miss 中位数 `56 -> 5`，降 91.07% | 调度器、目标 vCPU 定向唤醒、deferred IRQ kick 优先级契约和同核低优先级干扰的独立软件收益；不含静态分区变量 |
+| Linux virtual-timer 分段诊断 | 单对 60 秒：callback 到 WFI wake P99 `76 us -> 67 us`，降 11.84%；callback 到 `run_vcpu` dispatch P99 `102 us -> 86 us`，降 15.69%；pCPU3 timer expiry P99 `205 us -> 210 us`，基本不变 | fixed-priority 对 Host vCPU 唤醒/重调度段有可测软件收益，但 Linux cyclictest P99 `1152 us -> 1184 us` 未跟随；该单对只用于定位，不能作为正式改善声明 |
+| Linux per-vCPU direct CNTV/WFI 候选 | 三对顺序平衡 A/B 均把 pCPU3 WFI VM-exit 与 host timer IRQ 降为 0；但 timerlat IRQ P99 三轮中位数 `897.744 us -> 1502.064 us`，恶化 67.32%，thread P99 `1523.952 us -> 1887.952 us`，恶化 23.89% | per-vCPU timer contract 与 WFI 策略的独立软件归因成立，但最坏延迟验收失败；保持 opt-in，Linux 默认关闭，不计入实时性改善数字 |
+| Linux timer contract / WFI 三单元隔离 pilot | `CNTP+trap -> CNTV-only+trap` 的 timerlat IRQ/thread P99 分别改善 11.46%/1.70%，但 cyclictest P99 恶化 9.19%；`CNTV-only+trap -> passthrough` 的 IRQ/thread/cyclictest P99 分别改善 13.22%/10.37%/5.76%，但 cyclictest P99.9 恶化 19.32% | 证明此前恶化不能简单归因于 CNTV timer 注入；WFI 软件路径只表现出约 6-13% 的中心尾部候选收益，极端尾部未通过，仍不计入正式改善数字 |
+| VM-exit 后无条件 yield 隔离 pilot | 两轮平衡顺序中，vCPU1 direct ACK 到 `run_vcpu` dispatch 的 P50/P99/P99.9 中位数分别降低 40.00%/40.68%/22.89%，且三项均为 2/2 对改善；但 timerlat IRQ/thread P99 与 cyclictest P99 均逐对反向，cyclictest P99 中位数恶化 1.32% | 证明 direct timer exit 后的 Host runqueue 往返是真实软件成本，但不是 Linux Guest P99 主因；保持 opt-in，不切默认，不计入端到端正式提升数字 |
+| per-CPU timer wheel | 3 轮独立 host-only A/B：注册/取消吞吐中位数提升 **1.774x**；总锁等待中位数下降 **90.10%**；最大锁等待中位数下降 **63.44%** | 从全局 IRQ-safe 锁拆为 per-CPU 锁，独立归因于跨 pCPU 锁竞争消除；不依赖静态分区 |
+| timer IRQ/worker 观察器复核 | 源码确认硬件 IRQ 唤醒 priority-89 worker 后，priority-90 vCPU 会先恢复并同步调用 `check_timer_events()`；实际 expiry 在 worker 运行前已被另一消费者取走，因此单槽 IRQ 时间戳几乎总为空 | 不是 `IrqNotify` 丢通知，而是观察器绑定了错误消费者；已删除无法合法配对的 IRQ/worker 分类与直方图，只保留 deadline 到实际 expiry 的有效分布 |
+| 有界 priority-91 timer worker | 两对顺序平衡 pilot：Host expiry P99 中位数 `188.5 -> 189.5 us`，恶化 0.53%，两对方向相反；timerlat IRQ P99 `534.920 -> 554.560 us`，恶化 3.67%，两对方向相反；cyclictest P99 中位数改善 3.31% 但第二对恶化 0.31%；Zephyr P99 中位数恶化 1.84%。Linux timerlat thread P99 两对均改善，中位数降 15.49%，但该收益发生在 Guest IRQ 后，不能归因为 Host timer expiry。首个 modified 运行另出现一次 61.730 ms timer-wheel 最大锁等待 | priority-91 加每次唤醒一个回调的预算通过 liveness 门禁，但没有稳定改善目标 Host/IRQ 边界，并引入无优先级继承锁上的潜在优先级反转；保持 measurement-only、默认关闭，不进入正式重复或长稳，不计入任务一提升数字 |
+
+最终调度 A/B 见
+`results/task1/priority-scheduler/final-kick91-ababab-90s/README.md`。实验按
+`RR -> fixed` 交错执行 3 轮，两侧均保持 `stress-noiso`、无
+`dedicated_cpus`、相同 pCPU1 host burner、90 秒 Linux workload 和 300 个
+Zephyr 样本。6/6 轮均完成 stress-ng、`RT_CYCLICTEST_COMPLETE`、
+`RT_INIT_DONE` 与 `PSCI_SYSTEM_OFF`，未触发 progress watchdog。
+
+早期 `formal-peer-timer-ab` 的单轮 18.07x 只作为发现候选收益的历史结果，
+不再作为最终数字。priority-99 timer worker 会导致 Linux RCU 饥饿；将
+timer worker 降为 priority 89 能避免它压制 vCPU，但两次短跑只降低了活性
+故障的复现概率，并未根治。最终根因是 deferred VGIC vCPU kick worker
+仍处于默认 priority 0：priority-90 vCPU 等待远端 Guest CPU 时会持续压制
+该 worker，导致目标 vCPU 虽已有 pending IRQ 却停在 no-deadline WFI。
+生产契约因此为 deferred kick worker priority 91、vCPU/injector priority
+90、timer worker priority 89，并将架构中断唤醒从全 VM 广播收窄到目标
+vCPU。三轮 fixed 均越过原约 100 秒 Guest uptime 的冻结点，构成当前的
+活性证据。
+
+该正式重复实验还给出两个必须保留的边界。第一，Linux cyclictest P99
+中位数为 `1095 us -> 1207 us`，在该轮约回退 10.23%，所以 10.494x 只
+适用于 Zephyr/host burner 共核路径，不能外推为 Linux 全局实时性提升。
+随后补做的反向顺序 `fixed -> RR` 60 秒诊断对照中，Linux P99 又变为
+`1178 us -> 1362 us`，fixed 反而低 13.51%。两种顺序符号相反，说明目前
+既不能声称 Linux 改善，也不能把约 10% 回退独立归因于调度器；后续正式
+协议必须做顺序平衡并分段追踪 virtual-timer deadline、worker wake、目标
+vCPU wake、Guest 重入和 IRQ 注入。诊断证据见
+`results/task1/priority-scheduler/linux-counterbalanced-pilot-fixed-rr-60s/README.md`。
+第二，fixed 第 2 轮仍出现约 10.775 ms 的 Zephyr P99.9/max 离群点；三轮
+最大观测值仅从 11.263 ms 降至 10.775 ms（4.33%），不能声称跨轮最坏值
+降低一个数量级。下一轮核心工作应直接针对 Linux Guest 调度、虚拟 timer
+与 IRQ 尾延迟，而不是继续调整静态 CPU 分区。
+
+下一轮 runner 已改为默认 4 轮平衡顺序：`RR-fixed / fixed-RR / RR-fixed /
+fixed-RR`，且每轮强制采集 `rt stat`。AxVM 同时新增 feature-gated 的 per-CPU
+timer expiry lateness 直方图，以 1 us 桶宽输出 P50/P99/P99.9/max，并单列
+超过 4.096 ms 的 overflow。该统计落在实际 timer-wheel 到期消费点，可将
+“硬件 deadline 已过但 worker 尚未消费”的延迟从 Linux cyclictest 总延迟
+中拆出来。此处只声明测量能力已交付；新的 timer lateness 数字和 Linux
+改善百分比必须等平衡顺序的新二进制实验完成后回填。
+
+首组 timer-latency gate 见
+`results/task1/priority-scheduler/timer-latency-gate-rr-fixed-60s/README.md`。
+其 pCPU3 timer expiry P99 为 RR `164 us`、fixed `191 us`，而 Linux
+cyclictest P99 为 `1030 us`、`1005 us`；两者变化方向相反，证明 timer
+wheel 常态到期消费不是 Linux 约 1 ms 尾延迟的主导解释。随后增加
+feature-gated 的 callback 到 WFI wake、callback 到 `run_vcpu` dispatch
+两段直方图，结果见
+`results/task1/priority-scheduler/timer-stage-gate-rr-fixed-60s/README.md`。
+Linux 独有的 vCPU1 上，fixed 将这两段 P99 分别降低 11.84% 和 15.69%，
+但 Linux cyclictest P99 在该单对反而高 2.78%。因此固定优先级对 Host
+唤醒/重调度的内部收益已被独立观测到，剩余主导项已收窄到架构重入、
+virtual timer IRQ 可见、Linux IRQ/hrtimer 与 Guest 调度链。两组均为 dirty
+worktree 的单次诊断，不替代四轮平衡顺序正式实验。
+
+Linux Image 内嵌配置还揭示一个必须修正文档的事实：当前镜像为
+`CONFIG_PREEMPT=y`、`CONFIG_HZ=250`，但 `CONFIG_FTRACE` 与
+`CONFIG_NO_HZ_FULL` 均关闭。因此 Guest cmdline 虽写有 `nohz_full=1`，
+实际并未启用 full dynticks；现有证据只能说明 CPU affinity/IRQ affinity
+参数已传入，不能声称 Linux 测量核已由 nohz_full 隔离。下一步 Guest 内
+分段归因需要重建一份启用 ftrace/timerlat 的诊断内核；若同时切换
+PREEMPT_RT，则必须把“追踪能力”和“Guest 内核实时配置”拆为两个单变量
+A/B，不能把其收益计入 AxVisor 调度器改造。
+
+该诊断内核与事件追踪门禁现已交付。精确源码为 Linux
+`74fe02ce122a`，GCC 13.3 构建镜像 SHA256 为
+`4a8fd8d2665a5a6e6e5f04c29ba3b44a5f6ff3f17bdb1d796d8ca4bf93705847`；
+除 tracing 依赖、localversion 和 ftrace 必需函数对齐外，保持原镜像的
+`PREEMPT=y`、`HZ=250`、`NO_HZ_FULL=n`。事件门禁的 Linux Guest 分段
+结果见 `results/task1/linux-guest-trace-gate/stress-dedicated/README.md`，
+只作根因定位，不进入 RR/fixed 正式性能 A/B。
+
+timer-wheel 锁 A/B 见
+`results/task1/percpu-timer-wheel/formal-host-lock-ab-priority89-aggregate.md`。
+该实验不启动 Guest，在相同 4-pCPU、相同优先级和相同 timer storm 下，
+只切换 `global-timer-wheel` feature，因而是内部锁机制的独立归因。三轮
+expiry P99 变化范围为 -55.03% 到 +4.51%，TCG 噪声下不稳定，不能声称
+到期延迟改善。priority-89 的 global-lock Linux 兼容基线在 cyclictest
+开始前发生 progress watchdog 与 RCU stall，因此也不混入锁性能百分比。
+
+Linux per-vCPU direct CNTV/WFI 候选见
+`results/task1/linux-wfi-pervcpu-ab/README.md`。该实验固定
+`dedicated_cpus=1,3`、2-vCPU Linux 放置、诊断内核、Guest/Host 负载与
+timerlat 配置，只切换 `aarch64_virtual_timer_only`。三轮 modified 均将
+pCPU3 WFI VM-exit（baseline 7291-7875 次）和 pCPU3 host timer IRQ
+（baseline 6068-6520 次）降为 0，证明 per-vCPU 能力模型和 direct CNTV
+唤醒路径真实生效；但 IRQ P99 在三对中分别恶化 67.37%、27.97% 和
+18.33%。因此该候选明确判为“机制计数通过、实时尾延迟失败”，不能沿用
+Zephyr WFI 快路径的 19.2% 改善结论，也不能把退出次数归零换算成加速倍数。
+下一轮应直接处理 Linux timerlat 的 IRQ 到 thread 尾段，以及 Guest event
+trace 中 `sched_wakeup -> sched_switch` 的主导延迟。
+
+另有一个语义顺序修复 pilot 见
+`results/task1/linux-timer-publish-ab/README.md`：timer callback 现在先发布
+已到期的 VGIC PPI，再唤醒 vCPU，避免下一次 VGIC load 看到旧 timer level。
+该修复已通过 AArch64 release 构建和脚本回归，但与修复前归档 B3 的单轮
+跨时间比较没有显示性能改善（IRQ P99 `897.744 us -> 1101.840 us`），
+所以不计入任何提升百分比；它只作为 timer delivery correctness 修复保留。
+
+为拆开上述旧 A/B 同时切换 timer contract 与 WFI 策略的问题，新增三单元
+隔离实验见
+`results/task1/linux-wfi-isolation/pilot-trace-v3-2026-08-17/README.md`。
+三组统一使用 `dedicated_cpus=1,2,3`，确保 VM 级 WFI passthrough 对两个
+Linux vCPU 都合法；该拓扑仅作实验控制，不计入软件收益。Linux 在三组的
+`cntp-sysreg` 都为 0，且 `direct_overlaps` 都为 0。只收窄 timer contract
+时，timerlat IRQ/thread P99 改善 11.46%/1.70%，但 cyclictest P99 反向恶化
+9.19%；只去掉 WFI trap 时，IRQ/thread/cyclictest P99 改善
+13.22%/10.37%/5.76%，但 cyclictest P99.9 恶化 19.32%，约 307 ms max
+基本不变。因此当前共识是：CNTV 注入不是严重 P99 恶化的直接证据，WFI
+软件路径有 modest 中心尾部成本，但剩余主导长尾在 Guest 调度或每次
+VM-exit 后的 Host 重调度边界。下一项独立归因改为测试
+`runtime/vcpus.rs` 的无条件 `yield_now()`，而不是扩大 WFI 正式长跑。
+
+该 exit-yield 隔离现已完成，证据见
+`results/task1/vcpu-exit-yield/counterbalanced-pilot-2026-08-17/README.md`。
+两轮顺序为 `baseline -> modified -> modified -> baseline`，modified 的
+vCPU1 `post_vmexit_yields` 均为 0，baseline 分别为 101217 和 99750。
+direct ACK 到 `run_vcpu` dispatch 的 P50/P99/P99.9 中位数分别降低
+40.00%/40.68%/22.89%，且逐对方向一致；callback 到 dispatch P99 仅改善
+0.89% 且逐对反向。Linux timerlat IRQ/thread P99、cyclictest P99 和未改动的
+Zephyr P99 都在两对之间换向，cyclictest P99 中位数反而恶化 1.32%，因此
+不能声明 Linux 端到端改善，也不切换默认行为。下一项诊断应补齐
+`run_vcpu` dispatch 到真正 Guest entry 的架构准备段，覆盖 pending vIRQ
+drain、timer prepare、vCPU 状态转换与 VGIC load；当前 timer expiry P99
+约 202-211 us、direct dispatch P99 为 15-57 us，而 timerlat IRQ P99 仍为
+507-606 us，缺失段足以容纳剩余的主要 Host/虚拟中断延迟。
+
+随后的一对 Guest-entry 边界诊断见
+`results/task1/vcpu-exit-yield/guest-entry-pilot-2026-08-17/README.md`。
+新增统计点位于 pending vIRQ drain、timer prepare、vCPU 状态转换和 VGIC
+load 之后、进入 AArch64 Guest backend 之前。direct ACK 到 Guest entry P99
+为 `89 us -> 79 us`，callback 到 Guest entry P99 为 `169 us -> 162 us`；与
+对应 dispatch P99 相减后，两侧的架构准备段都约为 60-65 us。因此 VGIC
+load/状态转换不是剩余 200-300 us 的主导缺口。pCPU3 timer expiry P99 同期
+为 199/198 us。随后对 timer IRQ/worker 观察器的源码复核发现，priority-90
+vCPU 会在 priority-89 worker 前同步消费到期事件，因此原单槽 IRQ 时间戳绑定了
+错误消费者，无法合法拆出 IRQ 到 worker 延迟。无效分类已删除，保留 deadline 到
+实际 expiry 的可靠分布。
+
+## 11. 2026-08-18 阶段二收口
+
+P0-P4 的 QEMU 主线已经完成：统计和采集协议、竞争基线、Zephyr WFI/CNTV
+快路径、per-CPU timer wheel、固定优先级 FIFO 与就绪抢占均有实现和证据。最终可
+声明的软件机制结果为：调度/抢占 Zephyr P99 降 90.47%（10.494x）、WFI 快路径
+单对观测 P99 降 19.2%、timer-wheel 注册/取消吞吐提升 1.774x 且总锁等待下降
+90.10%。WFI 的退出计数是确定性机制证据，但其延迟百分比仍需更多重复才能升级为
+稳定统计声明。静态分区的 18.29x 单独归类为拓扑隔离，不混入软件机制收益。
+
+priority-91 timer worker 的两对顺序平衡 pilot 已完成。它没有稳定改善 Host expiry
+P99 或 timerlat IRQ P99，并出现一次 61.730 ms timer-wheel 锁等待，因此保持
+measurement-only、默认关闭，不进入正式重复和长稳。Linux direct CNTV/WFI、
+post-VM-exit no-yield 等候选同样因端到端尾延迟未通过而不计入提升数字。Linux Guest
+trace 已把已观测 IRQ-to-switch P99 的 95.6% 定位到 `sched_wakeup -> sched_switch`；
+继续追求 Linux P99 应拆成新的 Guest 内核/调度课题，不再扩张本阶段 AxVisor 机制。
+
+P5 物理板仍依赖外部板卡租约。它影响物理硬件 WCET/中断上界的声明，但不影响本阶段
+QEMU 软件机制、2-vCPU Linux、native Zephyr 基线、1800 秒矩阵和一小时功能长稳的
+交付完成。最终入口与合法声明边界统一见 `results/task1/README.md`。

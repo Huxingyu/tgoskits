@@ -14,7 +14,7 @@ use axvm_types::{VmBackendError as BackendError, VmBackendResult as BackendResul
 use super::*;
 use crate::{
     AxVmResult,
-    architecture::cpu_up::{self, CpuUpExit, CpuUpOps},
+    architecture::cpu_up::{self, CpuUpExit, CpuUpOps, CpuUpWork, PreparedCpuUp},
     ax_err,
     host::HostCpu,
 };
@@ -47,6 +47,8 @@ pub(crate) struct Aarch64Arch;
 #[derive(Clone, Copy, Debug)]
 pub(crate) enum Aarch64DeferredRunWork {
     ExternalInterrupt { token: Option<usize> },
+    CpuUp(CpuUpWork),
+    PsciCpuOn { nr: u64, args: [u64; 6] },
 }
 
 impl CpuUpOps for Aarch64Arch {}
@@ -60,6 +62,7 @@ fn classify_vm_exit(exit: &ArmVmExit) -> crate::ExitReason {
         ArmVmExit::Hypercall { .. } => crate::ExitReason::Hvc,
         ArmVmExit::MmioRead { .. } | ArmVmExit::MmioWrite { .. } => crate::ExitReason::Mmio,
         ArmVmExit::SysRegRead { .. } | ArmVmExit::SysRegWrite { .. } => crate::ExitReason::SysReg,
+        ArmVmExit::PhysicalTimerSysReg => crate::ExitReason::PhysicalTimerSysReg,
         ArmVmExit::GicCpuInterfaceRead { .. } | ArmVmExit::GicCpuInterfaceWrite { .. } => {
             crate::ExitReason::GicInterface
         }
@@ -124,12 +127,17 @@ impl ArchOps for Aarch64Arch {
             );
         }
         match exit {
-            ArmVmExit::Hypercall { nr, args } => super::handle_hypercall(
-                vm,
-                vcpu,
-                HypercallExit { nr, args },
-                crate::runtime::hvc::HyperCallAbi::AArch64,
-            ),
+            ArmVmExit::Hypercall { nr, args } => {
+                let abi = crate::runtime::hvc::HyperCallAbi::AArch64;
+                if crate::runtime::hvc::is_psci_cpu_on_function_id(nr, abi) {
+                    Ok(BoundVcpuExit::Defer(Aarch64DeferredRunWork::PsciCpuOn {
+                        nr,
+                        args,
+                    }))
+                } else {
+                    super::handle_hypercall(vm, vcpu, HypercallExit { nr, args }, abi)
+                }
+            }
             ArmVmExit::MmioRead {
                 addr,
                 width,
@@ -223,15 +231,19 @@ impl ArchOps for Aarch64Arch {
                 target_cpu,
                 entry_point,
                 arg,
-            } => cpu_up::handle::<Self>(
-                vm,
-                vcpu,
-                CpuUpExit {
+            } => {
+                let exit = CpuUpExit {
                     target_cpu,
                     entry_point: arm_guest_phys_addr_to_ax(entry_point),
                     arg,
-                },
-            ),
+                };
+                match cpu_up::prepare::<Self>(vm, vcpu, exit)? {
+                    PreparedCpuUp::Complete(action) => Ok(BoundVcpuExit::Complete(action)),
+                    PreparedCpuUp::Defer(work) => {
+                        Ok(BoundVcpuExit::Defer(Aarch64DeferredRunWork::CpuUp(work)))
+                    }
+                }
+            }
             ArmVmExit::SystemDown => {
                 warn!("VM[{}] run VCpu[{}] SystemDown", vm.id(), vcpu.id());
                 Ok(BoundVcpuExit::Complete(VcpuRunAction {
@@ -249,12 +261,14 @@ impl ArchOps for Aarch64Arch {
                 vcpu.get_arch_vcpu().deactivate(intid)?;
                 Ok(BoundVcpuExit::Continue)
             }
-            ArmVmExit::Nothing => Ok(BoundVcpuExit::Complete(VcpuRunAction {
-                waits_for_event: false,
-                stop_reason: None,
-                resets_vm: false,
-                exits_vcpu: false,
-            })),
+            ArmVmExit::PhysicalTimerSysReg | ArmVmExit::Nothing => {
+                Ok(BoundVcpuExit::Complete(VcpuRunAction {
+                    waits_for_event: false,
+                    stop_reason: None,
+                    resets_vm: false,
+                    exits_vcpu: false,
+                }))
+            }
             _ => ax_err!(Unsupported, "unsupported AArch64 VM exit"),
         }
     }
@@ -284,6 +298,24 @@ impl ArchOps for Aarch64Arch {
                     exit_reason,
                 );
                 crate::check_timer_events();
+            }
+            Aarch64DeferredRunWork::CpuUp(work) => {
+                return Ok(cpu_up::finish::<Self>(_vm, vcpu, work));
+            }
+            Aarch64DeferredRunWork::PsciCpuOn { nr, args } => {
+                let result = super::handle_hypercall::<_, core::convert::Infallible>(
+                    _vm,
+                    vcpu,
+                    HypercallExit { nr, args },
+                    crate::runtime::hvc::HyperCallAbi::AArch64,
+                )?;
+                return match result {
+                    BoundVcpuExit::Complete(action) => Ok(action),
+                    BoundVcpuExit::Continue => {
+                        unreachable!("hypercall handling always completes the current run slice")
+                    }
+                    BoundVcpuExit::Defer(never) => match never {},
+                };
             }
         }
         Ok(VcpuRunAction {
@@ -568,6 +600,7 @@ impl VmArchVcpuOps for AxvmArmVcpu {
             .ok_or(BackendError::InvalidState)?;
         let host_irq_guard = ArmHostIrqGuard::mask();
         vgic_backend_result(binding.load())?;
+        crate::runtime::vcpus::note_vtimer_guest_entry(binding.vcpu().raw());
         let run_result = arm_result(self.inner.run(&host_irq_guard));
         let timer_result = self.synchronize_timer();
         let save_result = vgic_backend_result(binding.save());

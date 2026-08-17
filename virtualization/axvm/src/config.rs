@@ -37,6 +37,18 @@ pub enum GuestBootPolicy {
     AdjustKernelForBootProtocol { protocol: VMBootProtocol },
 }
 
+/// Selects how the AArch64 guest `WFI` instruction is handled.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum Aarch64WfiPolicy {
+    /// Derive the safe policy from vCPU placement and timer wake capability.
+    #[default]
+    Auto,
+    /// Always trap `WFI` and arm the software timer wake path.
+    Trap,
+    /// Leave `WFI` in hardware after validating direct wake capability.
+    Passthrough,
+}
+
 /// A part of `AxVMConfig`, which represents a `VCpu`.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct AxVCpuConfig {
@@ -104,6 +116,8 @@ pub struct AxVMConfig {
     gic_profile: Option<GuestGicProfile>,
     plic_profile: Option<GuestPlicProfile>,
     timer_profile: Option<GuestTimerProfile>,
+    aarch64_virtual_timer_only: bool,
+    aarch64_wfi_policy: Aarch64WfiPolicy,
     serial_backend_factory: Arc<dyn SerialBackendFactory>,
     virtual_device_requests: Vec<VirtualDeviceRequest>,
     virtual_device_catalog: Arc<crate::ConfiguredDeviceCatalog>,
@@ -146,6 +160,10 @@ pub struct AxVMConfigParams {
     /// platforms report the trapping instruction itself and need `true`.
     /// Defaults to `true` so physical-board configs keep the legacy behavior.
     pub advance_hvc_smc_pc: bool,
+    /// Whether this AArch64 guest is contractually limited to `CNTV_*`.
+    pub aarch64_virtual_timer_only: bool,
+    /// How this AArch64 guest handles `WFI`.
+    pub aarch64_wfi_policy: Aarch64WfiPolicy,
 }
 
 impl AxVMConfig {
@@ -172,6 +190,8 @@ impl AxVMConfig {
             gic_profile: machine.gic,
             plic_profile: machine.plic,
             timer_profile: machine.timer,
+            aarch64_virtual_timer_only: params.aarch64_virtual_timer_only,
+            aarch64_wfi_policy: params.aarch64_wfi_policy,
             serial_backend_factory: params
                 .serial_backend_factory
                 .unwrap_or_else(|| Arc::new(NullSerialBackendFactory)),
@@ -401,6 +421,16 @@ impl AxVMConfig {
     /// Returns the machine-owned AArch64 architectural timer resources.
     pub fn timer_profile(&self) -> Option<&GuestTimerProfile> {
         self.timer_profile.as_ref()
+    }
+
+    /// Returns whether the guest is forbidden from accessing `CNTP_*`.
+    pub const fn aarch64_virtual_timer_only(&self) -> bool {
+        self.aarch64_virtual_timer_only
+    }
+
+    /// Returns the requested AArch64 `WFI` handling policy.
+    pub const fn aarch64_wfi_policy(&self) -> Aarch64WfiPolicy {
+        self.aarch64_wfi_policy
     }
 
     /// Replaces the virtual PLIC window with host firmware resources.

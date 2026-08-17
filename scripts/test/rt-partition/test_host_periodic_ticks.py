@@ -18,16 +18,19 @@ SAMPLE_LOG = """\
 [host_monotonic_s=10.2]   cpu   0:        100
 [host_monotonic_s=10.3]   cpu   1:          0
 [host_monotonic_s=10.4]   cpu   2:        101
+[host_monotonic_s=10.5]   cpu   3:          0
 [host_monotonic_s=20.0] VM-exit counters per physical CPU (13 reasons):
 [host_monotonic_s=20.1] Host periodic scheduler ticks (event-driven timer IRQs excluded):
 [host_monotonic_s=20.2]   cpu   0:        900 (80.000/s)
 [host_monotonic_s=20.3]   cpu   1:          0
 [host_monotonic_s=20.4]   cpu   2:        901 (80.000/s)
+[host_monotonic_s=20.5]   cpu   3:          0
 [host_monotonic_s=30.0] VM-exit counters per physical CPU (13 reasons):
 [host_monotonic_s=30.1] Host periodic scheduler ticks (event-driven timer IRQs excluded):
 [host_monotonic_s=30.2]   cpu   0:       1700 (80.000/s)
 [host_monotonic_s=30.3]   cpu   1:          0
 [host_monotonic_s=30.4]   cpu   2:       1701 (80.000/s)
+[host_monotonic_s=30.5]   cpu   3:          0
 """
 
 
@@ -67,6 +70,16 @@ class HostPeriodicTicksTest(unittest.TestCase):
 
     def test_require_zero_cpu_accepts_all_zero_snapshots(self):
         result, _ = self.run_parser(SAMPLE_LOG, "--require-zero-cpu", "1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_require_zero_cpu_accepts_multiple_zero_cpus(self):
+        result, _ = self.run_parser(
+            SAMPLE_LOG,
+            "--require-zero-cpu",
+            "1",
+            "--require-zero-cpu",
+            "3",
+        )
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_rejects_missing_tick_snapshots(self):

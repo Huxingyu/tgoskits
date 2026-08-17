@@ -11,6 +11,9 @@
 #   rt_interval_us=N    cyclictest interval (default 1000)
 #   rt_maxlat_us=N      histogram max latency (default 400)
 #   rt_priority=N       cyclictest SCHED_FIFO priority (default 90)
+#   rt_trace=disabled|events|timerlat
+#                       optional tracefs diagnostic capture
+#   rt_trace_buffer_kb=N per-CPU trace buffer size (default 8192 KiB)
 #   rt_start_delay_sec=N delay before workload start so the runner can sample
 #                        the pre-test VM-exit counters
 #
@@ -39,6 +42,8 @@ duration_sec=0
 interval_us=1000
 maxlat_us=400
 priority=90
+trace_mode=disabled
+trace_buffer_kb=8192
 start_delay_sec=25
 
 for arg in $(/bin/busybox cat /proc/cmdline); do
@@ -51,6 +56,8 @@ for arg in $(/bin/busybox cat /proc/cmdline); do
         rt_interval_us=*) interval_us="${arg#rt_interval_us=}" ;;
         rt_maxlat_us=*) maxlat_us="${arg#rt_maxlat_us=}" ;;
         rt_priority=*) priority="${arg#rt_priority=}" ;;
+        rt_trace=*) trace_mode="${arg#rt_trace=}" ;;
+        rt_trace_buffer_kb=*) trace_buffer_kb="${arg#rt_trace_buffer_kb=}" ;;
         rt_start_delay_sec=*) start_delay_sec="${arg#rt_start_delay_sec=}" ;;
     esac
 done
@@ -76,8 +83,25 @@ if [ "$loops" -eq 0 ] && [ "$duration_sec" -eq 0 ]; then
     echo "RT_DURATION_ERROR loops and duration cannot both be zero"
     /bin/busybox poweroff -f
 fi
+case "$trace_mode" in
+    disabled|events|timerlat) ;;
+    *)
+        echo "RT_FTRACE_ERROR invalid mode=$trace_mode"
+        /bin/busybox poweroff -f
+        ;;
+esac
+case "$trace_buffer_kb" in
+    *[!0-9]*|'')
+        echo "RT_FTRACE_ERROR invalid buffer_kb=$trace_buffer_kb"
+        /bin/busybox poweroff -f
+        ;;
+esac
+if [ "$trace_buffer_kb" -eq 0 ]; then
+    echo "RT_FTRACE_ERROR buffer_kb must be positive"
+    /bin/busybox poweroff -f
+fi
 
-echo "RT_INIT scenario=$scenario cpu=$cpu load_cpu=$load_cpu loops=$loops duration_sec=$duration_sec interval_us=$interval_us maxlat_us=$maxlat_us priority=$priority start_delay_sec=$start_delay_sec"
+echo "RT_INIT scenario=$scenario cpu=$cpu load_cpu=$load_cpu loops=$loops duration_sec=$duration_sec interval_us=$interval_us maxlat_us=$maxlat_us priority=$priority trace=$trace_mode trace_buffer_kb=$trace_buffer_kb start_delay_sec=$start_delay_sec"
 echo "RT_CPUS total=$cpu_total"
 echo "RT_SCHED_PROBE_START"
 if /bin/busybox chrt -p $$; then
@@ -118,6 +142,63 @@ case "$scenario" in
         ;;
 esac
 
+trace_dir=/sys/kernel/tracing
+if [ "$trace_mode" != disabled ]; then
+    /bin/busybox mkdir -p "$trace_dir"
+    if ! /bin/busybox mount -t tracefs tracefs "$trace_dir"; then
+        echo "RT_FTRACE_ERROR tracefs mount failed"
+        /bin/busybox poweroff -f
+    fi
+    case "$cpu" in
+        0) trace_cpumask=1 ;;
+        1) trace_cpumask=2 ;;
+    esac
+    echo 0 > "$trace_dir/tracing_on"
+    echo > "$trace_dir/trace"
+    echo "$trace_buffer_kb" > "$trace_dir/buffer_size_kb"
+    echo "$trace_cpumask" > "$trace_dir/tracing_cpumask"
+    echo mono_raw > "$trace_dir/trace_clock"
+fi
+if [ "$trace_mode" = events ]; then
+    for trace_event in \
+        irq/irq_handler_entry irq/irq_handler_exit \
+        timer/hrtimer_expire_entry timer/hrtimer_expire_exit \
+        sched/sched_wakeup sched/sched_switch; do
+        if [ ! -e "$trace_dir/events/$trace_event/enable" ]; then
+            echo "RT_FTRACE_ERROR missing_event=$trace_event"
+            /bin/busybox poweroff -f
+        fi
+    done
+    for trace_event in \
+        irq/irq_handler_entry irq/irq_handler_exit \
+        timer/hrtimer_expire_entry timer/hrtimer_expire_exit \
+        sched/sched_wakeup sched/sched_switch; do
+        echo 1 > "$trace_dir/events/$trace_event/enable"
+    done
+    echo "RT_FTRACE_START mode=events cpu=$cpu buffer_kb=$trace_buffer_kb"
+    echo 1 > "$trace_dir/tracing_on"
+fi
+if [ "$trace_mode" = timerlat ]; then
+    for control in \
+        current_tracer osnoise/cpus osnoise/timerlat_period_us \
+        osnoise/stop_tracing_us osnoise/stop_tracing_total_us; do
+        if [ ! -e "$trace_dir/$control" ]; then
+            echo "RT_FTRACE_ERROR missing_timerlat_control=$control"
+            /bin/busybox poweroff -f
+        fi
+    done
+    echo "$cpu" > "$trace_dir/osnoise/cpus"
+    echo "$interval_us" > "$trace_dir/osnoise/timerlat_period_us"
+    echo 0 > "$trace_dir/osnoise/stop_tracing_us"
+    echo 0 > "$trace_dir/osnoise/stop_tracing_total_us"
+    if ! echo timerlat > "$trace_dir/current_tracer"; then
+        echo "RT_FTRACE_ERROR timerlat tracer unavailable"
+        /bin/busybox poweroff -f
+    fi
+    echo "RT_FTRACE_START mode=timerlat cpu=$cpu buffer_kb=$trace_buffer_kb period_us=$interval_us"
+    echo 1 > "$trace_dir/tracing_on"
+fi
+
 echo "RT_CYCLICTEST_START"
 IFS=' ' read -r start_uptime_s _ < /proc/uptime
 echo "RT_CYCLICTEST_TIMING_START uptime_s=$start_uptime_s"
@@ -140,6 +221,11 @@ else
         > /tmp/cyclictest.log 2>&1
 fi
 status=$?
+if [ "$trace_mode" != disabled ]; then
+    echo 0 > "$trace_dir/tracing_on"
+    /bin/busybox cat "$trace_dir/trace" > /tmp/rt-ftrace.log
+    echo "RT_FTRACE_STOP mode=$trace_mode"
+fi
 /bin/busybox kill "$progress_pid" 2>/dev/null || true
 /bin/busybox wait "$progress_pid" 2>/dev/null || true
 /bin/busybox cat /tmp/cyclictest.log
@@ -157,6 +243,18 @@ fi
 /bin/busybox kill "$load_pid" 2>/dev/null || true
 /bin/busybox wait "$load_pid" 2>/dev/null || true
 /bin/busybox cat /tmp/rt-cpustat.log
+
+if [ "$trace_mode" != disabled ]; then
+    echo "RT_FTRACE_DUMP_READY encoding=gzip-base64"
+    IFS= read -r trace_dump_token
+    if [ "$trace_dump_token" != dump ]; then
+        echo "RT_FTRACE_ERROR invalid_dump_token=$trace_dump_token"
+        /bin/busybox poweroff -f
+    fi
+    echo "RT_FTRACE_DUMP_BEGIN encoding=gzip-base64"
+    /bin/busybox gzip -c /tmp/rt-ftrace.log | /bin/busybox base64
+    echo "RT_FTRACE_DUMP_END"
+fi
 
 # Keep the console alive briefly so the runner can capture the tail.
 /bin/busybox sleep 2

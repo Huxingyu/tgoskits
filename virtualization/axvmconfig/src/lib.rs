@@ -220,6 +220,24 @@ fn boot_protocol_name(protocol: VMBootProtocol) -> &'static str {
     }
 }
 
+/// Selects how the AArch64 guest `WFI` instruction is handled.
+///
+/// `Auto` preserves the platform policy: shared vCPUs and guests with an
+/// emulated timer trap `WFI`, while a dedicated `CNTV`-only guest may wait in
+/// hardware. The explicit variants exist for controlled latency experiments.
+#[cfg_attr(all(feature = "std", any(windows, unix)), derive(schemars::JsonSchema))]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum Aarch64WfiPolicy {
+    /// Use the safe platform default derived from CPU placement and timers.
+    #[default]
+    Auto,
+    /// Always trap guest `WFI` and use the host software wake path.
+    Trap,
+    /// Allow guest `WFI` to remain in hardware when every enabled timer wakes it.
+    Passthrough,
+}
+
 /// The configuration structure for the guest VM base info.
 #[cfg_attr(all(feature = "std", any(windows, unix)), derive(schemars::JsonSchema))]
 #[derive(Debug, Default, Clone, serde::Serialize, serde::Deserialize)]
@@ -252,6 +270,20 @@ pub struct VMBaseConfig {
     ///
     ///   It will phrase an error if the number of vCpus is not equal to the length of `phys_cpu_sets` array.
     pub phys_cpu_sets: Option<Vec<usize>>,
+    /// Declares that an AArch64 guest uses only the virtual architectural
+    /// timer (`CNTV_*`) and must not access the physical timer (`CNTP_*`).
+    ///
+    /// Dedicated vCPUs may leave WFI untrapped only when this contract is
+    /// enabled, because CNTV has a direct hardware wake path while CNTP is
+    /// software-emulated. Defaults to `false` for compatibility and safety.
+    pub aarch64_virtual_timer_only: bool,
+    /// Selects how the AArch64 guest `WFI` instruction is handled.
+    ///
+    /// The default preserves the capability-gated platform policy. `trap` is
+    /// intended for A/B isolation of the software wake path; `passthrough`
+    /// is accepted only when the vCPU is dedicated and every exposed timer
+    /// has a hardware wake path.
+    pub aarch64_wfi_policy: Aarch64WfiPolicy,
     /// Whether the AArch64 trap layer must advance the exception PC past the
     /// trapping `hvc`/`smc` instruction before resuming the guest.
     ///

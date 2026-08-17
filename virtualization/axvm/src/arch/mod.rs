@@ -88,7 +88,7 @@ pub(crate) type ArchPerCpu = <CurrentArch as ArchOps>::PerCpu;
 pub(crate) type ArchNestedPageTable = <CurrentArch as ArchOps>::NestedPageTable;
 
 pub(crate) fn register_timer_source(
-    deadline_source: std::sync::Arc<crate::timer::PublishedTimerDeadline>,
+    deadline_source: &'static crate::timer::PublishedTimerDeadline,
     notify: std::sync::Arc<ax_std::os::arceos::modules::ax_task::IrqNotify>,
 ) {
     CurrentArch::register_timer_source(deadline_source, notify);

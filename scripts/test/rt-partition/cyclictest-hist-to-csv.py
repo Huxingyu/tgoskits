@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Extract the cyclictest histogram from a console log and write CSV.
 
-Input: a serial log that contains the rt-tests 2.10 quiet histogram output:
-    # Histogram
+Input: a serial log that contains quiet cyclictest histogram output. Some
+rt-tests versions omit the optional ``# Histogram`` heading:
+    # Histogram                 (optional)
     000000 000005
     000001 000003
     # Min Latencies: ...
@@ -33,28 +34,32 @@ def normalize_console_line(line: str) -> str:
 
 
 def extract_histogram(text: str) -> list[tuple[int, int]]:
-    marker = "# Histogram"
-    lines = text.splitlines()
-    marker_indexes = [
-        index for index, line in enumerate(lines) if normalize_console_line(line) == marker
+    lines = [normalize_console_line(line) for line in text.splitlines()]
+    summary_indexes = [
+        index for index, line in enumerate(lines) if line.startswith("# Min Latencies:")
     ]
-    if not marker_indexes:
-        raise ValueError("cyclictest histogram marker not found in log")
+    if not summary_indexes:
+        raise ValueError("cyclictest minimum latency summary not found in log")
 
+    # The bucket rows are the contiguous numeric block immediately preceding
+    # the summary. Anchoring from the summary avoids confusing earlier numeric
+    # VM-exit tables with cyclictest output when the heading is omitted.
     buckets: list[tuple[int, int]] = []
-    for line in lines[marker_indexes[-1] + 1 :]:
-        line = normalize_console_line(line)
-        if line.startswith("# Min Latencies:"):
-            break
+    for line in reversed(lines[: summary_indexes[-1]]):
         match = re.fullmatch(r"\s*(\d+)\s+((?:\d+\s*)+)", line)
         if match is None:
-            continue
+            if buckets:
+                break
+            if not line:
+                continue
+            raise ValueError("cyclictest histogram contains no bucket rows")
         bucket = int(match.group(1))
         counts = [int(value) for value in match.group(2).split()]
         buckets.append((bucket, sum(counts)))
 
     if not buckets:
         raise ValueError("cyclictest histogram contains no bucket rows")
+    buckets.reverse()
     return buckets
 
 
@@ -78,9 +83,11 @@ def histogram_percentile(
 
 def extract_summary(text: str, buckets: list[tuple[int, int]]) -> dict[str, int]:
     lines = [normalize_console_line(line) for line in text.splitlines()]
-    marker_indexes = [index for index, line in enumerate(lines) if line == "# Histogram"]
-    if not marker_indexes:
-        raise ValueError("cyclictest histogram marker not found in log")
+    summary_indexes = [
+        index for index, line in enumerate(lines) if line.startswith("# Min Latencies:")
+    ]
+    if not summary_indexes:
+        raise ValueError("cyclictest minimum latency summary not found in log")
 
     metrics: dict[str, int] = {}
     patterns = {
@@ -89,7 +96,7 @@ def extract_summary(text: str, buckets: list[tuple[int, int]]) -> dict[str, int]
         "max_latency_us": re.compile(r"# Max Latencies:\s+(\d+)\s*$"),
         "overflow_samples": re.compile(r"# Histogram Overflows:\s+(\d+)\s*$"),
     }
-    for line in lines[marker_indexes[-1] + 1 :]:
+    for line in lines[summary_indexes[-1] :]:
         for name, pattern in patterns.items():
             match = pattern.fullmatch(line)
             if match is not None:

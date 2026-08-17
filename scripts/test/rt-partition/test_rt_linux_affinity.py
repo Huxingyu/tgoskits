@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[3]
 RUNNER = (ROOT / "scripts/test/rt-partition/run-cyclictest.sh").read_text()
 INIT = (ROOT / "scripts/test/rt-partition/rt-linux-init.sh").read_text()
 P1_RUNNER = (ROOT / "scripts/test/rt-partition/run-p1-comparison.sh").read_text()
+RUNNER_STEPS = RUNNER.split('cat > "$steps" <<EOF', 1)[1].split("\nEOF", 1)[0]
 
 
 class RtLinuxAffinityTest(unittest.TestCase):
@@ -121,7 +122,29 @@ class RtLinuxAffinityTest(unittest.TestCase):
         self.assertIn("host_monotonic_s=", RUNNER)
 
     def test_formal_metadata_records_that_realtime_trace_is_disabled(self):
-        self.assertIn("realtime_trace=disabled", RUNNER)
+        self.assertIn('linux_trace="${RT_LINUX_TRACE:-disabled}"', RUNNER)
+        self.assertIn('printf \'realtime_trace=%s\\n\' "$linux_trace"', RUNNER)
+
+    def test_guest_trace_mode_captures_timer_and_scheduler_events(self):
+        self.assertIn('rt_trace=*) trace_mode="${arg#rt_trace=}"', INIT)
+        self.assertIn('mount -t tracefs tracefs "$trace_dir"', INIT)
+        self.assertIn("timer/hrtimer_expire_entry", INIT)
+        self.assertIn("sched/sched_wakeup", INIT)
+        self.assertIn("sched/sched_switch", INIT)
+        self.assertIn("RT_FTRACE_DUMP_BEGIN", INIT)
+        self.assertIn("RT_FTRACE_DUMP_READY encoding=gzip-base64", INIT)
+        self.assertIn("/bin/busybox gzip -c /tmp/rt-ftrace.log", INIT)
+        self.assertIn("/bin/busybox base64", INIT)
+        self.assertIn('rt_trace=${linux_trace}', RUNNER)
+        self.assertIn('linux-ftrace.txt', RUNNER)
+
+    def test_guest_timerlat_mode_captures_irq_and_thread_latency(self):
+        self.assertIn("disabled|events|timerlat", INIT)
+        self.assertIn('echo timerlat > "$trace_dir/current_tracer"', INIT)
+        self.assertIn('osnoise/timerlat_period_us', INIT)
+        self.assertIn('RT_FTRACE_START mode=timerlat', INIT)
+        self.assertIn('linux-timerlat.txt', RUNNER)
+        self.assertIn('linux-timerlat-latency.py', RUNNER)
 
     def test_default_histogram_bound_keeps_formal_samples_in_range(self):
         self.assertIn('maxlat_us="${RT_MAXLAT_US:-20000}"', RUNNER)
@@ -170,32 +193,36 @@ class RtLinuxAffinityTest(unittest.TestCase):
         self.assertIn("timeout_sec >= minimum_outer_timeout", RUNNER)
 
     def test_zephyr_sampling_starts_inside_the_linux_workload_window(self):
-        linux_start = RUNNER.index("expect ${linux_start_timeout} RT_CYCLICTEST_START")
-        zephyr_attach = RUNNER.index(r"expect 10 Attached VM\[2\] console")
-        zephyr_gate = RUNNER.index("send-until 60 0.5 g PERIODIC LATENCY START")
-        zephyr_complete = RUNNER.index(
-            "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300"
+        linux_start = RUNNER_STEPS.index(
+            "expect ${linux_start_timeout} RT_CYCLICTEST_START"
         )
-        linux_complete = RUNNER.index(
+        zephyr_attach = RUNNER_STEPS.index(r"expect 10 Attached VM\[2\] console")
+        zephyr_measurement = RUNNER_STEPS.index("${zephyr_measurement_steps}")
+        linux_complete = RUNNER_STEPS.index(
             "expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE"
         )
-        self.assertLess(linux_start, zephyr_gate)
-        self.assertLess(zephyr_attach, zephyr_gate)
-        self.assertLess(zephyr_gate, zephyr_complete)
-        self.assertLess(zephyr_complete, linux_complete)
+        self.assertLess(linux_start, zephyr_measurement)
+        self.assertLess(zephyr_attach, zephyr_measurement)
+        self.assertLess(zephyr_measurement, linux_complete)
+        self.assertRegex(
+            RUNNER,
+            r"send-until 60 0\.5 g PERIODIC LATENCY START\n"
+            r"(?:.*\n)*?expect \$\{zephyr_timeout\} "
+            r"PERIODIC LATENCY COMPLETE samples=300",
+        )
         self.assertIn('zephyr_start_gated="$(sed -n', RUNNER)
         self.assertIn('[[ "$zephyr_start_gated" == "1" ]]', RUNNER)
         self.assertIn("send-until 60 0.5 g PERIODIC LATENCY START", RUNNER)
 
     def test_runner_confirms_console_attachment_before_guest_input(self):
-        zephyr_command = RUNNER.index("cmd vm console 2")
-        zephyr_attached = RUNNER.index(r"expect 10 Attached VM\[2\] console")
-        zephyr_gate = RUNNER.index("send-until 60 0.5 g PERIODIC LATENCY START")
-        linux_command = RUNNER.index("cmd vm console 1")
-        linux_attached = RUNNER.index(r"expect 10 Attached VM\[1\] console")
+        zephyr_command = RUNNER_STEPS.index("cmd vm console 2")
+        zephyr_attached = RUNNER_STEPS.index(r"expect 10 Attached VM\[2\] console")
+        zephyr_measurement = RUNNER_STEPS.index("${zephyr_measurement_steps}")
+        linux_command = RUNNER_STEPS.index("cmd vm console 1")
+        linux_attached = RUNNER_STEPS.index(r"expect 10 Attached VM\[1\] console")
 
         self.assertLess(zephyr_command, zephyr_attached)
-        self.assertLess(zephyr_attached, zephyr_gate)
+        self.assertLess(zephyr_attached, zephyr_measurement)
         self.assertLess(linux_command, linux_attached)
 
     def test_vmexit_snapshots_bound_the_zephyr_sampling_window(self):
@@ -211,8 +238,8 @@ class RtLinuxAffinityTest(unittest.TestCase):
 
     def test_dedicated_scenarios_require_zero_host_ticks_on_pcpu1(self):
         self.assertIn("host-periodic-ticks.csv", RUNNER)
-        self.assertIn("--require-zero-cpu 1", RUNNER)
-        self.assertIn('stress-dedicated|stress-rt)', RUNNER)
+        self.assertIn('host_tick_args+=(--require-zero-cpu "$dedicated_cpu")', RUNNER)
+        self.assertIn('dedicated_cpus="1"', RUNNER)
 
 
 if __name__ == "__main__":

@@ -187,13 +187,12 @@ pub fn handle_ipi_reschedule() {
     if !take_remote_reschedule_pending_for_current_cpu() {
         return;
     }
-    #[cfg(all(feature = "preempt", feature = "host-test"))]
+    #[cfg(feature = "preempt")]
     if let Some(curr) = crate::current_may_uninit() {
+        // The IPI action still runs in hard-IRQ context. Publish the request
+        // here and let the common IRQ exit path perform the context switch
+        // after it has cleared the platform IRQ-context marker.
         curr.set_force_resched_pending(true);
-    }
-    #[cfg(all(feature = "preempt", not(feature = "host-test")))]
-    if crate::current_may_uninit().is_some() {
-        CurrentRunQueueRef::<RawState>::force_resched_from_irq();
     }
 }
 
@@ -692,7 +691,18 @@ impl<G: GuardState> AxRunQueueRef<G> {
         task.set_cpu_id(cpu_id as _);
         // SAFETY: `AxRunQueueRef<G>` has already entered the run-queue
         // critical section represented by `G`.
-        unsafe { self.inner.scheduler.lock_raw() }.add_task(task);
+        let mut scheduler = unsafe { self.inner.scheduler.lock_raw() };
+        #[cfg(feature = "sched-rt")]
+        if !scheduler.set_priority(&task, task.sched_priority() as isize) {
+            warn!(
+                "task {} requested invalid fixed priority {}; using {}",
+                task.id_name(),
+                task.sched_priority(),
+                ax_sched::MIN_PRIORITY
+            );
+            let _ = scheduler.set_priority(&task, ax_sched::MIN_PRIORITY);
+        }
+        scheduler.add_task(task);
         #[cfg(all(feature = "smp", feature = "ipi"))]
         kick_remote_cpu(cpu_id);
     }
@@ -893,17 +903,6 @@ impl<G: GuardState> CurrentRunQueueRef<G> {
         } else {
             curr.set_force_resched_pending(true);
         }
-    }
-
-    #[cfg(all(
-        feature = "smp",
-        feature = "ipi",
-        feature = "preempt",
-        not(feature = "host-test")
-    ))]
-    fn force_resched_from_irq() {
-        let mut rq = current_run_queue::<RawState>();
-        rq.force_resched_with_preempt_count(0);
     }
 
     /// Exit the current task with the specified exit code.

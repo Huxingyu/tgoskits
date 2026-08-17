@@ -6,6 +6,8 @@
 # initialization that delays hardware-virtualization enablement on the
 # secondary CPUs under TCG (observed 3/4 cores with the default profile).
 features = [
+    "rt-scheduler",
+    "timer-latency-stats",
     # "ax-driver/nvme",
     # "fs",
 ]

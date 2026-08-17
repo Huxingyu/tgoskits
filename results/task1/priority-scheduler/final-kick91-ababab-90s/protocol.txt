@@ -1,0 +1,9 @@
+experiment=fixed-priority-scheduler-single-variable-ab
+order=interleaved-rr-fixed
+repeats=3
+duration_sec=90
+burner=1:10:53
+vcpu_priority=90
+timer_worker_priority=89
+rr_board=/home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rr.toml
+fixed_board=/home/huhu/tgoskits-rt/scripts/test/rt-partition/board-qemu-aarch64-rt.toml
