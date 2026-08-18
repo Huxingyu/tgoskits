@@ -7,7 +7,10 @@
 #include <zephyr/sys/time_units.h>
 
 #define PERIOD_MS 10
-#define SAMPLE_COUNT 300
+#ifndef RT_SAMPLE_COUNT
+#define RT_SAMPLE_COUNT 300
+#endif
+#define SAMPLE_COUNT RT_SAMPLE_COUNT
 
 #ifndef RT_START_DELAY_MS
 #define RT_START_DELAY_MS 0

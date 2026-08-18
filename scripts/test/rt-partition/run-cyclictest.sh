@@ -32,11 +32,26 @@ linux_wfi_policy="${RT_LINUX_WFI_POLICY:-auto}"
 dedicated_cpus_override="${RT_DEDICATED_CPUS_OVERRIDE:-}"
 require_init_done="${RT_REQUIRE_INIT_DONE:-1}"
 qemu_exit_grace_sec="${RT_QEMU_EXIT_GRACE_SEC:-10}"
+zephyr_sample_count_expected="${RT_ZEPHYR_SAMPLE_COUNT:-300}"
+allow_dirty="${RT_ALLOW_DIRTY:-0}"
 
 git -C "$source_root" rev-parse --is-inside-work-tree >/dev/null 2>&1 || {
     printf 'error: RT_SOURCE_ROOT is not a git worktree: %s\n' "$source_root" >&2
     exit 2
 }
+case "$allow_dirty" in
+    0|1) ;;
+    *) printf 'error: RT_ALLOW_DIRTY must be 0 or 1\n' >&2; exit 2 ;;
+esac
+tracked_status="$(git -C "$source_root" status --porcelain --untracked-files=no)"
+if [[ -n "$tracked_status" && "$allow_dirty" == "0" ]]; then
+    printf 'error: source worktree has tracked changes; commit them or set RT_ALLOW_DIRTY=1\n' >&2
+    printf '%s\n' "$tracked_status" >&2
+    exit 2
+fi
+tracked_dirty=0
+[[ -n "$tracked_status" ]] && tracked_dirty=1
+untracked_count="$(git -C "$source_root" ls-files --others --exclude-standard | wc -l | tr -d ' ')"
 case "$vmexit_diagnostics" in
     0|1) ;;
     *) printf 'error: RT_VMEXIT_DIAGNOSTICS must be 0 or 1\n' >&2; exit 2 ;;
@@ -141,6 +156,10 @@ fi
 for value in "$loops" "$duration_sec" "$interval_us" "$maxlat_us" "$deadline_tolerance_ns" "$priority" "$rt_cpu" "$start_delay_sec" "$runtime_scale" "$result_drain_timeout" "$zephyr_timeout" "$linux_trace_buffer_kb" "$qemu_exit_grace_sec"; do
     [[ "$value" =~ ^[0-9]+$ ]] || { printf 'error: numeric RT option is invalid: %s\n' "$value" >&2; exit 2; }
 done
+[[ "$zephyr_sample_count_expected" =~ ^[1-9][0-9]*$ ]] || {
+    printf 'error: RT_ZEPHYR_SAMPLE_COUNT must be a positive integer\n' >&2
+    exit 2
+}
 (( interval_us > 0 && runtime_scale > 0 && result_drain_timeout > 0 && zephyr_timeout > 0 && linux_trace_buffer_kb > 0 && qemu_exit_grace_sec > 0 )) || {
     printf 'error: interval, runtime scale, result drain timeout, Zephyr timeout, trace buffer, and QEMU exit grace must be positive\n' >&2
     exit 2
@@ -223,8 +242,8 @@ zephyr_start_delay_ms="$(sed -n 's/^start_delay_ms=//p' "$zephyr_manifest")"
     printf 'error: invalid Zephyr entry point in manifest: %s\n' "$zephyr_entry" >&2
     exit 1
 }
-[[ "$zephyr_samples" == "300" ]] || {
-    printf 'error: Zephyr manifest sample count is not 300: %s\n' "$zephyr_samples" >&2
+[[ "$zephyr_samples" == "$zephyr_sample_count_expected" ]] || {
+    printf 'error: Zephyr manifest sample count is not %s: %s\n' "$zephyr_sample_count_expected" "$zephyr_samples" >&2
     exit 1
 }
 [[ "$zephyr_start_gated" == "1" ]] || {
@@ -405,13 +424,13 @@ cmd ${timer_storm_command}
 expect 300 RT_TIMER_STORM_COMPLETE
 cmd vm console 2
 expect 10 Attached VM\\[2\\] console
-expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300
+expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=${zephyr_samples}
 EOF
 )"
 else
     zephyr_measurement_steps="$(cat <<EOF
 send-until 60 0.5 g PERIODIC LATENCY START
-expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300
+expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=${zephyr_samples}
 EOF
 )"
 fi
@@ -533,7 +552,7 @@ end_ns="$(date +%s%N)"
 elapsed_ms=$(( (end_ns - start_ns) / 1000000 ))
 printf 'rt_experiment end_ns=%s elapsed_ms=%s\n' "$end_ns" "$elapsed_ms" | tee -a "$run_log"
 
-python3 - "$run_log" "$out_dir" "$vmexit_diagnostics" <<'PY'
+python3 - "$run_log" "$out_dir" "$vmexit_diagnostics" "$zephyr_samples" <<'PY'
 import csv
 import re
 import sys
@@ -542,6 +561,7 @@ from pathlib import Path
 log_path = Path(sys.argv[1])
 out = Path(sys.argv[2])
 vmexit_diagnostics = sys.argv[3] == "1"
+expected_samples = int(sys.argv[4])
 raw_log = log_path.read_text(errors="replace")
 progress = re.findall(
     r"^\[host_monotonic_s=([0-9.]+)\].*RT_PROGRESS uptime_s=([0-9.]+)",
@@ -590,7 +610,7 @@ else:
 
 header = "sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns"
 header_index = log.rfind(header)
-complete_index = log.rfind("PERIODIC LATENCY COMPLETE samples=300")
+complete_index = log.rfind(f"PERIODIC LATENCY COMPLETE samples={expected_samples}")
 if header_index < 0 or complete_index < header_index:
     raise SystemExit("Zephyr periodic CSV block is missing")
 rows = []
@@ -600,9 +620,9 @@ for line in log[header_index + len(header):complete_index].splitlines():
     candidate = re.sub(r"^\[VM 2\] ", "", candidate)
     if re.fullmatch(r"\d+,-?\d+,-?\d+,-?\d+,-?\d+", candidate):
         rows.append(candidate.split(","))
-if len(rows) != 300:
-    raise SystemExit(f"expected 300 Zephyr samples, found {len(rows)}")
-if [int(row[0]) for row in rows] != list(range(300)):
+if len(rows) != expected_samples:
+    raise SystemExit(f"expected {expected_samples} Zephyr samples, found {len(rows)}")
+if [int(row[0]) for row in rows] != list(range(expected_samples)):
     raise SystemExit("Zephyr sample sequence is incomplete or out of order")
 with (out / "zephyr.csv").open("w", newline="") as stream:
     writer = csv.writer(stream)
@@ -715,7 +735,7 @@ strings "$axvisor_bin" | rg -F "$cmdline" >/dev/null || {
 
 python3 - "$run_log" "$out_dir/cyclictest.csv" "$out_dir/cyclictest-summary.txt" \
     "$scenario" "$run_mode" "$loops" "$duration_sec" "$elapsed_ms" \
-    "$burner_config" "$require_init_done" "$linux_trace" <<'PY'
+    "$burner_config" "$require_init_done" "$linux_trace" "$zephyr_samples" <<'PY'
 import csv
 import re
 import sys
@@ -731,6 +751,7 @@ elapsed_ms = int(sys.argv[8])
 burner_config = sys.argv[9]
 require_init_done = sys.argv[10] == "1"
 linux_trace = sys.argv[11]
+expected_samples = int(sys.argv[12])
 log = re.sub(
     r"(?m)^\[host_monotonic_s=[0-9.]+\] ",
     "",
@@ -746,7 +767,7 @@ required = [
     "# Min Latencies:",
     "# Histogram Overflows:",
     "RT_CYCLICTEST_COMPLETE",
-    "PERIODIC LATENCY COMPLETE samples=300",
+    f"PERIODIC LATENCY COMPLETE samples={expected_samples}",
 ]
 if require_init_done:
     required.append(f"RT_INIT_DONE scenario={scenario}")
@@ -770,7 +791,7 @@ if "RT_FTRACE_ERROR" in log:
     raise SystemExit("Linux ftrace setup reported an execution error")
 linux_start = log.index("RT_CYCLICTEST_START")
 zephyr_start = log.index("PERIODIC LATENCY START")
-zephyr_complete = log.index("PERIODIC LATENCY COMPLETE samples=300")
+zephyr_complete = log.index(f"PERIODIC LATENCY COMPLETE samples={expected_samples}")
 linux_complete = log.index("RT_CYCLICTEST_COMPLETE")
 if not linux_start < zephyr_start < zephyr_complete < linux_complete:
     raise SystemExit("Zephyr samples were not captured inside the Linux workload window")
@@ -819,6 +840,9 @@ PY
 {
     printf 'scenario=%s\n' "$scenario"
     printf 'git_commit=%s\n' "$(git -C "$source_root" rev-parse HEAD)"
+    printf 'tracked_dirty=%s\n' "$tracked_dirty"
+    printf 'untracked_count=%s\n' "$untracked_count"
+    printf 'allow_dirty=%s\n' "$allow_dirty"
     printf 'source_root=%s\n' "$source_root"
     printf 'run_mode=%s\n' "$run_mode"
     printf 'requested_loops=%s\n' "$loops"
@@ -841,6 +865,7 @@ PY
     printf 'board_config=%s\n' "$board_toml"
     printf 'zephyr_guest_type=%s\n' "$zephyr_guest_type"
     printf 'zephyr_start_delay_ms=%s\n' "$zephyr_start_delay_ms"
+    printf 'zephyr_sample_count=%s\n' "$zephyr_samples"
     printf 'progress_timeout_sec=%s\n' "$progress_timeout"
     printf 'zephyr_timeout_sec=%s\n' "$zephyr_timeout"
     printf 'result_drain_timeout_sec=%s\n' "$result_drain_timeout"

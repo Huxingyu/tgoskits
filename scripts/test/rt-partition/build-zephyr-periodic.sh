@@ -14,6 +14,7 @@ memory_base="${ZEPHYR_MEMORY_BASE:-0xA0000000}"
 memory_size="${ZEPHYR_MEMORY_SIZE:-0x08000000}"
 start_gated="${ZEPHYR_START_GATED:-1}"
 start_delay_ms="${ZEPHYR_START_DELAY_MS:-0}"
+sample_count="${ZEPHYR_SAMPLE_COUNT:-300}"
 out_dir="$(realpath -m "$out_dir")"
 build_dir="$(realpath -m "$build_dir")"
 
@@ -32,6 +33,10 @@ done
     printf 'error: ZEPHYR_START_DELAY_MS must be a non-negative integer\n' >&2
     exit 2
 }
+[[ "$sample_count" =~ ^[1-9][0-9]*$ ]] || {
+    printf 'error: ZEPHYR_SAMPLE_COUNT must be a positive integer\n' >&2
+    exit 2
+}
 
 mkdir -p "$out_dir"
 overlay="${out_dir}/zephyr-periodic-memory.overlay"
@@ -44,6 +49,7 @@ ZEPHYR_BASE="$zephyr_base" cmake -S "$app_dir" -B "$build_dir" -G Ninja \
     -DCROSS_COMPILE="$cross_prefix" \
     -DRT_START_GATED="$start_gated" \
     -DRT_START_DELAY_MS="$start_delay_ms" \
+    -DRT_SAMPLE_COUNT="$sample_count" \
     -DDTC_OVERLAY_FILE="$overlay"
 cmake --build "$build_dir" --clean-first
 
@@ -79,7 +85,7 @@ rg -a -F "PERIODIC LATENCY COMPLETE samples=%d" "$staged_bin" >/dev/null || {
     printf 'zephyr_commit=%s\n' "$(git -C "$zephyr_base" rev-parse HEAD)"
     printf 'source_commit=%s\n' "$(git -C "$repo_root" rev-parse HEAD)"
     printf 'board=qemu_cortex_a53\n'
-    printf 'sample_count=300\n'
+    printf 'sample_count=%s\n' "$sample_count"
     printf 'start_gated=%s\n' "$start_gated"
     printf 'start_delay_ms=%s\n' "$start_delay_ms"
     printf 'toolchain=%s\n' "$("${cross_prefix}gcc" -dumpfullversion)"

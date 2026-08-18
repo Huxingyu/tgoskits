@@ -12,6 +12,7 @@ BUILD_TRACE_LINUX = (
 ).read_text()
 NATIVE_RUNNER_PATH = ROOT / "scripts/test/rt-partition/run-native-zephyr.sh"
 MATRIX_RUNNER = (ROOT / "scripts/test/rt-partition/run-cyclictest.sh").read_text()
+FOUR_ARM_RUNNER = (ROOT / "scripts/test/rt-partition/run-four-arm-matrix.sh").read_text()
 PRIORITY_AB_RUNNER_PATH = (
     ROOT / "scripts/test/rt-partition/run-priority-scheduler-ab.sh"
 )
@@ -45,6 +46,36 @@ class RtBuildScriptsTest(unittest.TestCase):
         self.assertIn("k_sleep(K_MSEC(1));", ZEPHYR_MAIN)
         self.assertIn("PERIODIC LATENCY SETTLE", ZEPHYR_MAIN)
         self.assertIn("uart_poll_in", ZEPHYR_MAIN)
+
+    def test_zephyr_sample_count_is_a_build_and_runner_contract(self):
+        self.assertIn("#ifndef RT_SAMPLE_COUNT", ZEPHYR_MAIN)
+        self.assertIn("#define SAMPLE_COUNT RT_SAMPLE_COUNT", ZEPHYR_MAIN)
+        self.assertIn('sample_count="${ZEPHYR_SAMPLE_COUNT:-300}"', BUILD_ZEPHYR)
+        self.assertIn('-DRT_SAMPLE_COUNT="$sample_count"', BUILD_ZEPHYR)
+        self.assertIn('printf \'sample_count=%s\\n\' "$sample_count"', BUILD_ZEPHYR)
+        self.assertIn(
+            'zephyr_sample_count_expected="${RT_ZEPHYR_SAMPLE_COUNT:-300}"',
+            MATRIX_RUNNER,
+        )
+        self.assertIn("expected_samples = int(sys.argv[4])", MATRIX_RUNNER)
+        self.assertIn("expected_samples = int(sys.argv[12])", MATRIX_RUNNER)
+        self.assertIn("zephyr_sample_count=%s", MATRIX_RUNNER)
+
+    def test_matrix_runner_rejects_tracked_dirty_sources_by_default(self):
+        self.assertIn('allow_dirty="${RT_ALLOW_DIRTY:-0}"', MATRIX_RUNNER)
+        self.assertIn("status --porcelain --untracked-files=no", MATRIX_RUNNER)
+        self.assertIn("RT_ALLOW_DIRTY must be 0 or 1", MATRIX_RUNNER)
+        self.assertIn("tracked_dirty=%s", MATRIX_RUNNER)
+        self.assertIn("untracked_count=%s", MATRIX_RUNNER)
+
+    def test_four_arm_runner_separates_topology_and_scheduler(self):
+        self.assertIn("arms=(shared-rr shared-fixed partition-rr partition-fixed)", FOUR_ARM_RUNNER)
+        self.assertIn("RT_DEDICATED_CPUS_OVERRIDE=\"$dedicated\"", FOUR_ARM_RUNNER)
+        self.assertIn("RT_ZEPHYR_SAMPLE_COUNT=\"$sample_count\"", FOUR_ARM_RUNNER)
+        self.assertIn("pairwise_compare shared-scheduler shared-rr shared-fixed", FOUR_ARM_RUNNER)
+        self.assertIn("pairwise_compare partition-effect shared-rr partition-rr", FOUR_ARM_RUNNER)
+        self.assertIn("pairwise_compare partitioned-scheduler partition-rr partition-fixed", FOUR_ARM_RUNNER)
+        self.assertIn("pairwise_compare shared-vs-partition shared-fixed partition-fixed", FOUR_ARM_RUNNER)
 
     def test_native_zephyr_runner_archives_complete_evidence(self):
         runner = NATIVE_RUNNER_PATH.read_text()
