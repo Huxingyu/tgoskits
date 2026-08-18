@@ -418,3 +418,54 @@ trace 已把已观测 IRQ-to-switch P99 的 95.6% 定位到 `sched_wakeup -> sch
 P5 物理板仍依赖外部板卡租约。它影响物理硬件 WCET/中断上界的声明，但不影响本阶段
 QEMU 软件机制、2-vCPU Linux、native Zephyr 基线、1800 秒矩阵和一小时功能长稳的
 交付完成。最终入口与合法声明边界统一见 `results/task1/README.md`。
+
+## 12. 2026-08-19 四臂三轮最终归因矩阵
+
+为把静态 CPU 分区与 AxVisor 调度机制独立归因，最终冻结了四个条件：
+`shared + RR`、`shared + fixed-priority`、`partitioned + RR`、
+`partitioned + fixed-priority`。每臂 3 次、每次 180 s Linux cyclictest、
+3000 个 Zephyr 周期样本，执行顺序交错为
+`shared-rr, shared-fixed, partition-rr, partition-fixed` 与反向顺序。
+完整原始证据位于 `results/task1/four-arm-matrix-final-180s-marker-20260818/`，
+协议见该目录 `protocol.txt`，每次运行均有 `meta.txt`、串口日志、统计文件和
+`sha256sums`。
+
+### 12.1 Zephyr P99 jitter（3 轮中位数）
+
+| 对比 | RR 基线 | fixed/partition 结果 | 归因 | P99 变化 |
+|---|---:|---:|---|---:|
+| shared RR -> shared fixed | 10.733 ms | 1.074 ms | 固定优先级、目标 vCPU kick 与就绪抢占 | 90.0% 降低，9.99x |
+| shared RR -> partitioned RR | 10.733 ms | 0.904 ms | vCPU/pCPU 静态分区、host burner 隔离 | 91.6% 降低，11.87x |
+| partitioned RR -> partitioned fixed | 0.904 ms | 0.893 ms | 调度器机制在无同核竞争下的独立收益 | 1.25% 降低，1.01x |
+| shared fixed -> partitioned fixed | 1.074 ms | 0.893 ms | fixed 条件下的拓扑隔离收益 | 16.9% 降低，1.20x |
+
+这四格给出本阶段最重要的独立归因：数量级改善来自两个不同因素在
+`shared + RR` 中叠加；固定优先级的核心软件收益由第一行与第三行对照证明，
+而不是把静态分区的倍数冒充调度器收益。分区后调度器只剩约 1%，符合“没有
+同核竞争时抢占没有可抢对象”的机制预期。
+
+### 12.2 其他硬指标
+
+- Zephyr 1 ms 容差 miss 中位数：`shared/RR 595`、`shared/fixed 69`、
+  `partition/RR 8`、`partition/fixed 5`。
+- Zephyr P99.9 中位数：`11.065 ms -> 1.406 ms`（shared RR -> shared
+  fixed），`1.080 ms -> 1.059 ms`（partition RR -> partition fixed）。
+- Zephyr max jitter 中位数：`11.317 ms -> 10.789 ms`（shared RR -> shared
+  fixed），`2.264 ms -> 1.581 ms`（partition RR -> partition fixed）。固定优先级
+  的数量级声明限于 P99/容差 miss；跨轮 max 没有数量级改善。
+- Linux cyclictest P99 在 shared RR -> shared fixed 为 `1258 -> 1335 us`，
+  在 partition RR -> partition fixed 为 `1179 -> 1149 us`。因此不能把
+  Zephyr/host burner 的调度收益外推为 Linux Guest P99 的稳定改善；Linux
+  端到端尾延迟仍受 Guest `sched_wakeup -> sched_switch` 段主导。
+- 12/12 次运行均完成 `RT_CYCLICTEST_COMPLETE`、3000 个 Zephyr 样本、
+  `RT_INIT_DONE`、正常 `PSCI_SYSTEM_OFF` 和 QMP 退出；没有启动失败或
+  watchdog 失败。此前 `partition-fixed` 的失败是串口尾部竞态，已通过把
+  `RT_INIT_DONE` 前移到测量完成标记之后修复，修复提交为 `ae2656ef7`。
+
+### 12.3 结论边界
+
+本矩阵完成了 Plan 2 的 P0-P4 QEMU 证据闭环：有重复、有交错顺序、有
+2-vCPU Linux、有 RTOS 周期任务、有 host/guest 负载与 VM-exit/tick 诊断，
+并且把静态分区和内部调度路径分开。仍未完成的是 P5 物理板，因此不能把
+QEMU TCG 数字写成硬件 WCET；也不能把 Linux cyclictest 的个别方向变化
+写成 AxVisor 调度器的端到端改善。
