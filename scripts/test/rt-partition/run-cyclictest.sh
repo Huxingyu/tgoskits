@@ -16,6 +16,7 @@ maxlat_us="${RT_MAXLAT_US:-20000}"
 deadline_tolerance_ns="${RT_DEADLINE_TOLERANCE_NS:-1000000}"
 priority="${RT_PRIORITY:-90}"
 rt_cpu="${RT_CPU:-1}"
+rt_cpu_override="${RT_CPU:-}"
 start_delay_sec="${RT_START_DELAY_SEC:-25}"
 result_drain_timeout="${RT_RESULT_DRAIN_TIMEOUT_SEC:-180}"
 zephyr_timeout="${RT_ZEPHYR_TIMEOUT_SEC:-180}"
@@ -30,6 +31,9 @@ linux_trace_buffer_kb="${RT_LINUX_TRACE_BUFFER_KB:-8192}"
 linux_virtual_timer_only="${RT_LINUX_VIRTUAL_TIMER_ONLY:-0}"
 linux_wfi_policy="${RT_LINUX_WFI_POLICY:-auto}"
 dedicated_cpus_override="${RT_DEDICATED_CPUS_OVERRIDE:-}"
+linux_phys_cpu_ids="${RT_LINUX_PHYS_CPU_IDS:-2,3}"
+zephyr_phys_cpu_ids="${RT_ZEPHYR_PHYS_CPU_IDS:-1}"
+linux_template_override="${RT_LINUX_TEMPLATE:-}"
 require_init_done="${RT_REQUIRE_INIT_DONE:-1}"
 qemu_exit_grace_sec="${RT_QEMU_EXIT_GRACE_SEC:-10}"
 zephyr_sample_count_expected="${RT_ZEPHYR_SAMPLE_COUNT:-300}"
@@ -108,6 +112,16 @@ case "$scenario" in
         zephyr_guest_type="virtualized"
         runtime_scale=3
         ;;
+    stress-guest-shared)
+        # Guest-to-guest contention cell: Linux vCPU0 and Zephyr vCPU0 both
+        # execute on pCPU1; Linux vCPU1 remains on pCPU2 for guest housekeeping.
+        dedicated_cpus=""
+        zephyr_guest_type="virtualized"
+        linux_phys_cpu_ids="1,2"
+        zephyr_phys_cpu_ids="1"
+        [[ -n "$rt_cpu_override" ]] || rt_cpu=0
+        runtime_scale=3
+        ;;
     stress-rt)
         dedicated_cpus="1"
         zephyr_guest_type="passthrough"
@@ -119,7 +133,7 @@ case "$scenario" in
         runtime_scale=3
         ;;
     *)
-        printf 'error: RT_SCENARIO must be idle, stress-noiso, stress-dedicated, or stress-rt\n' >&2
+        printf 'error: RT_SCENARIO must be idle, stress-noiso, stress-guest-shared, stress-dedicated, or stress-rt\n' >&2
         exit 2
         ;;
 esac
@@ -165,6 +179,22 @@ done
     exit 2
 }
 (( rt_cpu <= 1 )) || { printf 'error: RT_CPU must be 0 or 1 for the two-vCPU Linux guest\n' >&2; exit 2; }
+for cpu_list in "$linux_phys_cpu_ids" "$zephyr_phys_cpu_ids"; do
+    [[ "$cpu_list" =~ ^[0-9]+(,[0-9]+)*$ ]] || {
+        printf 'error: physical CPU mapping must be a comma-separated CPU list: %s\n' "$cpu_list" >&2
+        exit 2
+    }
+done
+IFS=',' read -r -a linux_phys_cpu_list <<< "$linux_phys_cpu_ids"
+IFS=',' read -r -a zephyr_phys_cpu_list <<< "$zephyr_phys_cpu_ids"
+(( ${#linux_phys_cpu_list[@]} == 2 )) || {
+    printf 'error: Linux VM requires exactly two physical CPU IDs: %s\n' "$linux_phys_cpu_ids" >&2
+    exit 2
+}
+(( ${#zephyr_phys_cpu_list[@]} == 1 )) || {
+    printf 'error: Zephyr VM requires exactly one physical CPU ID: %s\n' "$zephyr_phys_cpu_ids" >&2
+    exit 2
+}
 load_cpu=$((1 - rt_cpu))
 
 if (( duration_sec > 0 )); then
@@ -202,6 +232,9 @@ out_root="${RT_OUTPUT_ROOT:-${repo_root}/results/task1/matrix}"
 out_dir="${out_root}/${scenario}"
 board_toml="${RT_BOARD_CONFIG:-${repo_root}/scripts/test/rt-partition/board-qemu-aarch64-rt.toml}"
 linux_template="${repo_root}/scripts/test/rt-partition/vm-aarch64-rt-linux.toml"
+if [[ -n "$linux_template_override" ]]; then
+    linux_template="$linux_template_override"
+fi
 zephyr_template="${repo_root}/scripts/test/rt-partition/rt-partition-zephyr.toml"
 zephyr_template="${RT_ZEPHYR_TEMPLATE:-$zephyr_template}"
 zephyr_image="${RT_ZEPHYR_IMAGE:-${work}/zephyr-periodic.bin}"
@@ -287,7 +320,7 @@ rm -f "$serial_sock" "$qmp_sock" "$run_log" "$build_log" \
 cmdline="console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=${rt_cpu} nohz_full=${rt_cpu} irqaffinity=${load_cpu} rt_scenario=${scenario} rt_cpu=${rt_cpu} rt_load_cpu=${load_cpu} rt_loops=${cyclictest_loops} rt_duration_sec=${duration_sec} rt_interval_us=${interval_us} rt_maxlat_us=${maxlat_us} rt_priority=${priority} rt_trace=${linux_trace} rt_trace_buffer_kb=${linux_trace_buffer_kb} rt_start_delay_sec=${start_delay_sec}"
 
 python3 - "$linux_template" "$linux_config" "$cmdline" "$linux_image" \
-    "$linux_virtual_timer_only" "$linux_wfi_policy" <<'PY'
+    "$linux_virtual_timer_only" "$linux_wfi_policy" "$linux_phys_cpu_ids" <<'PY'
 import sys
 from pathlib import Path
 
@@ -297,6 +330,7 @@ cmdline = sys.argv[3]
 linux_image = sys.argv[4]
 virtual_timer_only = sys.argv[5] == "1"
 wfi_policy = sys.argv[6]
+phys_cpu_ids = sys.argv[7]
 lines = source.read_text().splitlines()
 cmdline_replaced = False
 kernel_replaced = False
@@ -318,6 +352,8 @@ for index, line in enumerate(lines):
     elif line.startswith("aarch64_wfi_policy = "):
         lines[index] = f'aarch64_wfi_policy = "{wfi_policy}"'
         wfi_policy_replaced = True
+    elif line.startswith("phys_cpu_ids = "):
+        lines[index] = f"phys_cpu_ids = [{', '.join(phys_cpu_ids.split(','))}]"
 if not cmdline_replaced:
     raise SystemExit("Linux VM template has no cmdline field")
 if not kernel_replaced:
@@ -329,7 +365,7 @@ if not wfi_policy_replaced:
 destination.write_text("\n".join(lines) + "\n")
 PY
 
-python3 - "$zephyr_template" "$zephyr_config" "$zephyr_guest_type" "$zephyr_entry" "$zephyr_image" <<'PY'
+python3 - "$zephyr_template" "$zephyr_config" "$zephyr_guest_type" "$zephyr_entry" "$zephyr_image" "$zephyr_phys_cpu_ids" <<'PY'
 import sys
 from pathlib import Path
 
@@ -338,6 +374,7 @@ destination = Path(sys.argv[2])
 guest_type = sys.argv[3]
 entry_point = sys.argv[4]
 image_path = sys.argv[5]
+phys_cpu_ids = sys.argv[6]
 lines = source.read_text().splitlines()
 found_guest_type = False
 found_entry_point = False
@@ -352,6 +389,8 @@ for index, line in enumerate(lines):
     elif line.startswith("kernel_path = "):
         lines[index] = f'kernel_path = "{image_path}"'
         found_kernel_path = True
+    elif line.startswith("phys_cpu_ids = "):
+        lines[index] = f"phys_cpu_ids = [{', '.join(phys_cpu_ids.split(','))}]"
 if not found_guest_type:
     raise SystemExit("Zephyr VM template has no guest_type field")
 if not found_entry_point:
@@ -879,6 +918,8 @@ PY
     printf 'host_periodic_tick_policy=%s\n' "${host_tick_args[*]:-record-only}"
     printf 'linux_rt_cpu=%s\n' "$rt_cpu"
     printf 'linux_load_cpu=%s\n' "$load_cpu"
+    printf 'linux_phys_cpu_ids=%s\n' "$linux_phys_cpu_ids"
+    printf 'zephyr_phys_cpu_ids=%s\n' "$zephyr_phys_cpu_ids"
     printf 'guest_cmdline=%s\n' "$cmdline"
     printf 'axvisor_bin=%s\n' "$axvisor_bin"
     printf 'build_command=cd %s && cargo xtask axvisor qemu --config %s --qemu-config %s --vmconfigs %s --vmconfigs %s\n' \

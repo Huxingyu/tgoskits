@@ -13,6 +13,7 @@ BUILD_TRACE_LINUX = (
 NATIVE_RUNNER_PATH = ROOT / "scripts/test/rt-partition/run-native-zephyr.sh"
 MATRIX_RUNNER = (ROOT / "scripts/test/rt-partition/run-cyclictest.sh").read_text()
 FOUR_ARM_RUNNER = (ROOT / "scripts/test/rt-partition/run-four-arm-matrix.sh").read_text()
+GUEST_SHARED_RUNNER_PATH = ROOT / "scripts/test/rt-partition/run-guest-shared-ab.sh"
 PRIORITY_AB_RUNNER_PATH = (
     ROOT / "scripts/test/rt-partition/run-priority-scheduler-ab.sh"
 )
@@ -32,6 +33,26 @@ ZEPHYR_MAIN = (ROOT / "scripts/test/zephyr-periodic/src/main.c").read_text()
 
 
 class RtBuildScriptsTest(unittest.TestCase):
+    def test_guest_shared_runner_keeps_topology_constant_and_changes_scheduler_only(self):
+        runner = GUEST_SHARED_RUNNER_PATH.read_text()
+        self.assertIn("RT_SCENARIO=stress-guest-shared", runner)
+        self.assertIn("RT_LINUX_PHYS_CPU_IDS=1,2", runner)
+        self.assertIn("RT_ZEPHYR_PHYS_CPU_IDS=1", runner)
+        self.assertIn("topology=linux-vcpu0->pcpu1,linux-vcpu1->pcpu2,zephyr-vcpu0->pcpu1", runner)
+        self.assertIn('rr_features - {"rr-scheduler"}', runner)
+        self.assertIn('fixed_features - {"rt-scheduler"}', runner)
+        self.assertIn("--baseline-label guest-shared-rr", runner)
+        self.assertIn("--modified-label guest-shared-fixed", runner)
+
+    def test_runner_supports_guest_shared_scenario_and_explicit_mappings(self):
+        self.assertIn("stress-guest-shared)", MATRIX_RUNNER)
+        self.assertIn('linux_phys_cpu_ids="${RT_LINUX_PHYS_CPU_IDS:-2,3}"', MATRIX_RUNNER)
+        self.assertIn('zephyr_phys_cpu_ids="${RT_ZEPHYR_PHYS_CPU_IDS:-1}"', MATRIX_RUNNER)
+        self.assertIn('linux_template_override="${RT_LINUX_TEMPLATE:-}"', MATRIX_RUNNER)
+        self.assertIn('phys_cpu_ids = [{\', \'.join(phys_cpu_ids.split(\',\'))}]', MATRIX_RUNNER)
+        self.assertIn("linux_phys_cpu_ids=%s", MATRIX_RUNNER)
+        self.assertIn("zephyr_phys_cpu_ids=%s", MATRIX_RUNNER)
+
     def test_zephyr_build_normalizes_caller_supplied_relative_paths(self):
         self.assertIn('out_dir="$(realpath -m "$out_dir")"', BUILD_ZEPHYR)
         self.assertIn('build_dir="$(realpath -m "$build_dir")"', BUILD_ZEPHYR)

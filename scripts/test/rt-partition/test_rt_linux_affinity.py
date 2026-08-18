@@ -208,7 +208,7 @@ class RtLinuxAffinityTest(unittest.TestCase):
             RUNNER,
             r"send-until 60 0\.5 g PERIODIC LATENCY START\n"
             r"(?:.*\n)*?expect \$\{zephyr_timeout\} "
-            r"PERIODIC LATENCY COMPLETE samples=300",
+            r"PERIODIC LATENCY COMPLETE samples=\$\{zephyr_samples\}",
         )
         self.assertIn('zephyr_start_gated="$(sed -n', RUNNER)
         self.assertIn('[[ "$zephyr_start_gated" == "1" ]]', RUNNER)
@@ -229,7 +229,7 @@ class RtLinuxAffinityTest(unittest.TestCase):
         self.assertIn('expected at least three vmexit snapshots', RUNNER)
         self.assertIn('vmexit-zephyr-after.txt', RUNNER)
         zephyr_complete = RUNNER.index(
-            "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=300"
+            "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=${zephyr_samples}"
         )
         middle_snapshot = RUNNER.index("${vmexit_after_zephyr_steps}", zephyr_complete)
         linux_attach = RUNNER.index("cmd vm console 1", middle_snapshot)
