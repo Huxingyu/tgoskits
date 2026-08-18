@@ -332,8 +332,10 @@ class ConsoleDriver:
             nanos = int(match.group(2))
             frame = bytes.fromhex(match.group(3))
             frames.setdefault(vm, []).append((nanos, frame))
+        prefix = destination / "capture"
         for vm, records in sorted(frames.items()):
-            with open(f"{prefix}.vm{vm}.pcap", "wb") as pcap_file:
+            pcap_path = prefix.with_name(f"{prefix.name}.vm{vm}.pcap")
+            with pcap_path.open("wb") as pcap_file:
                 pcap_file.write(PCAP_GLOBAL_HEADER)
                 for nanos, frame in records:
                     seconds = nanos // 1_000_000_000
@@ -343,7 +345,7 @@ class ConsoleDriver:
                         struct.pack("<IIII", seconds, micros, length, length)
                     )
                     pcap_file.write(frame)
-            print(f"pcap: wrote {len(records)} frames to {prefix}.vm{vm}.pcap")
+            print(f"pcap: wrote {len(records)} frames to {pcap_path}")
         self.dump_lines = []
 
 
