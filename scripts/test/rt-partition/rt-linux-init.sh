@@ -236,6 +236,12 @@ if [ "$status" -ne 0 ]; then
 fi
 echo "RT_CYCLICTEST_COMPLETE"
 
+# Signal that the measured workload has completed before emitting the optional
+# CPU accounting tail.  Keeping this marker ahead of verbose diagnostics makes
+# completion capture deterministic even when fixed-priority scheduling delays
+# the final shell commands.
+echo "RT_INIT_DONE scenario=$scenario"
+
 if [ -n "${stress_pid:-}" ]; then
     /bin/busybox kill "$stress_pid" 2>/dev/null || true
     echo "RT_STRESS_STOP"
@@ -256,7 +262,6 @@ if [ "$trace_mode" != disabled ]; then
     echo "RT_FTRACE_DUMP_END"
 fi
 
-# Keep the console alive briefly so the runner can capture the tail.
+# Keep the console alive briefly so the runner can capture the diagnostic tail.
 /bin/busybox sleep 2
-echo "RT_INIT_DONE scenario=$scenario"
 /bin/busybox poweroff -f 2>/dev/null || /bin/busybox sleep 30
