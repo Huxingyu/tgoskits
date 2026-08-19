@@ -101,6 +101,18 @@ pub fn priority_rr_scheduler_stats() -> Option<ax_sched::PriorityRRStats> {
     }
 }
 
+/// Returns the configured FP-RR quantum in scheduler ticks.
+pub const fn priority_rr_scheduler_quantum_ticks() -> Option<usize> {
+    #[cfg(feature = "sched-prio-rr")]
+    {
+        Some(MAX_TIME_SLICE)
+    }
+    #[cfg(not(feature = "sched-prio-rr"))]
+    {
+        None
+    }
+}
+
 /// Gets the current task, or returns [`None`] if the current task is not
 /// initialized.
 pub fn current_may_uninit() -> Option<CurrentTask> {

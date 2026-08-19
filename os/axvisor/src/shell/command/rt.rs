@@ -23,8 +23,10 @@ fn rt_stat(_cmd: &ParsedCommand) {
     if let Some(counts) = ax_std::os::arceos::modules::ax_task::priority_rr_scheduler_stats() {
         println!("FP-RR scheduler counters:");
         println!(
-            "  quantum_expiries={} same_priority_rotations={} \
+            "  quantum_ticks={} quantum_expiries={} same_priority_rotations={} \
              slice_preserving_preemptions={} voluntary_requeues={}",
+            ax_std::os::arceos::modules::ax_task::priority_rr_scheduler_quantum_ticks()
+                .unwrap_or(0),
             counts.quantum_expiries,
             counts.same_priority_rotations,
             counts.slice_preserving_preemptions,
