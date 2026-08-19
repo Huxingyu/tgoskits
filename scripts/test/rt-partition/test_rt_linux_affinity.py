@@ -231,10 +231,27 @@ class RtLinuxAffinityTest(unittest.TestCase):
         zephyr_complete = RUNNER.index(
             "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=${zephyr_samples}"
         )
-        middle_snapshot = RUNNER.index("${vmexit_after_zephyr_steps}", zephyr_complete)
-        linux_attach = RUNNER.index("cmd vm console 1", middle_snapshot)
-        self.assertLess(zephyr_complete, middle_snapshot)
-        self.assertLess(middle_snapshot, linux_attach)
+        linux_attach = RUNNER.index("cmd vm console 1", zephyr_complete)
+        linux_complete = RUNNER.index(
+            "expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE", linux_attach
+        )
+        middle_snapshot = RUNNER.index("${vmexit_after_zephyr_steps}", linux_complete)
+        self.assertLess(zephyr_complete, linux_attach)
+        self.assertLess(linux_attach, linux_complete)
+        self.assertLess(linux_complete, middle_snapshot)
+
+    def test_linux_completion_is_drained_before_post_zephyr_diagnostics(self):
+        linux_attach = RUNNER_STEPS.index("cmd vm console 1")
+        linux_complete = RUNNER_STEPS.index(
+            "expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE"
+        )
+        linux_detach = RUNNER_STEPS.index(
+            "detach", linux_complete
+        )
+        middle_snapshot = RUNNER_STEPS.index("${vmexit_after_zephyr_steps}")
+        self.assertLess(linux_attach, linux_complete)
+        self.assertLess(linux_complete, linux_detach)
+        self.assertLess(linux_detach, middle_snapshot)
 
     def test_dedicated_scenarios_require_zero_host_ticks_on_pcpu1(self):
         self.assertIn("host-periodic-ticks.csv", RUNNER)

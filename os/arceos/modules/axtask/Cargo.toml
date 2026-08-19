@@ -43,6 +43,7 @@ uspace = ["ax-hal/uspace"]
 sched-cfs = ["multitask", "preempt"]
 sched-rr = ["multitask", "preempt"]
 sched-rt = ["multitask", "preempt"]
+sched-prio-rr = ["multitask", "preempt"]
 
 host-test = [
   "ax-hal/host-test",

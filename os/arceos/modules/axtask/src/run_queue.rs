@@ -692,7 +692,7 @@ impl<G: GuardState> AxRunQueueRef<G> {
         // SAFETY: `AxRunQueueRef<G>` has already entered the run-queue
         // critical section represented by `G`.
         let mut scheduler = unsafe { self.inner.scheduler.lock_raw() };
-        #[cfg(feature = "sched-rt")]
+        #[cfg(any(feature = "sched-rt", feature = "sched-prio-rr"))]
         if !scheduler.set_priority(&task, task.sched_priority() as isize) {
             warn!(
                 "task {} requested invalid fixed priority {}; using {}",

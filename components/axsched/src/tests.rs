@@ -165,6 +165,60 @@ fn fixed_priority_rejects_out_of_range_values() {
 }
 
 #[test]
+fn fixed_priority_rr_rotates_same_priority_tasks_after_slice_expiry() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask, priority_rr_stats_snapshot};
+
+    let stats_before = priority_rr_stats_snapshot();
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 2>::new();
+    let first = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    let second = Arc::new(PriorityRRTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&first, 90));
+    assert!(scheduler.set_priority(&second, 90));
+    scheduler.add_task(first);
+    scheduler.add_task(second);
+
+    let current = scheduler.pick_next_task().unwrap();
+    assert_eq!(current.inner().value, 0);
+    assert!(!scheduler.task_tick(&current));
+    scheduler.put_prev_task(current, true);
+
+    let current = scheduler.pick_next_task().unwrap();
+    assert_eq!(current.inner().value, 0);
+    assert!(scheduler.task_tick(&current));
+    scheduler.put_prev_task(current, true);
+
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 1);
+    let stats_after = priority_rr_stats_snapshot();
+    assert!(stats_after.quantum_expiries > stats_before.quantum_expiries);
+    assert!(stats_after.same_priority_rotations > stats_before.same_priority_rotations);
+}
+
+#[test]
+fn fixed_priority_rr_preserves_preempted_task_until_slice_expiry() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask};
+
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 2>::new();
+    let low = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    let high = Arc::new(PriorityRRTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&low, 90));
+    assert!(scheduler.set_priority(&high, 91));
+
+    scheduler.add_task(low.clone());
+    let current = scheduler.pick_next_task().unwrap();
+    assert_eq!(current.inner().value, 0);
+    assert!(!scheduler.task_tick(&current));
+    scheduler.add_task(high);
+    scheduler.put_prev_task(current, true);
+
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 1);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 0);
+}
+
+#[test]
 fn rr_preempt_preserves_slice_but_forced_reschedule_rotates() {
     use alloc::sync::Arc;
 

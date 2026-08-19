@@ -20,6 +20,17 @@ use crate::shell::command::{CommandNode, OptionDef, ParsedCommand};
 
 fn rt_stat(_cmd: &ParsedCommand) {
     let runtime = axvm::rt_runtime_stats_snapshot();
+    if let Some(counts) = ax_std::os::arceos::modules::ax_task::priority_rr_scheduler_stats() {
+        println!("FP-RR scheduler counters:");
+        println!(
+            "  quantum_expiries={} same_priority_rotations={} \
+             slice_preserving_preemptions={} voluntary_requeues={}",
+            counts.quantum_expiries,
+            counts.same_priority_rotations,
+            counts.slice_preserving_preemptions,
+            counts.voluntary_requeues
+        );
+    }
     println!("RT vCPU wait counters:");
     for counts in runtime.vcpus {
         if counts.parks != 0

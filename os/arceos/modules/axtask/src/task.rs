@@ -377,7 +377,7 @@ impl TaskInner {
     }
 }
 
-#[cfg(feature = "sched-rt")]
+#[cfg(any(feature = "sched-rt", feature = "sched-prio-rr"))]
 impl ax_sched::SchedPriority for TaskInner {
     fn sched_priority(&self) -> isize {
         TaskInner::sched_priority(self) as isize

@@ -14,6 +14,9 @@ NATIVE_RUNNER_PATH = ROOT / "scripts/test/rt-partition/run-native-zephyr.sh"
 MATRIX_RUNNER = (ROOT / "scripts/test/rt-partition/run-cyclictest.sh").read_text()
 FOUR_ARM_RUNNER = (ROOT / "scripts/test/rt-partition/run-four-arm-matrix.sh").read_text()
 GUEST_SHARED_RUNNER_PATH = ROOT / "scripts/test/rt-partition/run-guest-shared-ab.sh"
+GUEST_SHARED_THREE_ARM_RUNNER_PATH = (
+    ROOT / "scripts/test/rt-partition/run-guest-shared-three-arm.sh"
+)
 PRIORITY_AB_RUNNER_PATH = (
     ROOT / "scripts/test/rt-partition/run-priority-scheduler-ab.sh"
 )
@@ -43,6 +46,14 @@ class RtBuildScriptsTest(unittest.TestCase):
         self.assertIn('fixed_features - {"rt-scheduler"}', runner)
         self.assertIn("--baseline-label guest-shared-rr", runner)
         self.assertIn("--modified-label guest-shared-fixed", runner)
+
+    def test_guest_shared_three_arm_runner_keeps_three_scheduler_profiles(self):
+        runner = GUEST_SHARED_THREE_ARM_RUNNER_PATH.read_text()
+        self.assertIn("arms=rr,fixed,fp-rr", runner)
+        self.assertIn("RT_SCENARIO=stress-guest-shared", runner)
+        self.assertIn("RT_LINUX_PHYS_CPU_IDS=1,2", runner)
+        self.assertIn("RT_ZEPHYR_PHYS_CPU_IDS=1", runner)
+        self.assertIn("pairwise_compare rr-vs-fp-rr rr fp-rr", runner)
 
     def test_runner_supports_guest_shared_scenario_and_explicit_mappings(self):
         self.assertIn("stress-guest-shared)", MATRIX_RUNNER)
