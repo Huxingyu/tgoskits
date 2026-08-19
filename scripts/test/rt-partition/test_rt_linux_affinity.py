@@ -187,6 +187,7 @@ class RtLinuxAffinityTest(unittest.TestCase):
         self.assertIn("if require_init_done:", RUNNER)
         self.assertIn('init_done_step="expect ${result_drain_timeout} RT_INIT_DONE', RUNNER)
         self.assertIn("require_init_done=%s", RUNNER)
+        self.assertIn("VM\\[1\\] PSCI_SYSTEM_OFF", RUNNER_STEPS)
 
     def test_outer_timeout_covers_boot_and_all_script_phases(self):
         self.assertIn("minimum_outer_timeout=$((", RUNNER)
@@ -218,12 +219,9 @@ class RtLinuxAffinityTest(unittest.TestCase):
         zephyr_command = RUNNER_STEPS.index("cmd vm console 2")
         zephyr_attached = RUNNER_STEPS.index(r"expect 10 Attached VM\[2\] console")
         zephyr_measurement = RUNNER_STEPS.index("${zephyr_measurement_steps}")
-        linux_command = RUNNER_STEPS.index("cmd vm console 1")
-        linux_attached = RUNNER_STEPS.index(r"expect 10 Attached VM\[1\] console")
-
         self.assertLess(zephyr_command, zephyr_attached)
         self.assertLess(zephyr_attached, zephyr_measurement)
-        self.assertLess(linux_command, linux_attached)
+        self.assertIn("attach-if-needed 1 RT_CYCLICTEST_COMPLETE", RUNNER_STEPS)
 
     def test_vmexit_snapshots_bound_the_zephyr_sampling_window(self):
         self.assertIn('expected at least three vmexit snapshots', RUNNER)
@@ -231,7 +229,9 @@ class RtLinuxAffinityTest(unittest.TestCase):
         zephyr_complete = RUNNER.index(
             "expect ${zephyr_timeout} PERIODIC LATENCY COMPLETE samples=${zephyr_samples}"
         )
-        linux_attach = RUNNER.index("cmd vm console 1", zephyr_complete)
+        linux_attach = RUNNER.index(
+            "attach-if-needed 1 RT_CYCLICTEST_COMPLETE", zephyr_complete
+        )
         linux_complete = RUNNER.index(
             "expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE", linux_attach
         )
@@ -241,17 +241,21 @@ class RtLinuxAffinityTest(unittest.TestCase):
         self.assertLess(linux_complete, middle_snapshot)
 
     def test_linux_completion_is_drained_before_post_zephyr_diagnostics(self):
-        linux_attach = RUNNER_STEPS.index("cmd vm console 1")
+        linux_attach = RUNNER_STEPS.index(
+            "attach-if-needed 1 RT_CYCLICTEST_COMPLETE"
+        )
         linux_complete = RUNNER_STEPS.index(
             "expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE"
         )
-        linux_detach = RUNNER_STEPS.index(
-            "detach", linux_complete
-        )
+        linux_detach = RUNNER_STEPS.index("detach-if-attached", linux_complete)
         middle_snapshot = RUNNER_STEPS.index("${vmexit_after_zephyr_steps}")
         self.assertLess(linux_attach, linux_complete)
         self.assertLess(linux_complete, linux_detach)
         self.assertLess(linux_detach, middle_snapshot)
+
+    def test_linux_completion_can_be_buffered_before_console_attach(self):
+        self.assertIn("attach-if-needed 1 RT_CYCLICTEST_COMPLETE", RUNNER_STEPS)
+        self.assertIn("detach-if-attached", RUNNER_STEPS)
 
     def test_dedicated_scenarios_require_zero_host_ticks_on_pcpu1(self):
         self.assertIn("host-periodic-ticks.csv", RUNNER)

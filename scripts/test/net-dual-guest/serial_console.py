@@ -11,7 +11,10 @@ stdout, and executes a small step script:
     send-until <seconds> <interval> <python-bytes> <regex>
                                resend bytes until the regex appears
     attach <vm_id>             switch the attached guest console to <vm_id>
+    attach-if-needed <vm_id> <regex>
+                               attach unless the regex is already buffered
     detach                     return from the guest console to the shell
+    detach-if-attached         return to the shell only when a guest is attached
     dump-pcap <prefix>         stream `virtnet capture dump` and write
                                <prefix>.vm1.pcap / <prefix>.vm2.pcap
     hold <seconds>             keep the connection open and keep reading
@@ -271,6 +274,11 @@ class ConsoleDriver:
                 file=sys.stderr,
             )
 
+    def attach_if_needed(self, vm_id: int, pattern: str) -> None:
+        if re.search(pattern, self.tail.decode("utf-8", errors="replace")):
+            return
+        self.attach(vm_id)
+
     def dump_pcap(self, prefix: str) -> None:
         self.dump_lines = []
 
@@ -472,9 +480,16 @@ def main() -> int:
                 return status
         elif step.startswith("attach "):
             driver.attach(int(step.split(" ", 1)[1]))
+        elif step.startswith("attach-if-needed "):
+            _, vm_id, pattern = step.split(" ", 2)
+            driver.attach_if_needed(int(vm_id), pattern)
         elif step == "detach":
             driver.conn.sendall(b"\x18h")
             time.sleep(0.3)
+        elif step == "detach-if-attached":
+            if driver.attached:
+                driver.conn.sendall(b"\x18h")
+                time.sleep(0.3)
         elif step.startswith("dump-pcap "):
             driver.dump_pcap(step.split(" ", 1)[1])
         elif step.startswith("qmp-quit "):

@@ -36,6 +36,11 @@ ZEPHYR_MAIN = (ROOT / "scripts/test/zephyr-periodic/src/main.c").read_text()
 
 
 class RtBuildScriptsTest(unittest.TestCase):
+    def test_serial_driver_handles_guest_completion_before_reattach(self):
+        serial = (ROOT / "scripts/test/net-dual-guest/serial_console.py").read_text()
+        self.assertIn("attach-if-needed", serial)
+        self.assertIn("detach-if-attached", serial)
+
     def test_guest_shared_runner_keeps_topology_constant_and_changes_scheduler_only(self):
         runner = GUEST_SHARED_RUNNER_PATH.read_text()
         self.assertIn("RT_SCENARIO=stress-guest-shared", runner)

@@ -487,16 +487,14 @@ expect 10 PERIODIC LATENCY READY
 ${zephyr_measurement_steps}
 detach
 expect 10 \[Axvisor\] detached VM\[2\] console
-cmd vm console 1
-expect 10 Attached VM\[1\] console
+attach-if-needed 1 RT_CYCLICTEST_COMPLETE
 sleep 1
 expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE
 ${trace_dump_steps}
 ${init_done_step}
-detach
-expect 10 \[Axvisor\] detached VM\[1\] console
+detach-if-attached
 ${vmexit_after_zephyr_steps}
-expect 30 \[Axvisor\] VM\[1\] stopped; returning to the management shell
+expect 30 (\[Axvisor\] VM\[1\] stopped; returning to the management shell|VM\[1\] PSCI_SYSTEM_OFF)
 ${runtime_final_steps}
 ${vmexit_final_steps}
 qmp-quit ${qmp_sock}
