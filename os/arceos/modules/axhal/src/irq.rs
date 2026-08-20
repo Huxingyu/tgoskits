@@ -40,6 +40,25 @@ pub fn handle_irq(vector: usize) -> bool {
     )
 }
 
+/// Dispatches an IRQ whose controller acknowledgement is already owned by the
+/// caller, then completes that acknowledgement before IRQ-tail preemption.
+///
+/// Hypervisor IRQ exits cannot call [`handle_irq`]: the GIC token was already
+/// acknowledged before the architecture state was restored. This entry point
+/// supplies the same IRQ-context and preemption-release ordering without a
+/// second controller acknowledgement. `complete` must perform the matching
+/// EOI/deactivate operation for the caller-owned token.
+pub fn dispatch_acknowledged_irq(irq: IrqId, complete: impl FnOnce()) -> IrqOutcome {
+    with_irq_entry(
+        || {},
+        || {
+            let outcome = dispatch_irq(irq);
+            complete();
+            outcome
+        },
+    )
+}
+
 fn with_irq_entry<T>(prepare: impl FnOnce(), dispatch: impl FnOnce() -> T) -> T {
     with_observed_irq_entry(prepare, dispatch, || {})
 }

@@ -78,6 +78,85 @@ pub(crate) static BUSY_TICKS: [core::sync::atomic::AtomicU64; crate::build_info:
 /// Monotonic scheduler tick used for task wait diagnostics.
 static SCHED_TICKS: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
 
+/// Returns whether a requested local wakeup should preempt the current task.
+///
+/// RR/FIFO schedulers preserve their existing eager-reschedule behavior. A
+/// fixed-priority scheduler, however, must not turn an equal- or lower-priority
+/// wakeup into an immediate context switch while a runnable task is already
+/// executing: doing so at every IRQ tail creates scheduler churn without
+/// making a more urgent task runnable. An idle CPU is the exception; it must
+/// leave the idle task even when the woken task carries the minimum priority.
+#[inline]
+#[cfg(any(
+    feature = "sched-rt",
+    feature = "sched-prio-rr",
+    feature = "sched-prio-rr-20ms"
+))]
+fn fixed_priority_wake_should_preempt(
+    current_is_idle: bool,
+    wake_priority: i32,
+    current_priority: i32,
+) -> bool {
+    current_is_idle || wake_priority > current_priority
+}
+
+#[inline]
+fn wake_should_preempt_current(wake_priority: i32) -> bool {
+    #[cfg(feature = "irq")]
+    if !ax_hal::irq::in_irq_context_preempt_disabled() {
+        return true;
+    }
+    #[cfg(any(
+        feature = "sched-rt",
+        feature = "sched-prio-rr",
+        feature = "sched-prio-rr-20ms"
+    ))]
+    {
+        let current = crate::current();
+        fixed_priority_wake_should_preempt(
+            current.is_idle(),
+            wake_priority,
+            current.sched_priority(),
+        )
+    }
+    #[cfg(not(any(
+        feature = "sched-rt",
+        feature = "sched-prio-rr",
+        feature = "sched-prio-rr-20ms"
+    )))]
+    {
+        let _ = wake_priority;
+        true
+    }
+}
+
+#[cfg(all(
+    test,
+    any(
+        feature = "sched-rt",
+        feature = "sched-prio-rr",
+        feature = "sched-prio-rr-20ms"
+    )
+))]
+mod priority_wake_tests {
+    #[test]
+    fn higher_priority_wakeup_requests_tail_preemption() {
+        assert!(super::fixed_priority_wake_should_preempt(false, 90, 89));
+    }
+
+    #[test]
+    fn equal_or_lower_wakeup_does_not_request_tail_preemption() {
+        assert!(!super::fixed_priority_wake_should_preempt(false, 90, 90));
+        assert!(!super::fixed_priority_wake_should_preempt(false, 89, 90));
+    }
+
+    #[test]
+    fn idle_cpu_always_leaves_the_idle_task() {
+        assert!(super::fixed_priority_wake_should_preempt(true, 0, 0));
+        assert!(super::fixed_priority_wake_should_preempt(true, 0, 90));
+    }
+}
+
 #[cfg(not(feature = "host-test"))]
 fn main_task_stack() -> TaskStack {
     let (stack_ptr, stack_size) = ax_hal::mem::boot_stack_bounds(this_cpu_id());
@@ -720,6 +799,7 @@ impl<G: GuardState> AxRunQueueRef<G> {
     /// This function does nothing if the task is not in [`TaskState::Blocked`],
     /// which means the task is already unblocked by other cores.
     pub fn unblock_task(&mut self, task: AxTaskRef, resched: bool) {
+        let wake_priority = task.sched_priority();
         let task_id_name = if log::log_enabled!(log::Level::Debug) {
             Some(task.id_name())
         } else {
@@ -742,7 +822,7 @@ impl<G: GuardState> AxRunQueueRef<G> {
             }
             // Note: when the task is unblocked on another CPU's run queue,
             // we just ignore the `resched` flag.
-            if resched && cpu_id == this_cpu_id() {
+            if resched && cpu_id == this_cpu_id() && wake_should_preempt_current(wake_priority) {
                 #[cfg(feature = "preempt")]
                 crate::current().set_preempt_pending(true);
             }
@@ -759,6 +839,7 @@ impl<G: GuardState> CurrentRunQueueRef<G> {
     /// See [`AxRunQueueRef::unblock_task`] for the state-transition details.
     #[cfg(feature = "irq")]
     pub(crate) fn unblock_task(&mut self, task: AxTaskRef, resched: bool) {
+        let wake_priority = task.sched_priority();
         let task_id_name = if log::log_enabled!(log::Level::Debug) {
             Some(task.id_name())
         } else {
@@ -773,7 +854,7 @@ impl<G: GuardState> CurrentRunQueueRef<G> {
             if let Some(task_id_name) = task_id_name {
                 debug!("task unblock: {task_id_name} on run_queue {cpu_id}");
             }
-            if resched {
+            if resched && wake_should_preempt_current(wake_priority) {
                 #[cfg(feature = "preempt")]
                 crate::current().set_preempt_pending(true);
             }
