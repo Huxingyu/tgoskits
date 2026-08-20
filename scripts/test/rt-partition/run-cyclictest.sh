@@ -36,6 +36,7 @@ zephyr_phys_cpu_ids="${RT_ZEPHYR_PHYS_CPU_IDS:-1}"
 linux_template_override="${RT_LINUX_TEMPLATE:-}"
 zephyr_template_override="${RT_ZEPHYR_TEMPLATE:-}"
 require_init_done="${RT_REQUIRE_INIT_DONE:-1}"
+hold_after_complete="${RT_HOLD_AFTER_COMPLETE:-0}"
 qemu_exit_grace_sec="${RT_QEMU_EXIT_GRACE_SEC:-10}"
 zephyr_sample_count_expected="${RT_ZEPHYR_SAMPLE_COUNT:-300}"
 allow_dirty="${RT_ALLOW_DIRTY:-0}"
@@ -68,6 +69,10 @@ esac
 case "$require_init_done" in
     0|1) ;;
     *) printf 'error: RT_REQUIRE_INIT_DONE must be 0 or 1\n' >&2; exit 2 ;;
+esac
+case "$hold_after_complete" in
+    0|1) ;;
+    *) printf 'error: RT_HOLD_AFTER_COMPLETE must be 0 or 1\n' >&2; exit 2 ;;
 esac
 case "$linux_trace" in
     disabled|events|timerlat) ;;
@@ -320,7 +325,7 @@ rm -f "$serial_sock" "$qmp_sock" "$run_log" "$build_log" \
     "$out_dir/post-stall/serial-actions.txt" \
     "$out_dir/post-stall/serial-tail.bin"
 
-cmdline="console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=${rt_cpu} nohz_full=${rt_cpu} irqaffinity=${load_cpu} rt_scenario=${scenario} rt_cpu=${rt_cpu} rt_load_cpu=${load_cpu} rt_loops=${cyclictest_loops} rt_duration_sec=${duration_sec} rt_interval_us=${interval_us} rt_maxlat_us=${maxlat_us} rt_priority=${priority} rt_trace=${linux_trace} rt_trace_buffer_kb=${linux_trace_buffer_kb} rt_start_delay_sec=${start_delay_sec}"
+cmdline="console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=${rt_cpu} nohz_full=${rt_cpu} irqaffinity=${load_cpu} rt_scenario=${scenario} rt_cpu=${rt_cpu} rt_load_cpu=${load_cpu} rt_loops=${cyclictest_loops} rt_duration_sec=${duration_sec} rt_interval_us=${interval_us} rt_maxlat_us=${maxlat_us} rt_priority=${priority} rt_trace=${linux_trace} rt_trace_buffer_kb=${linux_trace_buffer_kb} rt_start_delay_sec=${start_delay_sec} rt_hold_after_complete=${hold_after_complete}"
 
 python3 - "$linux_template" "$linux_config" "$cmdline" "$linux_image" \
     "$linux_virtual_timer_only" "$linux_wfi_policy" "$linux_phys_cpu_ids" <<'PY'
@@ -455,6 +460,16 @@ EOF
 else
     trace_dump_steps=""
 fi
+if (( hold_after_complete == 1 )); then
+    linux_hold_steps="$(cat <<EOF
+expect ${result_drain_timeout} RT_CYCLICTEST_HOLD_READY
+cmd release
+expect ${result_drain_timeout} RT_CYCLICTEST_RELEASED
+EOF
+)"
+else
+    linux_hold_steps=""
+fi
 
 if [[ -n "$timer_storm_command" ]]; then
     zephyr_measurement_steps="$(cat <<EOF
@@ -489,13 +504,15 @@ expect 10 PERIODIC LATENCY READY
 ${zephyr_measurement_steps}
 detach
 expect 10 \[Axvisor\] detached VM\[2\] console
-attach-if-needed 1 RT_CYCLICTEST_COMPLETE
+${vmexit_after_zephyr_steps}
+cmd vm console 1
+expect 10 Attached VM\[1\] console
 sleep 1
 expect ${experiment_timeout} RT_CYCLICTEST_COMPLETE
 ${trace_dump_steps}
 ${init_done_step}
+${linux_hold_steps}
 detach-if-attached
-${vmexit_after_zephyr_steps}
 expect 30 (\[Axvisor\] VM\[1\] stopped; returning to the management shell|VM\[1\] PSCI_SYSTEM_OFF)
 ${runtime_final_steps}
 ${vmexit_final_steps}
@@ -779,7 +796,8 @@ strings "$axvisor_bin" | rg -F "$cmdline" >/dev/null || {
 
 python3 - "$run_log" "$out_dir/cyclictest.csv" "$out_dir/cyclictest-summary.txt" \
     "$scenario" "$run_mode" "$loops" "$duration_sec" "$elapsed_ms" \
-    "$burner_config" "$require_init_done" "$linux_trace" "$zephyr_samples" <<'PY'
+    "$burner_config" "$require_init_done" "$linux_trace" "$hold_after_complete" \
+    "$zephyr_samples" <<'PY'
 import csv
 import re
 import sys
@@ -795,7 +813,8 @@ elapsed_ms = int(sys.argv[8])
 burner_config = sys.argv[9]
 require_init_done = sys.argv[10] == "1"
 linux_trace = sys.argv[11]
-expected_samples = int(sys.argv[12])
+hold_after_complete = sys.argv[12] == "1"
+expected_samples = int(sys.argv[13])
 log = re.sub(
     r"(?m)^\[host_monotonic_s=[0-9.]+\] ",
     "",
@@ -824,6 +843,8 @@ if linux_trace != "disabled":
             "RT_FTRACE_DUMP_END",
         ]
     )
+if hold_after_complete:
+    required.extend(["RT_CYCLICTEST_HOLD_READY", "RT_CYCLICTEST_RELEASED"])
 if burner_config:
     required.append(f"RT_BURNER_READY cpu={burner_config.split(':', 1)[0]}")
 missing = [marker for marker in required if marker not in log]
@@ -839,6 +860,11 @@ zephyr_complete = log.index(f"PERIODIC LATENCY COMPLETE samples={expected_sample
 linux_complete = log.index("RT_CYCLICTEST_COMPLETE")
 if not linux_start < zephyr_start < zephyr_complete < linux_complete:
     raise SystemExit("Zephyr samples were not captured inside the Linux workload window")
+if hold_after_complete:
+    hold_ready = log.index("RT_CYCLICTEST_HOLD_READY")
+    released = log.index("RT_CYCLICTEST_RELEASED")
+    if not linux_complete < hold_ready < released:
+        raise SystemExit("Linux hold/release markers are out of order")
 start_matches = re.findall(r"RT_CYCLICTEST_TIMING_START uptime_s=([0-9]+(?:\.[0-9]+)?)", log)
 end_matches = re.findall(r"RT_CYCLICTEST_TIMING_END uptime_s=([0-9]+(?:\.[0-9]+)?)", log)
 if len(start_matches) != 1 or len(end_matches) != 1:
@@ -904,6 +930,7 @@ PY
     printf 'vmexit_diagnostics=%s\n' "$vmexit_diagnostics"
     printf 'runtime_diagnostics=%s\n' "$runtime_diagnostics"
     printf 'require_init_done=%s\n' "$require_init_done"
+    printf 'hold_after_complete=%s\n' "$hold_after_complete"
     printf 'rootfs_override=%s\n' "${rootfs_override:-none}"
     printf 'linux_kernel=%s\n' "$linux_image"
     printf 'board_config=%s\n' "$board_toml"

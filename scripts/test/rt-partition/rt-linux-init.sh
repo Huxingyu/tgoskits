@@ -16,6 +16,8 @@
 #   rt_trace_buffer_kb=N per-CPU trace buffer size (default 8192 KiB)
 #   rt_start_delay_sec=N delay before workload start so the runner can sample
 #                        the pre-test VM-exit counters
+#   rt_hold_after_complete=0|1 keep Linux alive after measurement until the
+#                           runner sends the `release` token
 #
 # The measurement task is pinned to the isolated guest CPU. Stress stays on the
 # other housekeeping CPU, so the Linux workload is identical between the
@@ -45,6 +47,7 @@ priority=90
 trace_mode=disabled
 trace_buffer_kb=8192
 start_delay_sec=25
+hold_after_complete=0
 
 for arg in $(/bin/busybox cat /proc/cmdline); do
     case "$arg" in
@@ -59,6 +62,7 @@ for arg in $(/bin/busybox cat /proc/cmdline); do
         rt_trace=*) trace_mode="${arg#rt_trace=}" ;;
         rt_trace_buffer_kb=*) trace_buffer_kb="${arg#rt_trace_buffer_kb=}" ;;
         rt_start_delay_sec=*) start_delay_sec="${arg#rt_start_delay_sec=}" ;;
+        rt_hold_after_complete=*) hold_after_complete="${arg#rt_hold_after_complete=}" ;;
     esac
 done
 
@@ -100,8 +104,15 @@ if [ "$trace_buffer_kb" -eq 0 ]; then
     echo "RT_FTRACE_ERROR buffer_kb must be positive"
     /bin/busybox poweroff -f
 fi
+case "$hold_after_complete" in
+    0|1) ;;
+    *)
+        echo "RT_HOLD_ERROR invalid hold_after_complete=$hold_after_complete"
+        /bin/busybox poweroff -f
+        ;;
+esac
 
-echo "RT_INIT scenario=$scenario cpu=$cpu load_cpu=$load_cpu loops=$loops duration_sec=$duration_sec interval_us=$interval_us maxlat_us=$maxlat_us priority=$priority trace=$trace_mode trace_buffer_kb=$trace_buffer_kb start_delay_sec=$start_delay_sec"
+echo "RT_INIT scenario=$scenario cpu=$cpu load_cpu=$load_cpu loops=$loops duration_sec=$duration_sec interval_us=$interval_us maxlat_us=$maxlat_us priority=$priority trace=$trace_mode trace_buffer_kb=$trace_buffer_kb start_delay_sec=$start_delay_sec hold_after_complete=$hold_after_complete"
 echo "RT_CPUS total=$cpu_total"
 echo "RT_SCHED_PROBE_START"
 if /bin/busybox chrt -p $$; then
@@ -260,6 +271,16 @@ if [ "$trace_mode" != disabled ]; then
     echo "RT_FTRACE_DUMP_BEGIN encoding=gzip-base64"
     /bin/busybox gzip -c /tmp/rt-ftrace.log | /bin/busybox base64
     echo "RT_FTRACE_DUMP_END"
+fi
+
+if [ "$hold_after_complete" -eq 1 ]; then
+    echo "RT_CYCLICTEST_HOLD_READY"
+    IFS= read -r release_token
+    if [ "$release_token" != release ]; then
+        echo "RT_CYCLICTEST_ERROR invalid_release_token=$release_token"
+        /bin/busybox poweroff -f
+    fi
+    echo "RT_CYCLICTEST_RELEASED"
 fi
 
 # Keep the console alive briefly so the runner can capture the diagnostic tail.

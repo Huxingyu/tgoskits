@@ -41,6 +41,14 @@ class RtBuildScriptsTest(unittest.TestCase):
         self.assertIn("attach-if-needed", serial)
         self.assertIn("detach-if-attached", serial)
 
+    def test_linux_measurement_can_hold_guest_for_console_drain(self):
+        init = (ROOT / "scripts/test/rt-partition/rt-linux-init.sh").read_text()
+        runner = MATRIX_RUNNER
+        self.assertIn("rt_hold_after_complete", init)
+        self.assertIn("RT_CYCLICTEST_HOLD_READY", init)
+        self.assertIn("RT_CYCLICTEST_RELEASED", init)
+        self.assertIn("RT_HOLD_AFTER_COMPLETE", runner)
+
     def test_guest_shared_runner_keeps_topology_constant_and_changes_scheduler_only(self):
         runner = GUEST_SHARED_RUNNER_PATH.read_text()
         self.assertIn("RT_SCENARIO=stress-guest-shared", runner)
@@ -95,7 +103,7 @@ class RtBuildScriptsTest(unittest.TestCase):
             MATRIX_RUNNER,
         )
         self.assertIn("expected_samples = int(sys.argv[4])", MATRIX_RUNNER)
-        self.assertIn("expected_samples = int(sys.argv[12])", MATRIX_RUNNER)
+        self.assertIn("expected_samples = int(sys.argv[13])", MATRIX_RUNNER)
         self.assertIn("zephyr_sample_count=%s", MATRIX_RUNNER)
 
     def test_matrix_runner_rejects_tracked_dirty_sources_by_default(self):

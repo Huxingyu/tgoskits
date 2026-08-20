@@ -65,6 +65,7 @@ run_case() {
         RT_LOOPS=0 \
         RT_ZEPHYR_SAMPLE_COUNT="$sample_count" \
         RT_RUNTIME_DIAGNOSTICS=1 \
+        RT_HOLD_AFTER_COMPLETE=1 \
         "$runner"
     printf 'GUEST_SHARED_RUN_ACCEPTED variant=%s run=%s path=%s\n' \
         "$variant" "$run_number" "$run_root/stress-guest-shared"
