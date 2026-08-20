@@ -130,3 +130,48 @@ PSCI_SYSTEM_OFF
 
 仍需保守表述：QEMU TCG 下 P99/P99.9 会有明显波动；没有据此声称所有
 指标改善，也没有把 QEMU 结果等同于物理 RK3588 的最坏情况保证。
+
+## 附录：问题考古与经验教训
+
+### 时间线
+
+1. 先做了独占/拓扑矩阵，发现“18 倍”主要由 pCPU 隔离贡献，不能作为
+   调度机制收益。
+2. 转向 Linux/Zephyr 同 pCPU 的共享实验，首次暴露 Linux 提前关机和
+   console attach race。
+3. 修复 hold/release 后，RR 与 FP-RR 都能完成完整采样和收尾。
+4. 尝试无条件 IRQ-tail 抢占，先后出现 P99 撞上限和 Linux 258 样本停滞。
+5. 将 GIC completion 放回 IRQ guard 内，并把尾部抢占限制为“严格更高优先级
+   唤醒”，最终 smoke 闭环通过。
+
+### 设计阶段的根因
+
+早期方案把三个正交变量混在一起：CPU 拓扑、scheduler policy、实验收尾
+协议。这样即使数字变好，也无法知道收益来自哪一层；而 IRQ 方案又把“需要
+高优先级抢占”误化成“每个 IRQ 都应立即调度”。本轮把三者拆开，并明确
+`completion → IRQ-context withdrawal → preemption release` 的顺序约束。
+
+### 实现阶段的局部优化陷阱
+
+只看平均值或 P99 会掩盖“最大延迟几十秒”和“Guest 已停止但 runner 还在
+收集”的端到端故障。调度计数显示，无条件尾部抢占增加的是切换/回队列次数，
+并没有增加有效的高优先级服务。修复因此针对 wakeup 的优先级关系和 GIC
+所有权边界，而不是继续调 quantum 常数。
+
+### 测试盲区及改进
+
+- 旧 runner 没有 hold/release marker，无法区分 Guest 完成和 Guest 已关机；
+  现在 parser 强制检查 marker 顺序。
+- 旧镜像可能遮蔽源码修改；现在构建步骤显式重打包 initramfs，并在结果中
+  保存 SHA256。
+- 短 TCG smoke 不能外推长期 P99；现在保留失败日志、progress watchdog、
+  VM-exit snapshots，并对所有百分位使用“受 censored/TCG 波动影响”的表述。
+- host `cargo test -p axvm --lib` 不是有效的裸机链接验证；以 AArch64
+  release build 和真实 QEMU 运行作为消费者验证。
+
+### 可复用教训
+
+1. 先固定拓扑，再只改变一个机制变量。
+2. 任何“IRQ 返回即调度”的设计都必须先证明完成/EOI 顺序和切换频率上界。
+3. 实时系统验收必须同时记录平均、P99、P99.9、最大值、样本完整性和
+   长时间 liveness；单个漂亮数字不构成机制证据。
