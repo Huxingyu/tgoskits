@@ -1148,7 +1148,7 @@ impl AxVM {
 
     /// Returns the configured host scheduler priority for this VM's vCPU tasks.
     pub(crate) fn host_sched_priority(&self) -> i32 {
-        self.with_resources(|resources| Ok(resources.config().host_sched_priority()))
+        self.with_resources(|resources| Ok(resources.config.host_sched_priority()))
             .unwrap_or(crate::runtime::VCPU_TASK_PRIORITY)
     }
 
