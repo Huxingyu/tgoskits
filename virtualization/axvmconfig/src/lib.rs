@@ -270,6 +270,13 @@ pub struct VMBaseConfig {
     ///
     ///   It will phrase an error if the number of vCpus is not equal to the length of `phys_cpu_sets` array.
     pub phys_cpu_sets: Option<Vec<usize>>,
+    /// Host scheduler priority assigned to every vCPU task of this VM.
+    ///
+    /// Higher values run first when the priority-aware scheduler is enabled.
+    /// The default (90) preserves the historical behavior; deployments that
+    /// share a pCPU can assign a higher value to a latency-sensitive guest.
+    #[serde(default)]
+    pub host_sched_priority: Option<i32>,
     /// Declares that an AArch64 guest uses only the virtual architectural
     /// timer (`CNTV_*`) and must not access the physical timer (`CNTP_*`).
     ///
@@ -300,6 +307,7 @@ pub struct VMBaseConfig {
 fn default_true() -> bool {
     true
 }
+
 
 /// The configuration structure for the guest VM kernel.
 #[cfg_attr(all(feature = "std", any(windows, unix)), derive(schemars::JsonSchema))]

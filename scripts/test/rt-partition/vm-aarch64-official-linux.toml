@@ -1,19 +1,9 @@
-# RT-PARTITION Linux guest: 2 vCPUs pinned to physical CPUs 2 and 3.
-#
-# Load addresses follow the validated gicv3-timer-stress layout
-# (linux-qemu at 0x8020_0000, DTB at 0x8000_0000, initramfs at 0x8400_0000).
-# Guest CPU 1 is isolated from the kernel scheduler and runs the measurement
-# task; guest CPU 0 handles stress workers and kernel IRQs. The runner derives
-# `isolcpus`, `nohz_full`, and `irqaffinity` from its RT_CPU setting.
 [base]
 id = 1
-name = "rt-partition-linux"
+name = "official-rr-linux"
 guest_type = "virtualized"
 cpu_num = 2
-phys_cpu_ids = [2, 3]
-host_sched_priority = 89
-aarch64_virtual_timer_only = false
-aarch64_wfi_policy = "auto"
+phys_cpu_ids = [1, 2]
 
 [kernel]
 entry_point = 0x8020_0000

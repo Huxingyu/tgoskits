@@ -34,6 +34,7 @@ dedicated_cpus_override="${RT_DEDICATED_CPUS_OVERRIDE:-}"
 linux_phys_cpu_ids="${RT_LINUX_PHYS_CPU_IDS:-2,3}"
 zephyr_phys_cpu_ids="${RT_ZEPHYR_PHYS_CPU_IDS:-1}"
 linux_template_override="${RT_LINUX_TEMPLATE:-}"
+zephyr_template_override="${RT_ZEPHYR_TEMPLATE:-}"
 require_init_done="${RT_REQUIRE_INIT_DONE:-1}"
 qemu_exit_grace_sec="${RT_QEMU_EXIT_GRACE_SEC:-10}"
 zephyr_sample_count_expected="${RT_ZEPHYR_SAMPLE_COUNT:-300}"
@@ -236,7 +237,9 @@ if [[ -n "$linux_template_override" ]]; then
     linux_template="$linux_template_override"
 fi
 zephyr_template="${repo_root}/scripts/test/rt-partition/rt-partition-zephyr.toml"
-zephyr_template="${RT_ZEPHYR_TEMPLATE:-$zephyr_template}"
+if [[ -n "$zephyr_template_override" ]]; then
+    zephyr_template="$zephyr_template_override"
+fi
 zephyr_image="${RT_ZEPHYR_IMAGE:-${work}/zephyr-periodic.bin}"
 zephyr_manifest="${RT_ZEPHYR_MANIFEST:-${work}/zephyr-periodic.manifest}"
 linux_config="${work}/generated-${scenario}-linux.toml"
@@ -358,10 +361,9 @@ if not cmdline_replaced:
     raise SystemExit("Linux VM template has no cmdline field")
 if not kernel_replaced:
     raise SystemExit("Linux VM template has no kernel_path field")
-if not timer_contract_replaced:
-    raise SystemExit("Linux VM template has no virtual timer contract field")
-if not wfi_policy_replaced:
-    raise SystemExit("Linux VM template has no WFI policy field")
+# Older upstream AxVisor templates do not expose the realtime timer/WFI
+# contract knobs. Keep those templates usable for an official baseline; the
+# current tree still replaces both fields when present.
 destination.write_text("\n".join(lines) + "\n")
 PY
 
@@ -657,6 +659,9 @@ ansi_escape = re.compile(r"\x1b\[[0-?]*[ -/]*[@-~]")
 for line in log[header_index + len(header):complete_index].splitlines():
     candidate = ansi_escape.sub("", line.strip())
     candidate = re.sub(r"^\[VM 2\] ", "", candidate)
+    # serial_console.py prefixes every line when --timestamp-lines is enabled.
+    # Strip that transport timestamp before validating the guest CSV record.
+    candidate = re.sub(r"^\[host_monotonic_s=[0-9.]+\]\s*", "", candidate)
     if re.fullmatch(r"\d+,-?\d+,-?\d+,-?\d+,-?\d+", candidate):
         rows.append(candidate.split(","))
 if len(rows) != expected_samples:

@@ -337,6 +337,7 @@ pub(crate) fn build_axvm_config(cfg: &GuestConfig) -> AxVMConfig {
             axvmconfig::Aarch64WfiPolicy::Trap => axvm::Aarch64WfiPolicy::Trap,
             axvmconfig::Aarch64WfiPolicy::Passthrough => axvm::Aarch64WfiPolicy::Passthrough,
         },
+        host_sched_priority: cfg.base.host_sched_priority,
         cpu_config: AxVCpuConfig {
             bsp_entry: GuestPhysAddr::from(cfg.kernel.entry_point),
             ap_entry: GuestPhysAddr::from(cfg.kernel.entry_point),

@@ -9,6 +9,7 @@
 
 | Item | Purpose | Data / status |
 |---|---|---|
+| `task1-final-closure-20260820/` | final equal-protocol RR vs bounded-service FP-RR comparison and score estimate | accepted 90-second shared-pCPU A/B; expected 26-27/30 |
 | `24h-exploration-retrospective.md` | full exploration, failures, fixes, experiments, scoring, and remaining work | current end-to-end retrospective |
 | `phase2-plan.md` | Phase 2 execution record: statistics, contention, WFI, timer lock, preemption, rejected candidates, and closure | closed for the QEMU mainline; board port remains external |
 | `SESSION-SUMMARY.md` | current implementation and remaining work | updated after code audit |

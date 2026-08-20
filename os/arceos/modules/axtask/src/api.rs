@@ -68,7 +68,11 @@ pub fn default_task_stack_size() -> usize {
 }
 
 cfg_if::cfg_if! {
-    if #[cfg(feature = "sched-prio-rr")] {
+    if #[cfg(feature = "sched-prio-rr-20ms")] {
+        const MAX_TIME_SLICE: usize = 2;
+        pub(crate) type AxTask = ax_sched::PriorityRRTask<TaskInner, MAX_TIME_SLICE>;
+        pub(crate) type Scheduler = ax_sched::PriorityRRScheduler<TaskInner, MAX_TIME_SLICE>;
+    } else if #[cfg(feature = "sched-prio-rr")] {
         const MAX_TIME_SLICE: usize = 5;
         pub(crate) type AxTask = ax_sched::PriorityRRTask<TaskInner, MAX_TIME_SLICE>;
         pub(crate) type Scheduler = ax_sched::PriorityRRScheduler<TaskInner, MAX_TIME_SLICE>;
@@ -91,11 +95,11 @@ cfg_if::cfg_if! {
 
 /// Returns fixed-priority round-robin mechanism counters when that scheduler is active.
 pub fn priority_rr_scheduler_stats() -> Option<ax_sched::PriorityRRStats> {
-    #[cfg(feature = "sched-prio-rr")]
+    #[cfg(any(feature = "sched-prio-rr", feature = "sched-prio-rr-20ms"))]
     {
         Some(ax_sched::priority_rr_stats_snapshot())
     }
-    #[cfg(not(feature = "sched-prio-rr"))]
+    #[cfg(not(any(feature = "sched-prio-rr", feature = "sched-prio-rr-20ms")))]
     {
         None
     }
@@ -103,11 +107,11 @@ pub fn priority_rr_scheduler_stats() -> Option<ax_sched::PriorityRRStats> {
 
 /// Returns the configured FP-RR quantum in scheduler ticks.
 pub const fn priority_rr_scheduler_quantum_ticks() -> Option<usize> {
-    #[cfg(feature = "sched-prio-rr")]
+    #[cfg(any(feature = "sched-prio-rr", feature = "sched-prio-rr-20ms"))]
     {
         Some(MAX_TIME_SLICE)
     }
-    #[cfg(not(feature = "sched-prio-rr"))]
+    #[cfg(not(any(feature = "sched-prio-rr", feature = "sched-prio-rr-20ms")))]
     {
         None
     }

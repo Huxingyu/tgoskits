@@ -10,7 +10,7 @@ id = 1
 name = "rt-partition-linux"
 guest_type = "virtualized"
 cpu_num = 2
-phys_cpu_ids = [2, 3]
+phys_cpu_ids = [1, 2]
 host_sched_priority = 89
 aarch64_virtual_timer_only = false
 aarch64_wfi_policy = "auto"
@@ -18,12 +18,12 @@ aarch64_wfi_policy = "auto"
 [kernel]
 entry_point = 0x8020_0000
 image_location = "memory"
-kernel_path = "${workspace}/tmp/rt-partition/linux-qemu"
+kernel_path = "/home/huhu/tgoskits-rt/tmp/rt-partition/linux-qemu"
 kernel_load_addr = 0x8020_0000
 dtb_load_addr = 0x8000_0000
 ramdisk_path = "${workspace}/tmp/rt-partition/rt-linux-initramfs.cpio.gz"
 ramdisk_load_addr = 0x8400_0000
-cmdline = "console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7"
+cmdline = "console=ttyAMA0 rdinit=/init devtmpfs.mount=1 loglevel=7 isolcpus=0 nohz_full=0 irqaffinity=1 rt_scenario=stress-guest-shared rt_cpu=0 rt_load_cpu=1 rt_loops=0 rt_duration_sec=90 rt_interval_us=1000 rt_maxlat_us=20000 rt_priority=90 rt_trace=disabled rt_trace_buffer_kb=8192 rt_start_delay_sec=5"
 memory_regions = [[0x8000_0000, 0x4000_0000, 0x7, 0]]
 
 [devices]

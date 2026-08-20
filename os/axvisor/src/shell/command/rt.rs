@@ -24,13 +24,16 @@ fn rt_stat(_cmd: &ParsedCommand) {
         println!("FP-RR scheduler counters:");
         println!(
             "  quantum_ticks={} quantum_expiries={} same_priority_rotations={} \
-             slice_preserving_preemptions={} voluntary_requeues={}",
+             slice_preserving_preemptions={} voluntary_requeues={} idle_quantum_skips={} \
+             lower_priority_services={}",
             ax_std::os::arceos::modules::ax_task::priority_rr_scheduler_quantum_ticks()
                 .unwrap_or(0),
             counts.quantum_expiries,
             counts.same_priority_rotations,
             counts.slice_preserving_preemptions,
-            counts.voluntary_requeues
+            counts.voluntary_requeues,
+            counts.idle_quantum_skips,
+            counts.lower_priority_services
         );
     }
     println!("RT vCPU wait counters:");

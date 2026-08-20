@@ -219,6 +219,125 @@ fn fixed_priority_rr_preserves_preempted_task_until_slice_expiry() {
 }
 
 #[test]
+fn fixed_priority_rr_does_not_expire_budget_without_same_priority_peer() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask};
+
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 2>::new();
+    let only = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    assert!(scheduler.set_priority(&only, 90));
+    scheduler.add_task(only.clone());
+    let current = scheduler.pick_next_task().unwrap();
+
+    // The only runnable task keeps running; its fairness budget is not spent
+    // until a peer at priority 90 is actually waiting.
+    assert!(!scheduler.task_tick(&current));
+    assert!(!scheduler.task_tick(&current));
+    assert!(!scheduler.task_tick(&current));
+    scheduler.put_prev_task(current, true);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 0);
+}
+
+#[test]
+fn fixed_priority_rr_still_preempts_for_higher_priority_peer() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask};
+
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 2>::new();
+    let low = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    let high = Arc::new(PriorityRRTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&low, 80));
+    assert!(scheduler.set_priority(&high, 90));
+    let current = low.clone();
+    scheduler.add_task(high);
+
+    assert!(scheduler.task_tick(&current));
+    scheduler.put_prev_task(current, true);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 1);
+}
+
+#[test]
+fn fixed_priority_rr_grants_bounded_service_to_lower_priority_peer() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask};
+
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 5>::new();
+    let high = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    let low = Arc::new(PriorityRRTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&high, 90));
+    assert!(scheduler.set_priority(&low, 80));
+    scheduler.add_task(low);
+    let current = high;
+
+    // A continuously runnable high-priority task is allowed to dominate for
+    // the bounded interval, then the lower-priority peer gets one quantum.
+    for _ in 0..19 {
+        assert!(!scheduler.task_tick(&current));
+        scheduler.put_prev_task(current.clone(), true);
+        assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 0);
+    }
+    assert!(scheduler.task_tick(&current));
+    scheduler.put_prev_task(current, true);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 1);
+}
+
+#[test]
+fn fixed_priority_rr_preserves_forced_service_across_voluntary_yield() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask};
+
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 5>::new();
+    let high = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    let low = Arc::new(PriorityRRTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&high, 90));
+    assert!(scheduler.set_priority(&low, 80));
+    scheduler.add_task(low);
+
+    for _ in 0..19 {
+        assert!(!scheduler.task_tick(&high));
+    }
+    assert!(scheduler.task_tick(&high));
+    scheduler.put_prev_task(high.clone(), true);
+
+    let serviced = scheduler.pick_next_task().unwrap();
+    assert_eq!(serviced.inner().value, 1);
+    scheduler.put_prev_task(serviced, false);
+    assert_eq!(
+        scheduler.pick_next_task().unwrap().inner().value,
+        1,
+        "the bounded service window must survive a vCPU VM-exit yield",
+    );
+}
+
+#[test]
+fn fixed_priority_rr_returns_to_high_priority_after_service_tick() {
+    use alloc::sync::Arc;
+
+    use crate::{BaseScheduler, PriorityRRScheduler, PriorityRRTask};
+
+    let mut scheduler = PriorityRRScheduler::<PriorityTestTask, 5>::new();
+    let high = Arc::new(PriorityRRTask::new(PriorityTestTask::new(0)));
+    let low = Arc::new(PriorityRRTask::new(PriorityTestTask::new(1)));
+    assert!(scheduler.set_priority(&high, 90));
+    assert!(scheduler.set_priority(&low, 80));
+    scheduler.add_task(low);
+
+    for _ in 0..20 {
+        let _ = scheduler.task_tick(&high);
+    }
+    scheduler.put_prev_task(high.clone(), true);
+    let serviced = scheduler.pick_next_task().unwrap();
+    assert_eq!(serviced.inner().value, 1);
+    assert!(scheduler.task_tick(&serviced));
+    scheduler.put_prev_task(serviced, true);
+    assert_eq!(scheduler.pick_next_task().unwrap().inner().value, 0);
+}
+
+#[test]
 fn rr_preempt_preserves_slice_but_forced_reschedule_rotates() {
     use alloc::sync::Arc;
 

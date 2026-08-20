@@ -30,7 +30,7 @@ use crate::{
     host::HostTime,
     irq::model::{PendingVcpuInterrupt, VirtualInterruptId},
     runtime::{
-        VCPU_TASK_PRIORITY, VCpuRef, VIRQ_INJECTOR_TASK_PRIORITY, VMRef, sub_running_vm_count,
+        VCpuRef, VIRQ_INJECTOR_TASK_PRIORITY, VMRef, sub_running_vm_count,
     },
     vm::{PendingInterrupt, VmRuntimeHandle},
 };
@@ -1063,7 +1063,8 @@ pub(crate) fn build_vcpu_task(vm: &VMRef, vcpu: VCpuRef) -> crate::TaskInner {
         format!("VM[{}]-VCpu[{}]", vm.id(), vcpu.id()),
         KERNEL_STACK_SIZE,
     );
-    vcpu_task.set_sched_priority(VCPU_TASK_PRIORITY);
+    let host_priority = vm.host_sched_priority();
+    vcpu_task.set_sched_priority(host_priority);
 
     if let Some(phys_cpu_set) = vcpu.phys_cpu_set() {
         vcpu_task.set_cpumask(crate::host::task::cpu_mask_from_raw_bits(
@@ -1076,8 +1077,9 @@ pub(crate) fn build_vcpu_task(vm: &VMRef, vcpu: VCpuRef) -> crate::TaskInner {
     *vcpu_task.task_ext_mut() = Some(crate::AxTaskExt::from_impl(inner));
 
     info!(
-        "VCpu task {} created {:?}",
+        "VCpu task {} created priority={} {:?}",
         vcpu_task.id_name(),
+        host_priority,
         vcpu_task.cpumask()
     );
     vcpu_task

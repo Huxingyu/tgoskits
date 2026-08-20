@@ -52,6 +52,7 @@ fn parses_structured_guest_config() {
     assert_eq!(config.base.cpu_num, 2);
     assert_eq!(config.base.phys_cpu_ids, Some(vec![0x500, 0x501]));
     assert_eq!(config.base.phys_cpu_sets, Some(vec![3, 4]));
+    assert_eq!(config.base.host_sched_priority, None);
     assert!(!config.base.aarch64_virtual_timer_only);
     assert_eq!(config.base.aarch64_wfi_policy, Aarch64WfiPolicy::Auto);
     assert_eq!(config.devices.inherit_host_devices, Some(false));
@@ -101,6 +102,19 @@ aarch64_wfi_policy = "trap"
     .unwrap();
 
     assert_eq!(config.base.aarch64_wfi_policy, Aarch64WfiPolicy::Trap);
+}
+
+#[test]
+fn parses_explicit_host_scheduler_priority() {
+    let config = GuestConfig::from_toml(
+        r#"
+[base]
+host_sched_priority = 80
+"#,
+    )
+    .unwrap();
+
+    assert_eq!(config.base.host_sched_priority, Some(80));
 }
 
 #[test]

@@ -118,6 +118,8 @@ pub struct AxVMConfig {
     timer_profile: Option<GuestTimerProfile>,
     aarch64_virtual_timer_only: bool,
     aarch64_wfi_policy: Aarch64WfiPolicy,
+    /// Host scheduler priority assigned to each vCPU task of this VM.
+    host_sched_priority: i32,
     serial_backend_factory: Arc<dyn SerialBackendFactory>,
     virtual_device_requests: Vec<VirtualDeviceRequest>,
     virtual_device_catalog: Arc<crate::ConfiguredDeviceCatalog>,
@@ -164,6 +166,9 @@ pub struct AxVMConfigParams {
     pub aarch64_virtual_timer_only: bool,
     /// How this AArch64 guest handles `WFI`.
     pub aarch64_wfi_policy: Aarch64WfiPolicy,
+    /// Optional host scheduler priority. `None` keeps the compatibility
+    /// default used by existing programmatic callers.
+    pub host_sched_priority: Option<i32>,
 }
 
 impl AxVMConfig {
@@ -192,6 +197,7 @@ impl AxVMConfig {
             timer_profile: machine.timer,
             aarch64_virtual_timer_only: params.aarch64_virtual_timer_only,
             aarch64_wfi_policy: params.aarch64_wfi_policy,
+            host_sched_priority: params.host_sched_priority.unwrap_or(90),
             serial_backend_factory: params
                 .serial_backend_factory
                 .unwrap_or_else(|| Arc::new(NullSerialBackendFactory)),
@@ -216,6 +222,11 @@ impl AxVMConfig {
     /// Returns VM id.
     pub fn id(&self) -> usize {
         self.id
+    }
+
+    /// Returns the host scheduler priority for this VM's vCPU tasks.
+    pub const fn host_sched_priority(&self) -> i32 {
+        self.host_sched_priority
     }
 
     /// Returns VM name.

@@ -11,6 +11,7 @@ name = "rt-partition-zephyr"
 guest_type = "virtualized"
 cpu_num = 1
 phys_cpu_ids = [1]
+host_sched_priority = 90
 
 [kernel]
 entry_point = 0xA000_117C

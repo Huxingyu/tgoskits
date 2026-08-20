@@ -75,6 +75,9 @@ const ARRAY_REPEAT_VALUE: MaybeUninit<NonNull<AxRunQueue>> = MaybeUninit::uninit
 pub(crate) static BUSY_TICKS: [core::sync::atomic::AtomicU64; crate::build_info::CPU_CAPACITY] =
     [const { core::sync::atomic::AtomicU64::new(0) }; crate::build_info::CPU_CAPACITY];
 
+/// Monotonic scheduler tick used for task wait diagnostics.
+static SCHED_TICKS: core::sync::atomic::AtomicU64 = core::sync::atomic::AtomicU64::new(0);
+
 #[cfg(not(feature = "host-test"))]
 fn main_task_stack() -> TaskStack {
     let (stack_ptr, stack_size) = ax_hal::mem::boot_stack_bounds(this_cpu_id());
@@ -689,12 +692,17 @@ impl<G: GuardState> AxRunQueueRef<G> {
         assert!(task.is_ready());
         #[cfg(feature = "smp")]
         task.set_cpu_id(cpu_id as _);
+        task.mark_ready_at_tick(SCHED_TICKS.load(core::sync::atomic::Ordering::Relaxed));
         // SAFETY: `AxRunQueueRef<G>` has already entered the run-queue
         // critical section represented by `G`.
         let mut scheduler = unsafe { self.inner.scheduler.lock_raw() };
-        #[cfg(any(feature = "sched-rt", feature = "sched-prio-rr"))]
+        #[cfg(any(
+            feature = "sched-rt",
+            feature = "sched-prio-rr",
+            feature = "sched-prio-rr-20ms"
+        ))]
         if !scheduler.set_priority(&task, task.sched_priority() as isize) {
-            warn!(
+            debug!(
                 "task {} requested invalid fixed priority {}; using {}",
                 task.id_name(),
                 task.sched_priority(),
@@ -775,6 +783,7 @@ impl<G: GuardState> CurrentRunQueueRef<G> {
     #[cfg(feature = "irq")]
     pub fn scheduler_timer_tick(&mut self) {
         let curr = &self.current_task;
+        SCHED_TICKS.fetch_add(1, core::sync::atomic::Ordering::Relaxed);
         if !curr.is_idle() {
             // Ondemand-governor load accounting: this CPU ran a real (non-idle)
             // task this tick. Already IRQ + preempt off here; a single relaxed
@@ -1122,6 +1131,7 @@ impl AxRunQueue {
             // TODO: priority
             #[cfg(feature = "smp")]
             task.set_cpu_id(self.cpu_id as _);
+            task.mark_ready_at_tick(SCHED_TICKS.load(core::sync::atomic::Ordering::Relaxed));
             // SAFETY: the caller holds the run-queue context guard.
             unsafe { self.scheduler.lock_raw() }.put_prev_task(task, preempt);
             true
@@ -1173,6 +1183,18 @@ impl AxRunQueue {
         #[cfg(feature = "preempt")]
         next_task.set_preempt_pending(false);
         next_task.set_state(TaskState::Running);
+        let wait_ticks = next_task.take_ready_wait_ticks(
+            SCHED_TICKS.load(core::sync::atomic::Ordering::Relaxed),
+        );
+        if wait_ticks >= u64::MAX && next_task.id_name().contains("VM[") {
+            warn!(
+                "scheduler wait: task={} priority={} wait_ticks={} max_wait_ticks={}",
+                next_task.id_name(),
+                next_task.sched_priority(),
+                wait_ticks,
+                next_task.max_ready_wait_ticks(),
+            );
+        }
         if prev_task.ptr_eq(&next_task) {
             return;
         }
