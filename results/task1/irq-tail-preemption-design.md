@@ -64,7 +64,7 @@ Static and host checks:
 ```text
 cargo check -p ax-hal -p ax-task -p axvm                 PASS
 cargo test -p ax-sched                                   20 passed
-cargo test -p ax-task --features test,smp,sched-prio-rr  53 passed
+cargo test -p ax-task --features test,smp,sched-prio-rr  56 passed
 cargo test -p ax-hal --features axtest,host-test         4 passed
 Python rt-partition regression tests                     55 passed
 shell syntax and git diff --check                        PASS
