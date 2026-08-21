@@ -8,6 +8,7 @@ rtthread_commit="6ea682795bdbac59d3700b21e159ccaa3f7632cb"
 rtthread_cache="${RTTHREAD_BASE:-$repo_root/tmp/net-dual-guest/rt-thread-upstream}"
 toolchain_dir="${RTT_EXEC_PATH:-/tmp/rtthread-toolchain/bin}"
 fault_mode="${TASK2_FAULT_MODE:-none}"
+task1_quiet="${TASK1_QUIET:-0}"
 
 case "$fault_mode" in
     none)            fault_define=0 ;;
@@ -17,6 +18,10 @@ case "$fault_mode" in
         printf 'error: TASK2_FAULT_MODE must be none, drop-ack-once, or drop-ack-always\n' >&2
         exit 2
         ;;
+esac
+case "$task1_quiet" in
+    0|1) ;;
+    *) printf 'error: TASK1_QUIET must be 0 or 1\n' >&2; exit 2 ;;
 esac
 
 gcc="$toolchain_dir/aarch64-none-elf-gcc"
@@ -56,6 +61,11 @@ git -C "$build_source" checkout --quiet --detach "$rtthread_commit"
 git -C "$build_source" apply "$source_dir/rtthread.config.patch"
 cp "$source_dir/main.c" \
     "$build_source/bsp/qemu-virt64-aarch64/applications/main.c"
+if [[ "$task1_quiet" == 1 ]]; then
+    perl -pi -e \
+        's/^#define TASK2_FAULT_DROP_ACK_MODE/#define TASK1_QUIET 1\n#define TASK2_FAULT_DROP_ACK_MODE/' \
+        "$build_source/bsp/qemu-virt64-aarch64/applications/main.c"
+fi
 perl -pi -e \
     "s/#define TASK2_FAULT_DROP_ACK_MODE 0/#define TASK2_FAULT_DROP_ACK_MODE $fault_define/" \
     "$build_source/bsp/qemu-virt64-aarch64/applications/main.c"
@@ -107,6 +117,7 @@ manifest="$out_dir/manifest.toml"
     printf 'memory_size = "0x20000000"\n'
     printf 'elf_entry = "%s"\n' "$entry_point"
     printf 'fault_mode = "%s"\n' "$fault_mode"
+    printf 'task1_quiet = "%s"\n' "$task1_quiet"
     printf 'source_sha256 = "%s"\n' "$source_sha256"
     printf 'toolchain_sha256 = "%s"\n' "$toolchain_sha256"
     printf 'sha256 = "%s"\n' "$binary_sha256"

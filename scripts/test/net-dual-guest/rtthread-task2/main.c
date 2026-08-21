@@ -255,7 +255,9 @@ static void plant_update_disturbance(int64_t now_ms)
 	}
 	if (scheduled != plant_disturbance) {
 		plant_disturbance = scheduled;
+#ifndef TASK1_QUIET
 		rt_kprintf("TASK3_DISTURBANCE change=%d at_ms=%lld\n", (int)scheduled, (long long)now_ms);
+#endif
 	}
 }
 
@@ -371,9 +373,13 @@ int main(void)
 					if (pending_length > 0 && acknowledgement == pending_sequence) {
 						pending_length = 0;
 						last_acknowledged = acknowledgement;
+#ifndef TASK1_QUIET
 						rt_kprintf("TASK2_ACK seq=%u\n", acknowledgement);
+#endif
 					} else if (acknowledgement == last_acknowledged) {
+#ifndef TASK1_QUIET
 						rt_kprintf("TASK2_DUPLICATE_ACK seq=%u\n", acknowledgement);
+#endif
 					}
 				} else if (kind == KIND_HEARTBEAT) {
 					if (!valid_heartbeat(payload, payload_length)) {
@@ -387,7 +393,9 @@ int main(void)
 						for (unsigned index = 0; index < 8; index++) {
 							uptime = (uptime << 8) | payload[index];
 						}
+#ifndef TASK1_QUIET
 						rt_kprintf("TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=%llu\n", uptime);
+#endif
 					}
 				} else if (kind == KIND_CONTROL || kind == KIND_STATUS) {
 					bool valid = kind == KIND_CONTROL ? valid_control(payload, payload_length)
@@ -445,8 +453,10 @@ int main(void)
 						       request);
 						rt_kprintf("TASK3_CONTROL_APPLIED request=%u value=%d\n", request,
 						       output);
+#ifndef TASK1_QUIET
 						rt_kprintf("TASK3_PLANT_STATE before=%d after=%d dist=%d\n",
 						       state_before, plant_state, plant_disturbance);
+#endif
 						rt_kprintf("TASK2_STATUS_SENT seq=%u\n", pending_sequence);
 						if (dropped_ack_duplicate_seen) {
 							rt_kprintf("TASK2_FAULT_DROP_ACK_RECOVERED duplicate_seq=%u\n",
@@ -465,7 +475,9 @@ int main(void)
 						if (sequence == dropped_ack_sequence) {
 							dropped_ack_duplicate_seen = true;
 						}
+#ifndef TASK1_QUIET
 						rt_kprintf("TASK2_DUPLICATE seq=%u\n", sequence);
+#endif
 					} else {
 						size_t error_length = make_error(outbound, sequence, ERROR_OUT_OF_ORDER);
 						(void)send_frame(sockfd, &source, outbound, error_length);
@@ -488,8 +500,10 @@ int main(void)
 				retry_count++;
 				pending_sent = now;
 				(void)send_frame(sockfd, &peer, pending_frame, pending_length);
+#ifndef TASK1_QUIET
 				rt_kprintf("TASK2_RETRANSMIT seq=%u attempt=%u\n", pending_sequence,
 				       retry_count);
+#endif
 			}
 		}
 		if (!state_safe && now - last_rx >= PEER_TIMEOUT_MS) {

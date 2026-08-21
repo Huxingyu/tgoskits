@@ -14,6 +14,7 @@ rtos_vm_config="${STARRY_TASK23_RTOS_VM_CONFIG:-${STARRY_TASK23_ZEPHYR_VM_CONFIG
 rtos_name="${STARRY_TASK23_RTOS_NAME:-zephyr}"
 rtos_image="${STARRY_TASK23_RTOS_IMAGE:-${rtos_name}-task2.bin}"
 runtime_tag="${STARRY_TASK23_RUNTIME_TAG:-starry-zephyr-msix1-capture}"
+rtos_source_dir="${STARRY_TASK23_RTOS_SOURCE_DIR:-}"
 collect_rt_stat="${STARRY_TASK23_COLLECT_RT_STAT:-0}"
 runtime_dir="$repo_root/tmp/net-dual-guest"
 qemu_sock="$runtime_dir/qmp-${runtime_tag}.sock"
@@ -98,7 +99,7 @@ if [[ "${ALLOW_DIRTY:-0}" != 1 ]] &&
     exit 1
 fi
 
-normal_dir="$runtime_dir/${rtos_name}-task2-starry-normal"
+normal_dir="${rtos_source_dir:-$runtime_dir/${rtos_name}-task2-starry-normal}"
 drop_dir="$runtime_dir/${rtos_name}-task2-starry-drop-ack"
 retry_exhausted_dir="$runtime_dir/${rtos_name}-task2-starry-retry-exhausted"
 case "$rtos_variant" in
