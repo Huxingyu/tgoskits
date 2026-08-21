@@ -18,7 +18,13 @@ case "$rtos_name" in
 esac
 qemu_config="${STARRY_TASK1_QEMU_CONFIG:-$repo_root/scripts/test/net-dual-guest/qemu-aarch64-starry-${rtos_name}-task1-capture.toml}"
 rtos_vm="${STARRY_TASK1_RTOS_VM_CONFIG:-$repo_root/scripts/test/net-dual-guest/vm-aarch64-${rtos_name}-task1-shared.toml}"
-runtime_tag="${STARRY_TASK1_RUNTIME_TAG:-starry-${rtos_name}-task1-capture}"
+runtime_tag="${STARRY_TASK1_RUNTIME_TAG:-}"
+if [[ -z "$runtime_tag" ]]; then
+    case "$rtos_name" in
+        zephyr)   runtime_tag="starry-zephyr-msix1-capture" ;;
+        rtthread) runtime_tag="starry-rtthread-task1-capture" ;;
+    esac
+fi
 rtos_source_dir="${STARRY_TASK1_RTOS_SOURCE_DIR:-}"
 if [[ -z "$rtos_source_dir" && "$rtos_name" == rtthread ]]; then
     rtos_source_dir="$repo_root/tmp/net-dual-guest/rtthread-task2-starry-task1-normal"
