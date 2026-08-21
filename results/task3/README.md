@@ -87,6 +87,8 @@ marker 顺序、恢复后的续跑、双端非空 pcap、T2N1 ledger 和 SHA256 
 - `results/task3/fault-current-head-yolo-injection-invalid-parameter-v2/`：代理
   注入越界 `CONTROL value=1001`，RTOS 记录 invalid-parameter 拒绝，Linux
   收到 `TASK2_REMOTE_ERROR code=InvalidParameter`。
+- `results/task3/fault-current-head-yolo-injection-out-of-order-v2/`：在最终提交
+  HEAD 上重新执行的 out-of-order 证据，manifest 的 `git_head` 与最终提交一致。
 
 两次运行均通过 `verify_protocol_injection.py`，并保存双端 pcap、guest/proxy
 日志和 SHA256 manifest。这里验证的是协议错误传播和安全拒绝，不把注入帧当作

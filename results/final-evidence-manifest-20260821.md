@@ -30,6 +30,7 @@ for the current evidence.
 | YOLO ACK drop | `results/task3/fault-current-head-yolo-ack-drop-v2/` | `verify_fault_pcap.py` |
 | YOLO out-of-order | `results/task3/fault-current-head-yolo-injection-out-of-order/` | `verify_protocol_injection.py --mode out-of-order` |
 | YOLO invalid parameter | `results/task3/fault-current-head-yolo-injection-invalid-parameter-v2/` | `verify_protocol_injection.py --mode invalid-parameter` |
+| YOLO out-of-order (final HEAD replay) | `results/task3/fault-current-head-yolo-injection-out-of-order-v2/` | `verify_protocol_injection.py --mode out-of-order` |
 
 All five directories contain the run/build or guest/proxy logs, pcaps where
 applicable, and a manifest with input/output hashes. The two protocol-injection
@@ -39,7 +40,8 @@ verifier because it contains the one expected missing ACK; it passes
 `verify_fault_pcap.py`, which checks the exact one-frame delta plus retransmit and
 duplicate markers.
 
-The runtime captures record `git_head=5bb5c7957` in their own manifests. Commits
+Most runtime captures record `git_head=5bb5c7957` in their own manifests. The
+`out-of-order-v2` capture was replayed at final HEAD `92a97d12f`. Other commits
 after that point only archived existing captures or changed verifier/docs; they
 did not change the Guest protocol, model, hypervisor, or image-building code.
 Strict proof against a future rebased/integrated PR head still requires one fresh
