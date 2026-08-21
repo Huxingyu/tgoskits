@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Convert the pinned YOLO11n ONNX artifact to ncnn's param/bin format.
+# PNNX is a host-side conversion tool; the resulting pinned param/bin files are
+# loaded by both the Linux and StarryOS Guest runtimes.
+
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 model="${YOLO_ONNX:-$repo_root/tmp/task3-yolo/yolo11n.onnx}"
 out_dir="${OUT_DIR:-$repo_root/tmp/task3-yolo/ncnn-model}"

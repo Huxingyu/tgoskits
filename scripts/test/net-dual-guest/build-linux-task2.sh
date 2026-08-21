@@ -9,7 +9,11 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 out_dir="${OUT_DIR:-$repo_root/tmp/net-dual-guest/linux-task2}"
 cross_cc="${CROSS_CC:-/home/huhu/.local/toolchains/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc}"
+cross_cxx="${CROSS_CXX:-/home/huhu/.local/toolchains/aarch64-linux-musl-cross/bin/aarch64-linux-musl-g++}"
+cross_ar="${CROSS_AR:-/home/huhu/.local/toolchains/aarch64-linux-musl-cross/bin/aarch64-linux-musl-ar}"
+ncnn_prefix="${NCNN_PREFIX:-$repo_root/tmp/task3-yolo/ncnn-aarch64/install}"
 target_triple="aarch64-unknown-linux-musl"
+expected_ncnn_revision="946fe3fb14a8dff8c06df763f67be522167b2f00"
 
 if [[ ! -x "$cross_cc" ]]; then
     printf 'error: cross linker is not executable: %s\n' "$cross_cc" >&2
@@ -19,6 +23,12 @@ command -v sha256sum >/dev/null || {
     printf 'error: sha256sum is required\n' >&2
     exit 1
 }
+if ! grep -Fqx "ncnn_git_revision = \"$expected_ncnn_revision\"" \
+    "$ncnn_prefix/../manifest.toml"; then
+    printf 'error: NCNN_PREFIX does not contain pinned ncnn revision %s: %s\n' \
+        "$expected_ncnn_revision" "$ncnn_prefix" >&2
+    exit 1
+fi
 
 mkdir -p "$out_dir"
 
@@ -42,6 +52,9 @@ build_role() {
         ${TASK3_YOLO_MIN_CONFIDENCE_MILLI:+TASK3_YOLO_MIN_CONFIDENCE_MILLI="$TASK3_YOLO_MIN_CONFIDENCE_MILLI"} \
         ${TASK3_YOLO_MIN_AREA_MILLI:+TASK3_YOLO_MIN_AREA_MILLI="$TASK3_YOLO_MIN_AREA_MILLI"} \
         ${TASK3_YOLO_MAX_TARGET_STEP:+TASK3_YOLO_MAX_TARGET_STEP="$TASK3_YOLO_MAX_TARGET_STEP"} \
+        NCNN_PREFIX="$ncnn_prefix" \
+        CXX_aarch64_unknown_linux_musl="$cross_cxx" \
+        AR_aarch64_unknown_linux_musl="$cross_ar" \
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$cross_cc" \
         cargo build \
         --package arceos-task2-net \

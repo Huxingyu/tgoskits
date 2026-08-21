@@ -26,9 +26,10 @@ case "$virtio_slot" in
     *)  printf 'error: TASK2_ZEPHYR_VIRTIO_SLOT must be 0 or 30\n' >&2; exit 1 ;;
 esac
 case "$fault_mode" in
-    none)          fault_define=0 ;;
-    drop-ack-once) fault_define=1 ;;
-    *) printf 'error: TASK2_FAULT_MODE must be none or drop-ack-once\n' >&2; exit 1 ;;
+    none)            fault_define=0 ;;
+    drop-ack-once)   fault_define=1 ;;
+    drop-ack-always) fault_define=2 ;;
+    *) printf 'error: TASK2_FAULT_MODE must be none, drop-ack-once, or drop-ack-always\n' >&2; exit 1 ;;
 esac
 
 case "$memory_base" in
@@ -70,7 +71,7 @@ ZEPHYR_SDK_INSTALL_DIR="$zephyr_sdk" \
     -d "$build_dir" \
     -- \
     -DDTC_OVERLAY_FILE="$device_overlay;$memory_overlay" \
-    -DEXTRA_CFLAGS:STRING="-DCONFIG_MAX_IRQ_LINES=64 -DTASK2_FAULT_DROP_ACK_ONCE=$fault_define"
+    -DEXTRA_CFLAGS:STRING="-DCONFIG_MAX_IRQ_LINES=64 -DTASK2_FAULT_DROP_ACK_MODE=$fault_define"
 popd >/dev/null
 
 elf="$out_dir/zephyr-task2.elf"

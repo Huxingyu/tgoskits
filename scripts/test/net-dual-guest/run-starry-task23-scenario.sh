@@ -57,6 +57,9 @@ case "$scenario" in
     drop-ack)
         zephyr_variant="drop-ack"
         ;;
+    retry-exhausted)
+        zephyr_variant="retry-exhausted"
+        ;;
     out-of-order|invalid-parameter)
         zephyr_variant="normal"
         ;;
@@ -67,7 +70,7 @@ case "$scenario" in
 esac
 
 case "$scenario" in
-    normal|drop-ack|blackout) run_mode="normal" ;;
+    normal|drop-ack|retry-exhausted|blackout) run_mode="normal" ;;
     *) run_mode="$scenario" ;;
 esac
 
@@ -85,13 +88,21 @@ fi
 
 normal_dir="$runtime_dir/zephyr-task2-starry-normal"
 drop_dir="$runtime_dir/zephyr-task2-starry-drop-ack"
-if [[ "$zephyr_variant" == normal ]]; then
-    selected_zephyr_dir="$normal_dir"
-    expected_fault_mode="none"
-else
-    selected_zephyr_dir="$drop_dir"
-    expected_fault_mode="drop-ack-once"
-fi
+retry_exhausted_dir="$runtime_dir/zephyr-task2-starry-retry-exhausted"
+case "$zephyr_variant" in
+    normal)
+        selected_zephyr_dir="$normal_dir"
+        expected_fault_mode="none"
+        ;;
+    drop-ack)
+        selected_zephyr_dir="$drop_dir"
+        expected_fault_mode="drop-ack-once"
+        ;;
+    retry-exhausted)
+        selected_zephyr_dir="$retry_exhausted_dir"
+        expected_fault_mode="drop-ack-always"
+        ;;
+esac
 for artifact in "$selected_zephyr_dir/zephyr-task2.bin" "$selected_zephyr_dir/manifest.toml"; do
     if [[ ! -s "$artifact" ]]; then
         printf 'error: missing Zephyr artifact: %s\n' "$artifact" >&2
@@ -237,6 +248,14 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
             printf 'expect 30 STARRY_T2N1_PASS\n'
             printf 'attach 2\n'
             printf 'expect 30 TASK2_FAULT_DROP_ACK_RECOVERED duplicate_seq=1\n'
+            ;;
+        retry-exhausted)
+            printf 'attach 2\n'
+            printf 'expect 120 TASK2_FAULT_DROP_ACK_ALWAYS seq=1\n'
+            printf 'attach 1\n'
+            printf 'expect 30 STARRY_T2N1_RETRANSMIT seq=1 attempt=5\n'
+            printf 'expect 30 STARRY_T2N1_SAFE source=protocol reason=RetryExhausted\n'
+            printf 'expect 30 STARRY_T2N1_RECOVERED state=Active\n'
             ;;
         out-of-order)
             printf 'attach 2\n'

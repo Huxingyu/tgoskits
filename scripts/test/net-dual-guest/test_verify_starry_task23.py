@@ -40,6 +40,28 @@ def frame(
 
 
 class VerifyStarryTask23Tests(unittest.TestCase):
+    def test_retry_exhaustion_requires_five_retries_and_no_ack(self) -> None:
+        frames = [
+            frame(
+                src=VERIFY.STARRY_IP,
+                dst=VERIFY.ZEPHYR_IP,
+                kind=VERIFY.KIND_CONTROL,
+                sequence=1,
+            )
+            for _ in range(6)
+        ]
+        log = "\n".join(
+            (
+                "TASK2_FAULT_MODE mode=drop-ack-always",
+                "TASK2_FAULT_DROP_ACK_ALWAYS seq=1",
+                "STARRY_T2N1_RETRANSMIT seq=1 attempt=5",
+                "STARRY_T2N1_SAFE source=protocol reason=RetryExhausted",
+                "STARRY_T2N1_RECOVERED state=Active",
+            )
+        )
+
+        self.assertEqual(VERIFY.verify_retry_exhausted(frames, log), [])
+
     def test_out_of_order_injection_is_proven_by_wire_capture(self) -> None:
         frames = [
             frame(

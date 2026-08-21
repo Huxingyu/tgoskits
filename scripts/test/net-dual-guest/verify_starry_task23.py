@@ -153,6 +153,49 @@ def verify_drop_ack(frames: list[WireFrame], log: str) -> list[str]:
     return failures
 
 
+def verify_retry_exhausted(frames: list[WireFrame], log: str) -> list[str]:
+    failures = require_patterns(
+        log,
+        (
+            r"TASK2_FAULT_MODE mode=drop-ack-always",
+            r"TASK2_FAULT_DROP_ACK_ALWAYS seq=1\b",
+            r"STARRY_T2N1_RETRANSMIT seq=1 attempt=5\b",
+            r"STARRY_T2N1_SAFE source=protocol reason=RetryExhausted",
+            r"STARRY_T2N1_RECOVERED state=Active",
+        ),
+    )
+    failures.extend(
+        require_order(
+            log,
+            (
+                "TASK2_FAULT_DROP_ACK_ALWAYS seq=1",
+                "STARRY_T2N1_RETRANSMIT seq=1 attempt=5",
+                "STARRY_T2N1_SAFE source=protocol reason=RetryExhausted",
+                "STARRY_T2N1_RECOVERED state=Active",
+            ),
+        )
+    )
+    controls = matching(
+        frames,
+        src=STARRY_IP,
+        dst=ZEPHYR_IP,
+        kind=KIND_CONTROL,
+        sequence=1,
+    )
+    acknowledgements = matching(
+        frames,
+        src=ZEPHYR_IP,
+        dst=STARRY_IP,
+        kind=KIND_ACK,
+        acknowledgement=1,
+    )
+    if len(controls) < 6:
+        failures.append(f"retry exhaustion needs initial CONTROL plus five retries, got {len(controls)}")
+    if acknowledgements:
+        failures.append(f"retry-exhausted capture contains {len(acknowledgements)} CONTROL ACK(s)")
+    return failures
+
+
 def verify_out_of_order(frames: list[WireFrame], log: str) -> list[str]:
     failures = require_patterns(
         log,
@@ -304,6 +347,7 @@ def verify_model_rejected(frames: list[WireFrame], log: str) -> list[str]:
 VERIFY_SCENARIO = {
     "normal": verify_normal,
     "drop-ack": verify_drop_ack,
+    "retry-exhausted": verify_retry_exhausted,
     "out-of-order": verify_out_of_order,
     "invalid-parameter": verify_invalid_parameter,
     "blackout": verify_blackout,

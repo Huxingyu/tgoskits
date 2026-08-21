@@ -26,8 +26,7 @@ feature requiring its own design and review.
 
 Final evidence root: `results/starryos-task123-final-20260822/`.
 
-Diagnostic validation completed on 2026-08-22 (not yet admissible as final
-clean-revision evidence):
+Diagnostic validation completed on 2026-08-22:
 
 - Task2/Task3 six-scenario PASS archives:
   `results/starryos-yolo-diagnostic-20260822/{normal-005,drop-ack-001,out-of-order-001,invalid-parameter-001,blackout-004,model-rejected-003}`.
@@ -38,9 +37,11 @@ clean-revision evidence):
   `results/starryos-task1-diagnostic-20260822/` used the preliminary CNN and
   therefore do not satisfy the final ncnn/YOLO Task1 requirement.
 
-- [ ] Commit and push the Task1 A/B runner/config/verifier implementation so all
+- [x] Commit and push the Task1 A/B runner/config/verifier implementation so all
       evidence runners start from a clean tracked worktree.
-- [ ] Run the identical persistent ncnn/YOLO/T2N1 workload under RR and bounded
+      Implementation commit: `eb6f92da7`; pushed to
+      `origin/openrace/starryos-task2-task3` before final evidence collection.
+- [x] Run the identical persistent ncnn/YOLO/T2N1 workload under RR and bounded
       FP-RR:
 
   ```bash
@@ -48,7 +49,13 @@ clean-revision evidence):
     results/starryos-task123-final-20260822/task1
   ```
 
-- [ ] Run all six Task2/Task3 scenarios from the same source revision:
+  Evidence: `results/starryos-task123-final-20260822/task1/`. Both arms completed
+  three CONTROL/STATUS cycles with matching Guest/model hashes and passing
+  dual-pcap verification. RR RTT min/median/p95/max was 133/448/590/590 ms;
+  FP-RR was 146/479/597/597 ms and reported
+  `lower_priority_services=189`.
+
+- [x] Run all six Task2/Task3 scenarios from the same source revision:
 
   ```bash
   for scenario in normal drop-ack out-of-order invalid-parameter blackout model-rejected; do
@@ -56,6 +63,13 @@ clean-revision evidence):
       "$scenario" "results/starryos-task123-final-20260822/task23/$scenario"
   done
   ```
+
+  Evidence: `results/starryos-task123-final-20260822/task23/`. `normal`,
+  `drop-ack`, `out-of-order`, `invalid-parameter`, `blackout`, and
+  `model-rejected` each contain passing pcap/scenario verifier logs, exact
+  commands, Guest logs, artifact hashes and `SHA256SUMS.txt`. The preserved
+  `normal-startup-failure-001` directory records an initial pre-Guest
+  AxVisor/QEMU startup failure and is not counted as a passing scenario.
 
 - [ ] Generate the StarryOS-versus-Linux ncnn/YOLO comparison from retained
       real-Guest logs. Both sides must use matching ncnn revisions, model/input
@@ -87,10 +101,10 @@ of this execution tracker.
 - [x] Capture an out-of-order reliable frame followed by `ERROR` and Safe state.
 - [x] Capture an invalid CONTROL payload followed by `ERROR` and Safe state.
 - [x] Capture blackout -> Safe -> recovery -> resumed CONTROL.
-- [ ] For every fault case, retain StarryOS/Zephyr logs, injector markers,
+- [x] For every fault case, retain StarryOS/Zephyr logs, injector markers,
       two Guest pcaps, verifier output, commands, and SHA256 hashes from the
-      final clean source revision. Diagnostic archives already contain this
-      evidence, but must be regenerated after the implementation commit.
+      final clean source revision. Final evidence is under
+      `results/starryos-task123-final-20260822/task23/` at Git ID `eb6f92da7`.
 
 ## Task3: real in-Guest ncnn/YOLO and safety completion
 
@@ -121,14 +135,14 @@ of this execution tracker.
 
 - [x] Freeze the scheduler implementation: no new policy or unbounded IRQ-tail
       mechanism is introduced for this bonus path.
-- [ ] Build the StarryOS + Zephyr topology with the existing RR baseline and
+- [x] Build the StarryOS + Zephyr topology with the existing RR baseline and
       bounded fixed-priority scheduler using identical Guest images and load.
-- [ ] Prove both Guests boot, remain live, and complete the same ncnn/YOLO Task2/
+- [x] Prove both Guests boot, remain live, and complete the same ncnn/YOLO Task2/
       Task3 control workload under each scheduler.
-- [ ] Collect scheduler counters and protocol timing observations for both runs.
-- [ ] Report the comparison as QEMU software-in-the-loop evidence, not a physical
+- [x] Collect scheduler counters and protocol timing observations for both runs.
+- [x] Report the comparison as QEMU software-in-the-loop evidence, not a physical
       board WCET or a new Task1 performance claim.
-- [ ] Retain exact configs, logs, current-revision image hashes, and comparison
+- [x] Retain exact configs, logs, current-revision image hashes, and comparison
       summary.
 
 ## Final delivery gate
@@ -138,8 +152,10 @@ of this execution tracker.
       installed in the StarryOS rootfs.
 - [ ] Run the Starry endpoint's targeted tests and clippy checks.
 - [ ] Run the Python dual-Guest regression suite.
-- [ ] Run the T2N1 and fault pcap verifiers over every retained scenario.
-- [ ] Regenerate evidence from the final source revision and record its Git ID.
+- [x] Run the T2N1 and fault pcap verifiers over every retained Task1 and
+      Task2/Task3 scenario.
+- [x] Regenerate Task1 and six-scenario evidence from the clean implementation
+      revision and record its Git ID (`eb6f92da7`).
 - [ ] Update `FINAL-REPORT.md` to `complete` only if every mandatory row above is
       proven; otherwise retain `partial` and identify the exact missing evidence.
 - [ ] Commit and push each independently verified stage to

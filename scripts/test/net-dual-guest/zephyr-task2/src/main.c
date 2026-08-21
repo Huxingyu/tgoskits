@@ -27,8 +27,8 @@
 #define HEARTBEAT_INTERVAL_MS 200
 #define PEER_TIMEOUT_MS 10000
 
-#ifndef TASK2_FAULT_DROP_ACK_ONCE
-#define TASK2_FAULT_DROP_ACK_ONCE 0
+#ifndef TASK2_FAULT_DROP_ACK_MODE
+#define TASK2_FAULT_DROP_ACK_MODE 0
 #endif
 
 /*
@@ -306,7 +306,7 @@ int main(void)
 	uint32_t last_acknowledged = 0;
 	uint32_t pending_sequence = 0;
 	uint8_t retry_count = 0;
-	bool drop_control_ack_once = TASK2_FAULT_DROP_ACK_ONCE != 0;
+	int drop_control_ack_mode = TASK2_FAULT_DROP_ACK_MODE;
 	uint32_t dropped_ack_sequence = 0;
 	bool dropped_ack_duplicate_seen = false;
 	int state_safe = 0;
@@ -339,8 +339,10 @@ int main(void)
 	}
 	printk("TASK2_NET_CONFIGURED interface=virtio-net ip=10.0.42.2/24\n");
 	printk("TASK2_READY role=managed local=10.0.42.2:4242 peer=10.0.42.15:4242\n");
-	if (drop_control_ack_once) {
+	if (drop_control_ack_mode == 1) {
 		printk("TASK2_FAULT_MODE mode=drop-ack-once\n");
+	} else if (drop_control_ack_mode == 2) {
+		printk("TASK2_FAULT_MODE mode=drop-ack-always\n");
 	}
 
 	for (;;) {
@@ -421,10 +423,14 @@ int main(void)
 					} else if (sequence == expected_rx_sequence) {
 						expected_rx_sequence = sequence == UINT32_MAX ? 1 : sequence + 1;
 						size_t ack_length = make_ack(outbound, sequence);
-						if (kind == KIND_CONTROL && drop_control_ack_once) {
-							drop_control_ack_once = false;
+						if (kind == KIND_CONTROL && drop_control_ack_mode != 0) {
+							if (drop_control_ack_mode == 1) {
+								drop_control_ack_mode = 0;
+							}
 							dropped_ack_sequence = sequence;
-							printk("TASK2_FAULT_DROP_ACK seq=%u\n", sequence);
+							printk("TASK2_FAULT_DROP_ACK%s seq=%u\n",
+							       TASK2_FAULT_DROP_ACK_MODE == 2 ? "_ALWAYS" : "",
+							       sequence);
 						} else {
 							(void)send_frame(socket, &source, outbound, ack_length);
 						}
@@ -472,7 +478,12 @@ int main(void)
 					}
 					} else if (sequence == (expected_rx_sequence == 1 ? UINT32_MAX : expected_rx_sequence - 1)) {
 						size_t ack_length = make_ack(outbound, sequence);
-						(void)send_frame(socket, &source, outbound, ack_length);
+						if (kind == KIND_CONTROL && drop_control_ack_mode == 2) {
+							printk("TASK2_FAULT_DROP_ACK_ALWAYS seq=%u duplicate=true\n",
+							       sequence);
+						} else {
+							(void)send_frame(socket, &source, outbound, ack_length);
+						}
 						if (sequence == dropped_ack_sequence) {
 							dropped_ack_duplicate_seen = true;
 						}
