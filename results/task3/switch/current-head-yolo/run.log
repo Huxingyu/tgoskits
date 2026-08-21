@@ -1,0 +1,1252 @@
+[37m[  1.821751 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  1.822215 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  1.822432 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  1.824287 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  1.826352 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[m[37m[  1.829794 0:2 axvm::vm::prepare:82] [32mVM setup: id=1[m
+[m[37m[  1.832653 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[2] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32770), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32771), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  1.833510 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[2] architectural timer follows host firmware PPIs[m
+[m[37m[  1.836799 0:2 axvm::arch::aarch64::fdt::core::parser:442] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  1.837014 0:2 axvm::arch::aarch64::fdt::core::parser:449] [32mFound 1 host CPU nodes[m
+[m[37m[  1.837148 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[2] DTB not found, generating from the VM configuration[m
+[m[37m[  1.844090 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.848740 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.849272 0:2 axvisor::config:258] [32mCreating VM[2] "task2-p2-switch-zephyr"[m
+[m[37m[  1.850516 0:2 axvm::vm:1133] [32mVM created: id=2[m
+[m[37m[  2.655056 0:2 axvisor::config:270] [32mVM[2] created success, loading images...[m
+[m[37m[  2.658766 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  2.658923 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  2.659048 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  2.659266 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  2.659965 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[m[37m[  2.660290 0:2 axvm::vm::prepare:82] [32mVM setup: id=2[m
+[m[37m[  2.661035 0:2 axvm::runtime:73] [32mInitializing VMM...[m
+[m[37m[  2.661877 0:2 axvm::runtime:84] [32mVMM starting, booting VMs...[m
+[m[37m[  2.662140 0:2 axvm::vm:1365] [32mStarting VM[1][m
+[m[37m[  2.662383 0:2 axvm::runtime::vcpus:1060] [32mSpawning task for VM[1] VCpu[0][m
+[m[37m[  2.662947 0:2 axvm::runtime::vcpus:1079] [32mVCpu task Task(7, "VM[1]-VCpu[0]") created priority=90 cpumask: [0, ][m
+[m[37m[  2.667160 0:2 axvm::runtime:92] [32mVM[1] boot success[m
+[m[37m[  2.667275 0:2 axvm::vm:1365] [32mStarting VM[2][m
+[m[37m[  2.667362 0:2 axvm::runtime::vcpus:1060] [32mSpawning task for VM[2] VCpu[0][m
+[m[37m[  2.667588 0:2 axvm::runtime::vcpus:1079] [32mVCpu task Task(9, "VM[2]-VCpu[0]") created priority=90 cpumask: [0, ][m
+[m[37m[  2.667836 0:2 axvm::runtime:92] [32mVM[2] boot success[m
+[m[37m[  2.669907 0:2 axvisor:114] [32m[OK] Default guest initialized[m
+[m[37m[  2.671449 0:7 axvm::runtime::vcpus:1134] [32mVM[1] VCpu[0] waiting for running[m
+[m[37m[  2.671912 0:7 axvm::runtime::vcpus:1172] [32mVM[1] VCpu[0] running...[m
+[m[37m[  2.679603 0:9 axvm::runtime::vcpus:1134] [32mVM[2] VCpu[0] waiting for running[m
+[m[37m[  2.679742 0:9 axvm::runtime::vcpus:1172] [32mVM[2] VCpu[0] running...[m
+[m[37m[  2.732324 0:7 axvm::runtime::hvc:266] [32mVM[1] PSCI_FEATURES function_id=0x80000000[m
+[m[VM 2] *** Booting Zephyr OS build v4.4.2 ***
+[VM 2] TASK2_MAIN_START
+[VM 2] TASK2_SOCKET_CREATE
+[37m[  2.767842 0:7 axvm::runtime::hvc:266] [32mVM[1] PSCI_FEATURES function_id=0xc4000001[m
+[m[VM 2] TASK2_SOCKET_CREATED fd=0
+[37m[  2.771637 0:7 axvm::runtime::hvc:266] [32mVM[1] PSCI_FEATURES function_id=0xc400000e[m
+[m[VM 2] TASK2_NET_CONFIGURED interface=virtio-net ip=10.0.42.2/24
+[37m[  2.778894 0:7 axvm::runtime::hvc:266] [32mVM[1] PSCI_FEATURES function_id=0xc4000012[m
+[m[37m[  2.779379 0:7 axvm::runtime::hvc:266] [32mVM[1] PSCI_FEATURES function_id=0xc4000015[m
+[m[VM 2] TASK2_READY role=managed local=10.0.42.2:4242 peer=10.0.42.15:4242
+[37m[  3.016200 0:7 axvisor::virtio_net:595] [33mvirtio-net drops an ingress frame: NotReady[m
+[m[VM 1] [    0.000000] Booting Linux on physical CPU 0x0000000000 [0x410fd083]
+[VM 1] [    0.000000] Linux version 7.1.0-rc2-g74fe02ce122a-dirty (huhu@huhu-Legion-Y9000P-IAH7H) (aarch64-linux-musl-gcc (GCC) 11.2.1 20211120, GNU ld (GNU Binutils) 2.37) #1 SMP PREEMPT Fri Aug  7 08:02:49 CST 2026
+[VM 1] [    0.000000] KASLR disabled due to lack of seed
+[VM 1] [    0.000000] Machine model: linux,dummy-virt
+[VM 1] [    0.000000] efi: UEFI not found.
+[VM 1] [    0.000000] OF: reserved mem: Reserved memory: No reserved-memory node in the DT
+[VM 1] [    0.000000] NUMA: Faking a node at [mem 0x0000000080000000-0x000000009fffffff]
+[VM 1] [    0.000000] NODE_DATA(0) allocated [mem 0x9ff08dc0-0x9ff0b4bf]
+[VM 1] [    0.000000] cma: Reserved 32 MiB at 0x000000009a000000
+[VM 1] [    0.000000] psci: probing for conduit method from DT.
+[VM 1] [    0.000000] psci: PSCIv1.1 detected in firmware.
+[VM 1] [    0.000000] psci: Using standard PSCI v0.2 function IDs
+[VM 1] [    0.000000] psci: Trusted OS migration not required
+[VM 1] [    0.000000] psci: SMC Calling Convention v65535.65535
+[VM 1] [    0.000000] Zone ranges:
+[VM 1] [    0.000000]   DMA      [mem 0x0000000080000000-0x000000009fffffff]
+[VM 1] [    0.000000]   DMA32    empty
+[VM 1] [    0.000000]   Normal   empty
+[VM 1] [    0.000000] Movable zone start for each node
+[VM 1] [    0.000000] Early memory node ranges
+[VM 1] [    0.000000]   node   0: [mem 0x0000000080000000-0x000000009fffffff]
+[VM 1] [    0.000000] Initmem setup node 0 [mem 0x0000000080000000-0x000000009fffffff]
+[VM 1] [    0.000000] percpu: Embedded 26 pages/cpu s66584 r8192 d31720 u106496
+[VM 1] [    0.000000] Detected PIPT I-cache on CPU0
+[VM 1] [    0.000000] CPU features: detected: GICv3 CPU interface
+[VM 1] [    0.000000] CPU features: detected: Spectre-v2
+[VM 1] [    0.000000] CPU features: detected: Spectre-v3a
+[VM 1] [    0.000000] CPU features: detected: Spectre-v4
+[VM 1] [    0.000000] CPU features: detected: Spectre-BHB
+[VM 1] [    0.000000] CPU features: detected: ARM erratum 1742098
+[VM 1] [    0.000000] CPU features: detected: ARM errata 1165522, 1319367, or 1530923
+[VM 1] [    0.000000] alternatives: applying boot alternatives
+[VM 1] [    0.000000] printk: log buffer data + meta data: 131072 + 458752 = 589824 bytes
+[VM 1] [    0.000000] Dentry cache hash table entries: 65536 (order: 7, 524288 bytes, linear)
+[VM 1] [    0.000000] Inode-cache hash table entries: 32768 (order: 6, 262144 bytes, linear)
+[VM 1] [    0.000000] software IO TLB: SWIOTLB bounce buffer size adjusted to 0MB
+[VM 1] [    0.000000] software IO TLB: area num 1.
+[VM 1] [    0.000000] software IO TLB: mapped [mem 0x000000009f580000-0x000000009f600000] (0MB)
+[VM 1] [    0.000000] Fallback order for Node 0: 0 
+[VM 1] [    0.000000] Built 1 zonelists, mobility grouping on.  Total pages: 131072
+[VM 1] [    0.000000] Policy zone: DMA
+[VM 1] [    0.000000] mem auto-init: stack:off, heap alloc:off, heap free:off
+[VM 1] [    0.000000] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=1, Nodes=1
+[VM 1] [    0.000000] rcu: Preemptible hierarchical RCU implementation.
+[VM 1] [    0.000000] rcu: 	RCU event tracing is enabled.
+[VM 1] [    0.000000] rcu: 	RCU restricting CPUs from NR_CPUS=512 to nr_cpu_ids=1.
+[VM 1] [    0.000000] 	Trampoline variant of Tasks RCU enabled.
+[VM 1] [    0.000000] 	Tracing variant of Tasks RCU enabled.
+[VM 1] [    0.000000] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[VM 1] [    0.000000] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=1
+[VM 1] [    0.000000] RCU Tasks: Setting shift to 0 and lim to 1 rcu_task_cb_adjust=1 rcu_task_cpu_ids=1.
+[VM 1] [    0.000000] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[VM 1] [    0.000000] GICv3: 256 SPIs implemented
+[VM 1] [    0.000000] GICv3: 0 Extended SPIs implemented
+[VM 1] [    0.000000] Root IRQ handler: gic_handle_irq
+[VM 1] [    0.000000] GICv3: GICv3 features: 16 PPIs, RSS
+[VM 1] [    0.000000] GICv3: GICD_CTLR.DS=0, SCR_EL3.FIQ=0
+[VM 1] [    0.000000] GICv3: CPU0: found redistributor 0 region 0:0x00000000080a0000
+[VM 1] [    0.000000] ITS [mem 0x08080000-0x0809ffff]
+[VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Devices @83450000 (indirect, esz 8, psz 64K, shr 1)
+[VM 1] [    0.000000] ITS@0x0000000008080000: allocated 8192 Interrupt Collections @83460000 (flat, esz 8, psz 64K, shr 1)
+[VM 1] [    0.000000] GICv3: using LPI property table @0x0000000083470000
+[VM 1] [    0.000000] GICv3: CPU0: using allocated LPI pending table @0x0000000083480000
+[VM 1] [    0.000000] rcu: srcu_init: Setting srcu_struct sizes based on contention.
+[VM 1] [    0.000000] arch_timer: cp15 timer running at 62.50MHz (virt).
+[VM 1] [    0.000000] clocksource: arch_sys_counter: mask: 0x1ffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[VM 1] [    0.000062] sched_clock: 57 bits at 63MHz, resolution 16ns, wraps every 4398046511096ns
+[VM 1] [    0.008057] Console: colour dummy device 80x25
+[VM 1] [    0.008440] printk: legacy console [tty0] enabled
+[VM 1] [    0.015593] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[VM 1] [    0.015748] pid_max: default: 32768 minimum: 301
+[VM 1] [    0.019749] Mount-cache hash table entries: 1024 (order: 1, 8192 bytes, linear)
+[VM 1] [    0.019825] Mountpoint-cache hash table entries: 1024 (order: 1, 8192 bytes, linear)
+[VM 1] [    0.027371] VFS: Finished mounting rootfs on nullfs
+[VM 1] [    0.048708] cacheinfo: Unable to detect cache hierarchy for CPU 0
+[VM 1] [    0.060629] rcu: Hierarchical SRCU implementation.
+[VM 1] [    0.060697] rcu: 	Max phase no-delay instances is 1000.
+[VM 1] [    0.066050] fsl-mc MSI: its@8080000 domain created
+[VM 1] [    0.066878] EFI services will not be available.
+[VM 1] [    0.067381] smp: Bringing up secondary CPUs ...
+[VM 1] [    0.068008] smp: Brought up 1 node, 1 CPU
+[VM 1] [    0.068044] SMP: Total of 1 processors activated.
+[VM 1] [    0.069900] CPU: All CPU(s) started at EL1
+[VM 1] [    0.070179] CPU features: detected: 32-bit EL0 Support
+[VM 1] [    0.070209] CPU features: detected: 32-bit EL1 Support
+[VM 1] [    0.070283] CPU features: detected: CRC32 instructions
+[VM 1] [    0.070442] CPU features: detected: PMUv3
+[VM 1] [    0.078338] alternatives: applying system-wide alternatives
+[VM 1] [    0.106741] Memory: 408164K/524288K available (18688K kernel code, 5242K rwdata, 14504K rodata, 12672K init, 718K bss, 80672K reserved, 32768K cma-reserved)
+[VM 1] [    0.142934] devtmpfs: initialized
+[VM 1] [    0.161384] clocksource: jiffies: mask: 0xffffffff max_cycles: 0xffffffff, max_idle_ns: 7645041785100000 ns
+[VM 1] [    0.161957] posixtimers hash table entries: 512 (order: 1, 8192 bytes, linear)
+[VM 1] [    0.162479] futex hash table entries: 256 (16384 bytes on 1 NUMA nodes, total 16 KiB, linear).
+[VM 1] [    0.166002] 19744 pages in range for non-PLT usage
+[VM 1] [    0.166056] 511264 pages in range for PLT usage
+[VM 1] [    0.178315] DMI: not present or invalid.
+[VM 1] [    0.197365] NET: Registered PF_NETLINK/PF_ROUTE protocol family
+[VM 1] [    0.209001] DMA: preallocated 128 KiB GFP_KERNEL|GFP_DMA pool for atomic allocations
+[VM 1] [    0.209359] audit: initializing netlink subsys (disabled)
+[VM 1] [    0.212705] audit: type=2000 audit(0.180:1): state=initialized audit_enabled=0 res=1
+[VM 1] [    0.215201] thermal_sys: Registered thermal governor 'step_wise'
+[VM 1] [    0.215235] thermal_sys: Registered thermal governor 'power_allocator'
+[VM 1] [    0.215554] cpuidle: using governor menu
+[37m[  5.224554 0:7 axvisor::virtio_net:595] [33mvirtio-net drops an ingress frame: NotReady[m
+[m[VM 1] [    0.217091] hw-breakpoint: found 6 breakpoint and 4 watchpoint registers.
+[VM 1] [    0.217469] ASID allocator initialised with 65536 entries
+[VM 1] [    0.222971] Serial: AMBA PL011 UART driver
+[VM 1] [    0.248724] 9000000.pl011: ttyAMA0 at MMIO 0x9000000 (irq = 13, base_baud = 0) is a PL011 rev1
+[VM 1] [    0.253091] printk: console [ttyAMA0] enabled
+[VM 1] [    1.283519] HugeTLB: registered 1.00 GiB page size, pre-allocated 0 pages
+[VM 1] [    1.283646] HugeTLB: 0 KiB vmemmap can be freed for a 1.00 GiB page
+[VM 1] [    1.283719] HugeTLB: registered 32.0 MiB page size, pre-allocated 0 pages
+[VM 1] [    1.283760] HugeTLB: 0 KiB vmemmap can be freed for a 32.0 MiB page
+[VM 1] [    1.283795] HugeTLB: registered 2.00 MiB page size, pre-allocated 0 pages
+[VM 1] [    1.283824] HugeTLB: 0 KiB vmemmap can be freed for a 2.00 MiB page
+[VM 1] [    1.283855] HugeTLB: registered 64.0 KiB page size, pre-allocated 0 pages
+[VM 1] [    1.283883] HugeTLB: 0 KiB vmemmap can be freed for a 64.0 KiB page
+[VM 1] [    2.758698] ACPI: Interpreter disabled.
+[VM 1] [    2.770565] iommu: Default domain type: Translated
+[VM 1] [    2.780948] iommu: DMA domain TLB invalidation policy: strict mode
+[VM 1] [    2.794863] SCSI subsystem initialized
+[VM 1] [    2.804803] usbcore: registered new interface driver usbfs
+[VM 1] [    2.816217] usbcore: registered new interface driver hub
+[VM 1] [    2.827127] usbcore: registered new device driver usb
+[VM 1] [    2.838112] pps_core: LinuxPPS API ver. 1 registered
+[VM 1] [    2.848319] pps_core: Software ver. 5.3.6 - Copyright 2005-2007 Rodolfo Giometti <giometti@linux.it>
+[VM 1] [    2.866328] PTP clock support registered
+[VM 1] [    2.875020] EDAC MC: Ver: 3.0.0
+[VM 1] [    2.883108] scmi_core: SCMI protocol bus registered
+[VM 1] [    2.895195] FPGA manager framework
+[VM 1] [    2.911621] vgaarb: loaded
+[VM 1] [    2.919453] clocksource: Switched to clocksource arch_sys_counter
+[VM 1] [    2.933788] VFS: Disk quotas dquot_6.6.0
+[VM 1] [    2.942514] VFS: Dquot-cache hash table entries: 512 (order 0, 4096 bytes)
+[VM 1] [    2.958078] pnp: PnP ACPI: disabled
+[VM 1] [    2.989089] NET: Registered PF_INET protocol family
+[VM 1] [    3.221867] IP idents hash table entries: 8192 (order: 4, 65536 bytes, linear)
+[VM 1] [    3.241943] tcp_listen_portaddr_hash hash table entries: 256 (order: 0, 4096 bytes, linear)
+[VM 1] [    3.258600] Table-perturb hash table entries: 65536 (order: 6, 262144 bytes, linear)
+[VM 1] [    3.258687] TCP established hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[VM 1] [    3.258943] TCP bind hash table entries: 4096 (order: 5, 131072 bytes, linear)
+[VM 1] [    3.259097] TCP: Hash tables configured (established 4096 bind 4096)
+[VM 1] [    3.316850] UDP hash table entries: 256 (order: 2, 16384 bytes, linear)
+[VM 1] [    3.331094] NET: Registered PF_UNIX/PF_LOCAL protocol family
+[VM 1] [    3.346050] RPC: Registered named UNIX socket transport module.
+[VM 1] [    3.357711] RPC: Registered udp transport module.
+[VM 1] [    3.367946] RPC: Registered tcp transport module.
+[VM 1] [    3.377628] RPC: Registered tcp-with-tls transport module.
+[VM 1] [    3.388355] RPC: Registered tcp NFSv4.1 backchannel transport module.
+[VM 1] [    3.388506] PCI: CLS 0 bytes, default 64
+[VM 1] [    3.412682] kvm [1]: HYP mode not available
+[VM 1] [    3.425582] Initialise system trusted keyrings
+[VM 1] [    3.435769] Unpacking initramfs...
+[VM 1] [    3.455160] workingset: timestamp_bits=42 (anon: 38) max_order=17 bucket_order=0 (anon: 0)
+[VM 1] [    3.457805] squashfs: version 4.0 (2009/01/31) Phillip Lougher
+[VM 1] [    3.488264] NFS: Registering the id_resolver key type
+[VM 1] [    3.498763] Key type id_resolver registered
+[VM 1] [    3.507666] Key type id_legacy registered
+[VM 1] [    3.516496] nfs4filelayout_init: NFSv4 File Layout Driver Registering...
+[VM 1] [    3.776627] nfs4flexfilelayout_init: NFSv4 Flexfile Layout Driver Registering...
+[VM 1] [    3.795842] 9p: Installing v9fs 9p2000 file system support
+[VM 1] [    3.797655] Key type asymmetric registered
+[VM 1] [    3.797948] Asymmetric key parser 'x509' registered
+[VM 1] [    3.798436] Block layer SCSI generic (bsg) driver version 0.4 loaded (major 244)
+[VM 1] [    3.798763] io scheduler mq-deadline registered
+[VM 1] [    3.799035] io scheduler kyber registered
+[VM 1] [    3.864132] io scheduler bfq registered
+[VM 1] [    3.904661] ledtrig-cpu: registered to indicate activity on CPUs
+[VM 1] [    3.998827] Serial: 8250/16550 driver, 4 ports, IRQ sharing enabled
+[VM 1] [    4.030049] msm_serial: driver initialized
+[VM 1] [    4.040460] SuperH (H)SCI(F) driver initialized
+[VM 1] [    4.051976] STM32 USART driver initialized
+[VM 1] [    4.104005] loop: module loaded
+[VM 1] [    4.117452] megasas: 07.734.00.00-rc1
+[VM 1] [    4.150619] tun: Universal TUN/TAP device driver, 1.6
+[VM 1] [    4.197284] thunder_xcv, ver 1.0
+[VM 1] [    4.341031] thunder_bgx, ver 1.0
+[VM 1] [    4.341443] nicpf, ver 1.0
+[VM 1] [    4.360940] e1000: Intel(R) PRO/1000 Network Driver
+[VM 1] [    4.371030] e1000: Copyright (c) 1999-2006 Intel Corporation.
+[VM 1] [    4.387938] e1000e: Intel(R) PRO/1000 Network Driver
+[VM 1] [    4.388194] e1000e: Copyright(c) 1999 - 2015 Intel Corporation.
+[VM 1] [    4.388563] igb: Intel(R) Gigabit Ethernet Network Driver
+[VM 1] [    4.388781] igb: Copyright (c) 2007-2014 Intel Corporation.
+[VM 1] [    4.389153] igbvf: Intel(R) Gigabit Virtual Function Network Driver
+[VM 1] [    4.389364] igbvf: Copyright (c) 2009 - 2012 Intel Corporation.
+[VM 1] [    4.390098] sky2: driver version 1.30
+[VM 1] [    4.472863] VFIO - User Level meta-driver version: 0.3
+[VM 1] [    4.493557] usbcore: registered new interface driver usb-storage
+[VM 1] [    4.517704] i2c_dev: i2c /dev entries driver
+[VM 1] [    4.560033] SMCCC: SOC_ID: ARCH_SOC_ID not implemented, skipping ....
+[VM 1] [    4.577329] usbcore: registered new interface driver usbhid
+[VM 1] [    4.588802] usbhid: USB HID core driver
+[VM 1] [    4.620522] NET: Registered PF_INET6 protocol family
+[VM 1] [    4.645789] Segment Routing with IPv6
+[VM 1] [    4.654410] In-situ OAM (IOAM) with IPv6
+[VM 1] [    4.664095] sit: IPv6, IPv4 and MPLS over IPv4 tunneling driver
+[VM 1] [    4.682986] NET: Registered PF_PACKET protocol family
+[VM 1] [    4.904487] 9pnet: Installing 9P2000 support
+[VM 1] [    4.913788] Key type dns_resolver registered
+[VM 1] [    4.968459] registered taskstats version 1
+[VM 1] [    4.978446] Loading compiled-in X.509 certificates
+[VM 1] [    5.027907] Demotion targets for Node 0: null
+[VM 1] [    5.041841] clk: Disabling unused clocks
+[VM 1] [    5.055958] PM: genpd: Disabling unused power domains
+[VM 1] [    5.406691] Freeing initrd memory: 17912K
+[VM 1] [    5.458697] Freeing unused kernel memory: 12672K
+[VM 1] [    5.469325] Run /init as init process
+[VM 1] TASK2_INIT_START
+[VM 1] TASK2_NET_CONFIGURED interface=eth0 ip=10.0.42.15/24
+[VM 1] TASK2_READY role=controller local=10.0.42.15:4242 peer=10.0.42.2:4242
+[VM 1] TASK3_MODEL_READY model=yolo11n.onnx version=ultralytics-yolo11n-v8.3.0 sha256=634279b40c07c6391472c51ad45b81ebc48706a9a1fe72dd3396322acd0c053b path=embedded:fixture-replay mode=bounded-contract
+[VM 1] TASK3_MODEL_POLICY min_confidence_milli=600 min_area_milli=10 max_target_step=100
+[VM 1] TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=500
+[VM 1] TASK3_INFER elapsed_ms=96 sample=1 output=400 infer_us=6 model=yolo11n.onnx target=500
+[VM 1] TASK3_CONTROL_SENT elapsed_ms=96 request=1 value=400 target=500 state=300 seq=1 model=yolo11n.onnx
+[VM 2] TASK2_CONTROL_RECEIVED seq=1 request=1
+[VM 2] TASK3_CONTROL_APPLIED request=1 value=400
+[VM 2] TASK3_PLANT_STATE before=300 after=310 dist=0
+[VM 2] TASK2_STATUS_SENT seq=1
+[VM 1] TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=4720
+[VM 1] TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=5060
+[VM 1] TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=5280
+[VM 1] TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=5500
+[VM 1] TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=5720
+[VM 1] TASK2_ACK seq=1
+[VM 2] TASK2_ACK seq=1
+[VM 1] TASK3_STATUS_RECEIVED elapsed_ms=301 request=1 value=310 state=310 sample=1 rtt_ms=205
+[VM 1] TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+
+[Axvisor] detached VM[1] console
+Welcome to AxVisor Shell!
+Type 'help' to see available commands
+Use UP/DOWN arrows to navigate command history
+Console shortcuts:
+  Ctrl+X, then h  return to the Axvisor shell
+  Ctrl+X, then [  attach the previous running guest
+  Ctrl+X, then ]  attach the next running guest
+
+[2Kaxvisor:/$ [2Kaxvisor:/$ v[2Kaxvisor:/$ vi[2Kaxvisor:/$ vir[2Kaxvisor:/$ virt[2Kaxvisor:/$ virtn[2Kaxvisor:/$ virtne[2Kaxvisor:/$ virtnet[2Kaxvisor:/$ virtnet [2Kaxvisor:/$ virtnet c[2Kaxvisor:/$ virtnet ca[2Kaxvisor:/$ virtnet cap[2Kaxvisor:/$ virtnet capt[2Kaxvisor:/$ virtnet captu[2Kaxvisor:/$ virtnet captur[2Kaxvisor:/$ virtnet capture[2Kaxvisor:/$ virtnet capture [2Kaxvisor:/$ virtnet capture o[2Kaxvisor:/$ virtnet capture on
+virtnet: capture ON
+axvisor:/$ 
+[Axvisor] attached VM[2] console; use Ctrl+X, then h to return to the shell
+TASK2_CONTROL_RECEIVED seq=2 request=2
+TASK3_CONTROL_APPLIED request=2 value=218
+TASK3_PLANT_STATE before=310 after=252 dist=0
+TASK2_STATUS_SENT seq=2
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=998
+TASK2_ACK seq=2
+TASK2_CONTROL_RECEIVED seq=3 request=3
+TASK3_CONTROL_APPLIED request=3 value=534
+TASK3_PLANT_STATE before=252 after=328 dist=0
+TASK2_STATUS_SENT seq=3
+TASK2_ACK seq=3
+TASK2_CONTROL_RECEIVED seq=4 request=4
+TASK3_CONTROL_APPLIED request=4 value=382
+TASK3_PLANT_STATE before=328 after=319 dist=0
+TASK2_STATUS_SENT seq=4
+TASK2_ACK seq=4
+TASK2_CONTROL_RECEIVED seq=5 request=5
+TASK3_CONTROL_APPLIED request=5 value=200
+TASK3_PLANT_STATE before=319 after=251 dist=0
+TASK2_STATUS_SENT seq=5
+TASK2_ACK seq=5
+TASK2_CONTROL_RECEIVED seq=6 request=6
+TASK3_CONTROL_APPLIED request=6 value=536
+TASK3_PLANT_STATE before=251 after=328 dist=0
+TASK2_STATUS_SENT seq=6
+TASK2_ACK seq=6
+TASK2_CONTROL_RECEIVED seq=7 request=7
+TASK3_CONTROL_APPLIED request=7 value=382
+TASK3_PLANT_STATE before=328 after=319 dist=0
+TASK2_STATUS_SENT seq=7
+TASK2_ACK seq=7
+TASK2_CONTROL_RECEIVED seq=8 request=8
+TASK3_CONTROL_APPLIED request=8 value=200
+TASK3_PLANT_STATE before=319 after=251 dist=0
+TASK2_STATUS_SENT seq=8
+TASK2_ACK seq=8
+
+[Axvisor] attached VM[1] console; use Ctrl+X, then h to return to the shell
+TASK3_INFER elapsed_ms=301 sample=2 output=218 infer_us=118 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=301 request=2 value=218 target=419 state=310 seq=2 model=yolo11n.onnx
+TASK2_ACK seq=2
+TASK3_STATUS_RECEIVED elapsed_ms=1015 request=2 value=252 state=252 sample=2 rtt_ms=714
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=1015 sample=3 output=534 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=1015 request=3 value=534 target=519 state=252 seq=3 model=yolo11n.onnx
+TASK2_ACK seq=3
+TASK3_STATUS_RECEIVED elapsed_ms=1140 request=3 value=328 state=328 sample=3 rtt_ms=125
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=1140 sample=4 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=1140 request=4 value=382 target=519 state=328 seq=4 model=yolo11n.onnx
+TASK2_ACK seq=4
+TASK3_STATUS_RECEIVED elapsed_ms=1253 request=4 value=319 state=319 sample=4 rtt_ms=113
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=1253 sample=5 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=1253 request=5 value=200 target=419 state=319 seq=5 model=yolo11n.onnx
+TASK2_ACK seq=5
+TASK3_STATUS_RECEIVED elapsed_ms=1351 request=5 value=251 state=251 sample=5 rtt_ms=98
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=1351 sample=6 output=536 infer_us=4 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=1351 request=6 value=536 target=519 state=251 seq=6 model=yolo11n.onnx
+TASK2_ACK seq=6
+TASK3_STATUS_RECEIVED elapsed_ms=1479 request=6 value=328 state=328 sample=6 rtt_ms=128
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=1479 sample=7 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=1479 request=7 value=382 target=519 state=328 seq=7 model=yolo11n.onnx
+TASK2_ACK seq=7
+TASK3_STATUS_RECEIVED elapsed_ms=1588 request=7 value=319 state=319 sample=7 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=1588 sample=8 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=1588 request=8 value=200 target=419 state=319 seq=8 model=yolo11n.onnx
+TASK2_ACK seq=8
+TASK3_STATUS_RECEIVED elapsed_ms=1695 request=8 value=251 state=251 sample=8 rtt_ms=107
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=1695 sample=9 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=1695 request=9 value=536 target=519 state=251 seq=9 model=yolo11n.onnx
+TASK2_ACK seq=9
+TASK3_STATUS_RECEIVED elapsed_ms=1809 request=9 value=328 state=328 sample=9 rtt_ms=114
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=1809 sample=10 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=1809 request=10 value=382 target=519 state=328 seq=10 model=yolo11n.onnx
+TASK2_ACK seq=10
+TASK3_STATUS_RECEIVED elapsed_ms=1930 request=10 value=319 state=319 sample=10 rtt_ms=121
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=1930 sample=11 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=1930 request=11 value=200 target=419 state=319 seq=11 model=yolo11n.onnx
+TASK2_ACK seq=11
+TASK3_STATUS_RECEIVED elapsed_ms=2035 request=11 value=251 state=251 sample=11 rtt_ms=105
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=2035 sample=12 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=2035 request=12 value=536 target=519 state=251 seq=12 model=yolo11n.onnx
+TASK2_ACK seq=12
+TASK3_STATUS_RECEIVED elapsed_ms=2148 request=12 value=328 state=328 sample=12 rtt_ms=113
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=2148 sample=13 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=2148 request=13 value=382 target=519 state=328 seq=13 model=yolo11n.onnx
+TASK2_ACK seq=13
+TASK3_STATUS_RECEIVED elapsed_ms=2254 request=13 value=469 state=469 sample=13 rtt_ms=106
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=2254 sample=14 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=2254 request=14 value=0 target=419 state=469 seq=14 model=yolo11n.onnx
+TASK2_ACK seq=14
+TASK3_STATUS_RECEIVED elapsed_ms=2587 request=14 value=414 state=414 sample=14 rtt_ms=333
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=2587 sample=15 output=210 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=2587 request=15 value=210 target=519 state=414 seq=15 model=yolo11n.onnx
+TASK2_ACK seq=15
+TASK3_STATUS_RECEIVED elapsed_ms=2704 request=15 value=458 state=458 sample=15 rtt_ms=117
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=2704 sample=16 output=122 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=2704 request=16 value=122 target=519 state=458 seq=16 model=yolo11n.onnx
+TASK2_ACK seq=16
+TASK3_STATUS_RECEIVED elapsed_ms=2815 request=16 value=451 state=451 sample=16 rtt_ms=111
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=2815 sample=17 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=2815 request=17 value=0 target=419 state=451 seq=17 model=yolo11n.onnx
+TASK2_ACK seq=17
+TASK3_STATUS_RECEIVED elapsed_ms=3134 request=17 value=405 state=405 sample=17 rtt_ms=319
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=3134 sample=18 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=3134 request=18 value=228 target=519 state=405 seq=18 model=yolo11n.onnx
+TASK2_ACK seq=18
+TASK3_STATUS_RECEIVED elapsed_ms=3247 request=18 value=460 state=460 sample=18 rtt_ms=113
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=3247 sample=19 output=118 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=3247 request=19 value=118 target=519 state=460 seq=19 model=yolo11n.onnx
+TASK2_ACK seq=19
+TASK3_STATUS_RECEIVED elapsed_ms=3356 request=19 value=451 state=451 sample=19 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=3356 sample=20 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=3356 request=20 value=0 target=419 state=451 seq=20 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=9450
+TASK2_ACK seq=20
+TASK3_STATUS_RECEIVED elapsed_ms=3727 request=20 value=405 state=405 sample=20 rtt_ms=371
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=3727 sample=21 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=3727 request=21 value=228 target=519 state=405 seq=21 model=yolo11n.onnx
+TASK2_ACK seq=21
+TASK3_STATUS_RECEIVED elapsed_ms=3837 request=21 value=460 state=460 sample=21 rtt_ms=110
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=3837 sample=22 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=3837 request=22 value=118 target=519 state=460 seq=22 model=yolo11n.onnx
+TASK2_ACK seq=22
+TASK3_STATUS_RECEIVED elapsed_ms=3941 request=22 value=451 state=451 sample=22 rtt_ms=104
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=3941 sample=23 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=3941 request=23 value=0 target=419 state=451 seq=23 model=yolo11n.onnx
+TASK2_ACK seq=23
+TASK3_STATUS_RECEIVED elapsed_ms=4273 request=23 value=405 state=405 sample=23 rtt_ms=332
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=4273 sample=24 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=4273 request=24 value=228 target=519 state=405 seq=24 model=yolo11n.onnx
+TASK2_ACK seq=24
+TASK3_STATUS_RECEIVED elapsed_ms=4396 request=24 value=460 state=460 sample=24 rtt_ms=123
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=4396 sample=25 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=4396 request=25 value=118 target=519 state=460 seq=25 model=yolo11n.onnx
+TASK2_ACK seq=25
+TASK3_STATUS_RECEIVED elapsed_ms=4514 request=25 value=451 state=451 sample=25 rtt_ms=118
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=4514 sample=26 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=4514 request=26 value=0 target=419 state=451 seq=26 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=10570
+TASK2_ACK seq=26
+TASK3_STATUS_RECEIVED elapsed_ms=4857 request=26 value=405 state=405 sample=26 rtt_ms=343
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=4857 sample=27 output=228 infer_us=3 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=4857 request=27 value=228 target=519 state=405 seq=27 model=yolo11n.onnx
+TASK2_ACK seq=27
+TASK3_STATUS_RECEIVED elapsed_ms=4968 request=27 value=460 state=460 sample=27 rtt_ms=111
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=4968 sample=28 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=4968 request=28 value=118 target=519 state=460 seq=28 model=yolo11n.onnx
+TASK2_ACK seq=28
+TASK3_STATUS_RECEIVED elapsed_ms=5078 request=28 value=451 state=451 sample=28 rtt_ms=110
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=5078 sample=29 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=5078 request=29 value=0 target=419 state=451 seq=29 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=11130
+TASK2_ACK seq=29
+TASK3_STATUS_RECEIVED elapsed_ms=5449 request=29 value=405 state=405 sample=29 rtt_ms=371
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=5449 sample=30 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=5449 request=30 value=228 target=519 state=405 seq=30 model=yolo11n.onnx
+TASK2_ACK seq=30
+TASK3_STATUS_RECEIVED elapsed_ms=5573 request=30 value=460 state=460 sample=30 rtt_ms=124
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=5573 sample=31 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=5573 request=31 value=118 target=519 state=460 seq=31 model=yolo11n.onnx
+TASK2_ACK seq=31
+TASK3_STATUS_RECEIVED elapsed_ms=5935 request=31 value=451 state=451 sample=31 rtt_ms=362
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=5935 sample=32 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=5935 request=32 value=0 target=419 state=451 seq=32 model=yolo11n.onnx
+TASK2_ACK seq=32
+TASK3_STATUS_RECEIVED elapsed_ms=6047 request=32 value=405 state=405 sample=32 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=6047 sample=33 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=6047 request=33 value=228 target=519 state=405 seq=33 model=yolo11n.onnx
+TASK2_ACK seq=33
+TASK3_STATUS_RECEIVED elapsed_ms=6169 request=33 value=460 state=460 sample=33 rtt_ms=122
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=6169 sample=34 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=6169 request=34 value=118 target=519 state=460 seq=34 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=12240
+TASK2_ACK seq=34
+TASK3_STATUS_RECEIVED elapsed_ms=6527 request=34 value=451 state=451 sample=34 rtt_ms=358
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=6527 sample=35 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=6527 request=35 value=0 target=419 state=451 seq=35 model=yolo11n.onnx
+TASK2_ACK seq=35
+TASK3_STATUS_RECEIVED elapsed_ms=6643 request=35 value=405 state=405 sample=35 rtt_ms=116
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=6643 sample=36 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=6643 request=36 value=228 target=519 state=405 seq=36 model=yolo11n.onnx
+TASK2_ACK seq=36
+TASK3_STATUS_RECEIVED elapsed_ms=6753 request=36 value=460 state=460 sample=36 rtt_ms=110
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=6753 sample=37 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=6753 request=37 value=118 target=519 state=460 seq=37 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=12800
+TASK2_ACK seq=37
+TASK3_STATUS_RECEIVED elapsed_ms=7105 request=37 value=451 state=451 sample=37 rtt_ms=352
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=7105 sample=38 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=7105 request=38 value=0 target=419 state=451 seq=38 model=yolo11n.onnx
+TASK2_ACK seq=38
+TASK3_STATUS_RECEIVED elapsed_ms=7212 request=38 value=405 state=405 sample=38 rtt_ms=107
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=7212 sample=39 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=7212 request=39 value=228 target=519 state=405 seq=39 model=yolo11n.onnx
+TASK2_ACK seq=39
+TASK3_STATUS_RECEIVED elapsed_ms=7592 request=39 value=460 state=460 sample=39 rtt_ms=380
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=7592 sample=40 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=7592 request=40 value=118 target=519 state=460 seq=40 model=yolo11n.onnx
+TASK2_ACK seq=40
+TASK3_STATUS_RECEIVED elapsed_ms=7701 request=40 value=451 state=451 sample=40 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=7701 sample=41 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=7701 request=41 value=0 target=419 state=451 seq=41 model=yolo11n.onnx
+TASK2_ACK seq=41
+TASK3_STATUS_RECEIVED elapsed_ms=7821 request=41 value=405 state=405 sample=41 rtt_ms=120
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=7821 sample=42 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=7821 request=42 value=228 target=519 state=405 seq=42 model=yolo11n.onnx
+TASK2_ACK seq=42
+TASK3_STATUS_RECEIVED elapsed_ms=8179 request=42 value=460 state=460 sample=42 rtt_ms=358
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=8179 sample=43 output=118 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=8179 request=43 value=118 target=519 state=460 seq=43 model=yolo11n.onnx
+TASK2_ACK seq=43
+TASK3_STATUS_RECEIVED elapsed_ms=8281 request=43 value=451 state=451 sample=43 rtt_ms=102
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=8281 sample=44 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=8281 request=44 value=0 target=419 state=451 seq=44 model=yolo11n.onnx
+TASK2_ACK seq=44
+TASK3_STATUS_RECEIVED elapsed_ms=8393 request=44 value=405 state=405 sample=44 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=8393 sample=45 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=8393 request=45 value=228 target=519 state=405 seq=45 model=yolo11n.onnx
+TASK2_ACK seq=45
+TASK3_STATUS_RECEIVED elapsed_ms=8733 request=45 value=460 state=460 sample=45 rtt_ms=340
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=8733 sample=46 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=8733 request=46 value=118 target=519 state=460 seq=46 model=yolo11n.onnx
+TASK2_ACK seq=46
+TASK3_STATUS_RECEIVED elapsed_ms=8841 request=46 value=451 state=451 sample=46 rtt_ms=108
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=8841 sample=47 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=8841 request=47 value=0 target=419 state=451 seq=47 model=yolo11n.onnx
+TASK2_ACK seq=47
+TASK3_STATUS_RECEIVED elapsed_ms=8942 request=47 value=405 state=405 sample=47 rtt_ms=101
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=8942 sample=48 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=8942 request=48 value=228 target=519 state=405 seq=48 model=yolo11n.onnx
+TASK2_ACK seq=48
+TASK3_STATUS_RECEIVED elapsed_ms=9293 request=48 value=460 state=460 sample=48 rtt_ms=351
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=9293 sample=49 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=9293 request=49 value=118 target=519 state=460 seq=49 model=yolo11n.onnx
+TASK2_ACK seq=49
+TASK3_STATUS_RECEIVED elapsed_ms=9401 request=49 value=451 state=451 sample=49 rtt_ms=108
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=9401 sample=50 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=9401 request=50 value=0 target=419 state=451 seq=50 model=yolo11n.onnx
+TASK2_ACK seq=50
+TASK3_STATUS_RECEIVED elapsed_ms=9513 request=50 value=405 state=405 sample=50 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=9513 sample=51 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=9513 request=51 value=228 target=519 state=405 seq=51 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=15600
+TASK2_ACK seq=51
+TASK3_STATUS_RECEIVED elapsed_ms=9893 request=51 value=460 state=460 sample=51 rtt_ms=380
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=9893 sample=52 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=9893 request=52 value=118 target=519 state=460 seq=52 model=yolo11n.onnx
+TASK2_ACK seq=52
+TASK3_STATUS_RECEIVED elapsed_ms=10001 request=52 value=451 state=451 sample=52 rtt_ms=108
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=10001 sample=53 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=10001 request=53 value=0 target=419 state=451 seq=53 model=yolo11n.onnx
+TASK2_ACK seq=53
+TASK3_STATUS_RECEIVED elapsed_ms=10112 request=53 value=405 state=405 sample=53 rtt_ms=111
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=10112 sample=54 output=228 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=10112 request=54 value=228 target=519 state=405 seq=54 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=16160
+TASK2_ACK seq=54
+TASK3_STATUS_RECEIVED elapsed_ms=10453 request=54 value=460 state=460 sample=54 rtt_ms=341
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=10453 sample=55 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=10453 request=55 value=118 target=519 state=460 seq=55 model=yolo11n.onnx
+TASK2_ACK seq=55
+TASK3_STATUS_RECEIVED elapsed_ms=10561 request=55 value=451 state=451 sample=55 rtt_ms=108
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=10561 sample=56 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=10561 request=56 value=0 target=419 state=451 seq=56 model=yolo11n.onnx
+TASK2_ACK seq=56
+TASK3_STATUS_RECEIVED elapsed_ms=10681 request=56 value=405 state=405 sample=56 rtt_ms=120
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=10681 sample=57 output=228 infer_us=3 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=10681 request=57 value=228 target=519 state=405 seq=57 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=16710
+TASK2_ACK seq=57
+TASK3_STATUS_RECEIVED elapsed_ms=11041 request=57 value=460 state=460 sample=57 rtt_ms=360
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=11041 sample=58 output=118 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=11041 request=58 value=118 target=519 state=460 seq=58 model=yolo11n.onnx
+TASK2_ACK seq=58
+TASK3_STATUS_RECEIVED elapsed_ms=11153 request=58 value=451 state=451 sample=58 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=11153 sample=59 output=0 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=11153 request=59 value=0 target=419 state=451 seq=59 model=yolo11n.onnx
+TASK2_ACK seq=59
+TASK3_STATUS_RECEIVED elapsed_ms=11524 request=59 value=255 state=255 sample=59 rtt_ms=371
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=11524 sample=60 output=528 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=11524 request=60 value=528 target=519 state=255 seq=60 model=yolo11n.onnx
+TASK2_ACK seq=60
+TASK3_STATUS_RECEIVED elapsed_ms=11632 request=60 value=328 state=328 sample=60 rtt_ms=108
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=11632 sample=61 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=11632 request=61 value=382 target=519 state=328 seq=61 model=yolo11n.onnx
+TASK2_ACK seq=61
+TASK3_STATUS_RECEIVED elapsed_ms=11741 request=61 value=319 state=319 sample=61 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=11741 sample=62 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=11741 request=62 value=200 target=419 state=319 seq=62 model=yolo11n.onnx
+TASK2_ACK seq=62
+TASK3_STATUS_RECEIVED elapsed_ms=12095 request=62 value=251 state=251 sample=62 rtt_ms=354
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=12095 sample=63 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=12095 request=63 value=536 target=519 state=251 seq=63 model=yolo11n.onnx
+TASK2_ACK seq=63
+TASK3_STATUS_RECEIVED elapsed_ms=12205 request=63 value=328 state=328 sample=63 rtt_ms=110
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=12205 sample=64 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=12205 request=64 value=382 target=519 state=328 seq=64 model=yolo11n.onnx
+TASK2_ACK seq=64
+TASK3_STATUS_RECEIVED elapsed_ms=12313 request=64 value=319 state=319 sample=64 rtt_ms=108
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=12313 sample=65 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=12313 request=65 value=200 target=419 state=319 seq=65 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=18400
+TASK2_ACK seq=65
+TASK3_STATUS_RECEIVED elapsed_ms=12682 request=65 value=251 state=251 sample=65 rtt_ms=369
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=12682 sample=66 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=12682 request=66 value=536 target=519 state=251 seq=66 model=yolo11n.onnx
+TASK2_ACK seq=66
+TASK3_STATUS_RECEIVED elapsed_ms=12781 request=66 value=328 state=328 sample=66 rtt_ms=99
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=12781 sample=67 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=12781 request=67 value=382 target=519 state=328 seq=67 model=yolo11n.onnx
+TASK2_ACK seq=67
+TASK3_STATUS_RECEIVED elapsed_ms=12890 request=67 value=319 state=319 sample=67 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=12890 sample=68 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=12890 request=68 value=200 target=419 state=319 seq=68 model=yolo11n.onnx
+TASK2_ACK seq=68
+TASK3_STATUS_RECEIVED elapsed_ms=13241 request=68 value=251 state=251 sample=68 rtt_ms=351
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=13241 sample=69 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=13241 request=69 value=536 target=519 state=251 seq=69 model=yolo11n.onnx
+TASK2_ACK seq=69
+TASK3_STATUS_RECEIVED elapsed_ms=13343 request=69 value=328 state=328 sample=69 rtt_ms=102
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=13343 sample=70 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=13343 request=70 value=382 target=519 state=328 seq=70 model=yolo11n.onnx
+TASK2_ACK seq=70
+TASK3_STATUS_RECEIVED elapsed_ms=13461 request=70 value=319 state=319 sample=70 rtt_ms=118
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=13461 sample=71 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=13461 request=71 value=200 target=419 state=319 seq=71 model=yolo11n.onnx
+TASK2_ACK seq=71
+TASK3_STATUS_RECEIVED elapsed_ms=13803 request=71 value=251 state=251 sample=71 rtt_ms=342
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=13803 sample=72 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=13803 request=72 value=536 target=519 state=251 seq=72 model=yolo11n.onnx
+TASK2_ACK seq=72
+TASK3_STATUS_RECEIVED elapsed_ms=13925 request=72 value=328 state=328 sample=72 rtt_ms=122
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=13925 sample=73 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=13925 request=73 value=382 target=519 state=328 seq=73 model=yolo11n.onnx
+TASK2_ACK seq=73
+TASK3_STATUS_RECEIVED elapsed_ms=14034 request=73 value=319 state=319 sample=73 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=14034 sample=74 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=14034 request=74 value=200 target=419 state=319 seq=74 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=20090
+TASK2_ACK seq=74
+TASK3_STATUS_RECEIVED elapsed_ms=14392 request=74 value=251 state=251 sample=74 rtt_ms=358
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=14392 sample=75 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=14392 request=75 value=536 target=519 state=251 seq=75 model=yolo11n.onnx
+TASK2_ACK seq=75
+TASK3_STATUS_RECEIVED elapsed_ms=14511 request=75 value=328 state=328 sample=75 rtt_ms=119
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=14511 sample=76 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=14511 request=76 value=382 target=519 state=328 seq=76 model=yolo11n.onnx
+TASK2_ACK seq=76
+TASK3_STATUS_RECEIVED elapsed_ms=14629 request=76 value=319 state=319 sample=76 rtt_ms=118
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=14629 sample=77 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=14629 request=77 value=200 target=419 state=319 seq=77 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=20660
+TASK2_ACK seq=77
+TASK3_STATUS_RECEIVED elapsed_ms=14977 request=77 value=251 state=251 sample=77 rtt_ms=348
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=14977 sample=78 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=14977 request=78 value=536 target=519 state=251 seq=78 model=yolo11n.onnx
+TASK2_ACK seq=78
+TASK3_STATUS_RECEIVED elapsed_ms=15088 request=78 value=328 state=328 sample=78 rtt_ms=111
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=15088 sample=79 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=15088 request=79 value=382 target=519 state=328 seq=79 model=yolo11n.onnx
+TASK2_ACK seq=79
+TASK3_STATUS_RECEIVED elapsed_ms=15459 request=79 value=319 state=319 sample=79 rtt_ms=371
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=15459 sample=80 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=15459 request=80 value=200 target=419 state=319 seq=80 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=21250
+TASK2_ACK seq=80
+TASK3_STATUS_RECEIVED elapsed_ms=15593 request=80 value=251 state=251 sample=80 rtt_ms=134
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=15593 sample=81 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=15593 request=81 value=536 target=519 state=251 seq=81 model=yolo11n.onnx
+TASK2_ACK seq=81
+TASK3_STATUS_RECEIVED elapsed_ms=15709 request=81 value=328 state=328 sample=81 rtt_ms=116
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=15709 sample=82 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=15709 request=82 value=382 target=519 state=328 seq=82 model=yolo11n.onnx
+TASK2_ACK seq=82
+TASK3_STATUS_RECEIVED elapsed_ms=16033 request=82 value=319 state=319 sample=82 rtt_ms=324
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=16033 sample=83 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=16033 request=83 value=200 target=419 state=319 seq=83 model=yolo11n.onnx
+TASK2_ACK seq=83
+TASK3_STATUS_RECEIVED elapsed_ms=16153 request=83 value=251 state=251 sample=83 rtt_ms=120
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=16153 sample=84 output=536 infer_us=3 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=16153 request=84 value=536 target=519 state=251 seq=84 model=yolo11n.onnx
+TASK2_ACK seq=84
+TASK3_STATUS_RECEIVED elapsed_ms=16265 request=84 value=328 state=328 sample=84 rtt_ms=112
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=16265 sample=85 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=16265 request=85 value=382 target=519 state=328 seq=85 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=22310
+TASK2_ACK seq=85
+TASK3_STATUS_RECEIVED elapsed_ms=16610 request=85 value=319 state=319 sample=85 rtt_ms=345
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=16610 sample=86 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=16610 request=86 value=200 target=419 state=319 seq=86 model=yolo11n.onnx
+TASK2_ACK seq=86
+TASK3_STATUS_RECEIVED elapsed_ms=16726 request=86 value=251 state=251 sample=86 rtt_ms=116
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=16726 sample=87 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=16726 request=87 value=536 target=519 state=251 seq=87 model=yolo11n.onnx
+TASK2_ACK seq=87
+TASK3_STATUS_RECEIVED elapsed_ms=16832 request=87 value=328 state=328 sample=87 rtt_ms=106
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=16832 sample=88 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=16832 request=88 value=382 target=519 state=328 seq=88 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=22860
+TASK2_ACK seq=88
+TASK3_STATUS_RECEIVED elapsed_ms=17181 request=88 value=319 state=319 sample=88 rtt_ms=349
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=17181 sample=89 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=17181 request=89 value=200 target=419 state=319 seq=89 model=yolo11n.onnx
+TASK2_ACK seq=89
+TASK3_STATUS_RECEIVED elapsed_ms=17291 request=89 value=251 state=251 sample=89 rtt_ms=110
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=17291 sample=90 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=17291 request=90 value=536 target=519 state=251 seq=90 model=yolo11n.onnx
+TASK2_ACK seq=90
+TASK3_STATUS_RECEIVED elapsed_ms=17641 request=90 value=328 state=328 sample=90 rtt_ms=350
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=17641 sample=91 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=17641 request=91 value=382 target=519 state=328 seq=91 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=23430
+TASK2_ACK seq=91
+TASK3_STATUS_RECEIVED elapsed_ms=17780 request=91 value=319 state=319 sample=91 rtt_ms=139
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=17780 sample=92 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=17780 request=92 value=200 target=419 state=319 seq=92 model=yolo11n.onnx
+TASK2_ACK seq=92
+TASK3_STATUS_RECEIVED elapsed_ms=17891 request=92 value=251 state=251 sample=92 rtt_ms=111
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=17891 sample=93 output=536 infer_us=3 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=17891 request=93 value=536 target=519 state=251 seq=93 model=yolo11n.onnx
+TASK2_ACK seq=93
+TASK3_STATUS_RECEIVED elapsed_ms=18252 request=93 value=328 state=328 sample=93 rtt_ms=361
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=18252 sample=94 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=18252 request=94 value=382 target=519 state=328 seq=94 model=yolo11n.onnx
+TASK2_ACK seq=94
+TASK3_STATUS_RECEIVED elapsed_ms=18352 request=94 value=319 state=319 sample=94 rtt_ms=100
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=18352 sample=95 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=18352 request=95 value=200 target=419 state=319 seq=95 model=yolo11n.onnx
+TASK2_ACK seq=95
+TASK3_STATUS_RECEIVED elapsed_ms=18462 request=95 value=251 state=251 sample=95 rtt_ms=110
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=18462 sample=96 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=18462 request=96 value=536 target=519 state=251 seq=96 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=24550
+TASK2_ACK seq=96
+TASK3_STATUS_RECEIVED elapsed_ms=18832 request=96 value=328 state=328 sample=96 rtt_ms=370
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=18832 sample=97 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=18832 request=97 value=382 target=519 state=328 seq=97 model=yolo11n.onnx
+TASK2_ACK seq=97
+TASK3_STATUS_RECEIVED elapsed_ms=18941 request=97 value=319 state=319 sample=97 rtt_ms=109
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=18941 sample=98 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=18941 request=98 value=200 target=419 state=319 seq=98 model=yolo11n.onnx
+TASK2_ACK seq=98
+TASK3_STATUS_RECEIVED elapsed_ms=19041 request=98 value=251 state=251 sample=98 rtt_ms=100
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=19041 sample=99 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=19041 request=99 value=536 target=519 state=251 seq=99 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=25110
+TASK2_ACK seq=99
+TASK3_STATUS_RECEIVED elapsed_ms=19409 request=99 value=328 state=328 sample=99 rtt_ms=368
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=19409 sample=100 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=19409 request=100 value=382 target=519 state=328 seq=100 model=yolo11n.onnx
+TASK2_ACK seq=100
+TASK3_STATUS_RECEIVED elapsed_ms=19527 request=100 value=319 state=319 sample=100 rtt_ms=118
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=19527 sample=101 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=19527 request=101 value=200 target=419 state=319 seq=101 model=yolo11n.onnx
+TASK2_ACK seq=101
+TASK3_STATUS_RECEIVED elapsed_ms=19632 request=101 value=251 state=251 sample=101 rtt_ms=105
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=19632 sample=102 output=536 infer_us=3 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=19632 request=102 value=536 target=519 state=251 seq=102 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=25670
+TASK2_ACK seq=102
+TASK3_STATUS_RECEIVED elapsed_ms=19987 request=102 value=328 state=328 sample=102 rtt_ms=355
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=19987 sample=103 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=19987 request=103 value=382 target=519 state=328 seq=103 model=yolo11n.onnx
+TASK2_ACK seq=103
+TASK3_STATUS_RECEIVED elapsed_ms=20097 request=103 value=319 state=319 sample=103 rtt_ms=110
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=20097 sample=104 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=20097 request=104 value=200 target=419 state=319 seq=104 model=yolo11n.onnx
+TASK2_ACK seq=104
+TASK3_STATUS_RECEIVED elapsed_ms=20455 request=104 value=251 state=251 sample=104 rtt_ms=358
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=20455 sample=105 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=20455 request=105 value=536 target=519 state=251 seq=105 model=yolo11n.onnx
+TASK2_ACK seq=105
+TASK3_STATUS_RECEIVED elapsed_ms=20569 request=105 value=328 state=328 sample=105 rtt_ms=114
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=20569 sample=106 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=20569 request=106 value=382 target=519 state=328 seq=106 model=yolo11n.onnx
+TASK2_ACK seq=106
+TASK3_STATUS_RECEIVED elapsed_ms=20684 request=106 value=319 state=319 sample=106 rtt_ms=115
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=20684 sample=107 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=20684 request=107 value=200 target=419 state=319 seq=107 model=yolo11n.onnx
+TASK2_ACK seq=107
+TASK3_STATUS_RECEIVED elapsed_ms=21035 request=107 value=251 state=251 sample=107 rtt_ms=351
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=21035 sample=108 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=21035 request=108 value=536 target=519 state=251 seq=108 model=yolo11n.onnx
+TASK2_ACK seq=108
+TASK3_STATUS_RECEIVED elapsed_ms=21145 request=108 value=328 state=328 sample=108 rtt_ms=110
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=21145 sample=109 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=21145 request=109 value=382 target=519 state=328 seq=109 model=yolo11n.onnx
+TASK2_ACK seq=109
+TASK3_STATUS_RECEIVED elapsed_ms=21251 request=109 value=319 state=319 sample=109 rtt_ms=106
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=21251 sample=110 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=21251 request=110 value=200 target=419 state=319 seq=110 model=yolo11n.onnx
+TASK2_ACK seq=110
+TASK3_STATUS_RECEIVED elapsed_ms=21602 request=110 value=251 state=251 sample=110 rtt_ms=351
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=21602 sample=111 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=21602 request=111 value=536 target=519 state=251 seq=111 model=yolo11n.onnx
+TASK2_ACK seq=111
+TASK3_STATUS_RECEIVED elapsed_ms=21713 request=111 value=328 state=328 sample=111 rtt_ms=111
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=21713 sample=112 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=21713 request=112 value=382 target=519 state=328 seq=112 model=yolo11n.onnx
+TASK2_ACK seq=112
+TASK3_STATUS_RECEIVED elapsed_ms=21836 request=112 value=319 state=319 sample=112 rtt_ms=123
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=21836 sample=113 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=21836 request=113 value=200 target=419 state=319 seq=113 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=27920
+TASK2_ACK seq=113
+TASK3_STATUS_RECEIVED elapsed_ms=22206 request=113 value=251 state=251 sample=113 rtt_ms=370
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=22206 sample=114 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=22206 request=114 value=536 target=519 state=251 seq=114 model=yolo11n.onnx
+TASK2_ACK seq=114
+TASK3_STATUS_RECEIVED elapsed_ms=22319 request=114 value=328 state=328 sample=114 rtt_ms=113
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=22319 sample=115 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=22319 request=115 value=382 target=519 state=328 seq=115 model=yolo11n.onnx
+TASK2_ACK seq=115
+TASK3_STATUS_RECEIVED elapsed_ms=22434 request=115 value=319 state=319 sample=115 rtt_ms=115
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=22434 sample=116 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=22434 request=116 value=200 target=419 state=319 seq=116 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=28480
+TASK2_ACK seq=116
+TASK3_STATUS_RECEIVED elapsed_ms=22773 request=116 value=251 state=251 sample=116 rtt_ms=339
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=22773 sample=117 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=22773 request=117 value=536 target=519 state=251 seq=117 model=yolo11n.onnx
+TASK2_ACK seq=117
+TASK3_STATUS_RECEIVED elapsed_ms=22897 request=117 value=328 state=328 sample=117 rtt_ms=124
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=22897 sample=118 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=22897 request=118 value=382 target=519 state=328 seq=118 model=yolo11n.onnx
+TASK2_ACK seq=118
+TASK3_STATUS_RECEIVED elapsed_ms=23269 request=118 value=319 state=319 sample=118 rtt_ms=372
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=23269 sample=119 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=23269 request=119 value=200 target=419 state=319 seq=119 model=yolo11n.onnx
+TASK2_ACK seq=119
+TASK3_STATUS_RECEIVED elapsed_ms=23397 request=119 value=251 state=251 sample=119 rtt_ms=128
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=23397 sample=120 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=23397 request=120 value=536 target=519 state=251 seq=120 model=yolo11n.onnx
+TASK2_ACK seq=120
+TASK3_STATUS_RECEIVED elapsed_ms=23508 request=120 value=328 state=328 sample=120 rtt_ms=111
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=23508 sample=121 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=23508 request=121 value=382 target=519 state=328 seq=121 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=29600
+TASK2_ACK seq=121
+TASK3_STATUS_RECEIVED elapsed_ms=23883 request=121 value=319 state=319 sample=121 rtt_ms=375
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=23883 sample=122 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=23883 request=122 value=200 target=419 state=319 seq=122 model=yolo11n.onnx
+TASK2_ACK seq=122
+TASK3_STATUS_RECEIVED elapsed_ms=24006 request=122 value=251 state=251 sample=122 rtt_ms=123
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=24006 sample=123 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=24006 request=123 value=536 target=519 state=251 seq=123 model=yolo11n.onnx
+TASK2_ACK seq=123
+TASK3_STATUS_RECEIVED elapsed_ms=24123 request=123 value=328 state=328 sample=123 rtt_ms=117
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=24123 sample=124 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=24123 request=124 value=382 target=519 state=328 seq=124 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=30160
+TASK2_ACK seq=124
+TASK3_STATUS_RECEIVED elapsed_ms=24461 request=124 value=319 state=319 sample=124 rtt_ms=338
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=24461 sample=125 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=24461 request=125 value=200 target=419 state=319 seq=125 model=yolo11n.onnx
+TASK2_ACK seq=125
+TASK3_STATUS_RECEIVED elapsed_ms=24573 request=125 value=251 state=251 sample=125 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=24573 sample=126 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=24573 request=126 value=536 target=519 state=251 seq=126 model=yolo11n.onnx
+TASK2_ACK seq=126
+TASK3_STATUS_RECEIVED elapsed_ms=24685 request=126 value=328 state=328 sample=126 rtt_ms=112
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=24685 sample=127 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=24685 request=127 value=382 target=519 state=328 seq=127 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=30710
+TASK2_ACK seq=127
+TASK3_STATUS_RECEIVED elapsed_ms=25045 request=127 value=319 state=319 sample=127 rtt_ms=360
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=25045 sample=128 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=25045 request=128 value=200 target=419 state=319 seq=128 model=yolo11n.onnx
+TASK2_ACK seq=128
+TASK3_STATUS_RECEIVED elapsed_ms=25163 request=128 value=251 state=251 sample=128 rtt_ms=118
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=25163 sample=129 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=25163 request=129 value=536 target=519 state=251 seq=129 model=yolo11n.onnx
+TASK2_ACK seq=129
+TASK3_STATUS_RECEIVED elapsed_ms=25533 request=129 value=328 state=328 sample=129 rtt_ms=370
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=25533 sample=130 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=25533 request=130 value=382 target=519 state=328 seq=130 model=yolo11n.onnx
+TASK2_ACK seq=130
+TASK3_STATUS_RECEIVED elapsed_ms=25641 request=130 value=319 state=319 sample=130 rtt_ms=108
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=25641 sample=131 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=25641 request=131 value=200 target=419 state=319 seq=131 model=yolo11n.onnx
+TASK2_ACK seq=131
+TASK3_STATUS_RECEIVED elapsed_ms=25755 request=131 value=251 state=251 sample=131 rtt_ms=114
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=25755 sample=132 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=25755 request=132 value=536 target=519 state=251 seq=132 model=yolo11n.onnx
+TASK2_ACK seq=132
+TASK3_STATUS_RECEIVED elapsed_ms=26101 request=132 value=328 state=328 sample=132 rtt_ms=346
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=26101 sample=133 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=26101 request=133 value=382 target=519 state=328 seq=133 model=yolo11n.onnx
+TASK2_ACK seq=133
+TASK3_STATUS_RECEIVED elapsed_ms=26222 request=133 value=319 state=319 sample=133 rtt_ms=121
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=26222 sample=134 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=26222 request=134 value=200 target=419 state=319 seq=134 model=yolo11n.onnx
+TASK2_ACK seq=134
+TASK3_STATUS_RECEIVED elapsed_ms=26333 request=134 value=251 state=251 sample=134 rtt_ms=111
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=26333 sample=135 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=26333 request=135 value=536 target=519 state=251 seq=135 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=32380
+TASK2_ACK seq=135
+TASK3_STATUS_RECEIVED elapsed_ms=26677 request=135 value=328 state=328 sample=135 rtt_ms=344
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=26677 sample=136 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=26677 request=136 value=382 target=519 state=328 seq=136 model=yolo11n.onnx
+TASK2_ACK seq=136
+TASK3_STATUS_RECEIVED elapsed_ms=26793 request=136 value=319 state=319 sample=136 rtt_ms=116
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=26793 sample=137 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=26793 request=137 value=200 target=419 state=319 seq=137 model=yolo11n.onnx
+TASK2_ACK seq=137
+TASK3_STATUS_RECEIVED elapsed_ms=26909 request=137 value=251 state=251 sample=137 rtt_ms=116
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=26909 sample=138 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=26909 request=138 value=536 target=519 state=251 seq=138 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=32940
+TASK2_ACK seq=138
+TASK3_STATUS_RECEIVED elapsed_ms=27253 request=138 value=328 state=328 sample=138 rtt_ms=344
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=27253 sample=139 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=27253 request=139 value=382 target=519 state=328 seq=139 model=yolo11n.onnx
+TASK2_ACK seq=139
+TASK3_STATUS_RECEIVED elapsed_ms=27375 request=139 value=319 state=319 sample=139 rtt_ms=122
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=27375 sample=140 output=200 infer_us=3 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=27375 request=140 value=200 target=419 state=319 seq=140 model=yolo11n.onnx
+TASK2_ACK seq=140
+TASK3_STATUS_RECEIVED elapsed_ms=27764 request=140 value=251 state=251 sample=140 rtt_ms=389
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=27764 sample=141 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=27764 request=141 value=536 target=519 state=251 seq=141 model=yolo11n.onnx
+TASK2_ACK seq=141
+TASK3_STATUS_RECEIVED elapsed_ms=27881 request=141 value=328 state=328 sample=141 rtt_ms=117
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=27881 sample=142 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=27881 request=142 value=382 target=519 state=328 seq=142 model=yolo11n.onnx
+TASK2_ACK seq=142
+TASK3_STATUS_RECEIVED elapsed_ms=27991 request=142 value=319 state=319 sample=142 rtt_ms=110
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=27991 sample=143 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=27991 request=143 value=200 target=419 state=319 seq=143 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=34060
+TASK2_ACK seq=143
+TASK3_STATUS_RECEIVED elapsed_ms=28345 request=143 value=251 state=251 sample=143 rtt_ms=354
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=28345 sample=144 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=28345 request=144 value=536 target=519 state=251 seq=144 model=yolo11n.onnx
+TASK2_ACK seq=144
+TASK3_STATUS_RECEIVED elapsed_ms=28459 request=144 value=328 state=328 sample=144 rtt_ms=114
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=28459 sample=145 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=28459 request=145 value=382 target=519 state=328 seq=145 model=yolo11n.onnx
+TASK2_ACK seq=145
+TASK3_STATUS_RECEIVED elapsed_ms=28581 request=145 value=319 state=319 sample=145 rtt_ms=122
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=28581 sample=146 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=28581 request=146 value=200 target=419 state=319 seq=146 model=yolo11n.onnx
+TASK2_HEARTBEAT_RECEIVED peer_uptime_ms=34600
+TASK2_ACK seq=146
+TASK3_STATUS_RECEIVED elapsed_ms=28922 request=146 value=251 state=251 sample=146 rtt_ms=341
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=28922 sample=147 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=28922 request=147 value=536 target=519 state=251 seq=147 model=yolo11n.onnx
+TASK2_ACK seq=147
+TASK3_STATUS_RECEIVED elapsed_ms=29037 request=147 value=328 state=328 sample=147 rtt_ms=115
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=29037 sample=148 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=29037 request=148 value=382 target=519 state=328 seq=148 model=yolo11n.onnx
+TASK2_ACK seq=148
+TASK3_STATUS_RECEIVED elapsed_ms=29408 request=148 value=319 state=319 sample=148 rtt_ms=371
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=29408 sample=149 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=29408 request=149 value=200 target=419 state=319 seq=149 model=yolo11n.onnx
+TASK2_ACK seq=149
+TASK3_STATUS_RECEIVED elapsed_ms=29533 request=149 value=251 state=251 sample=149 rtt_ms=125
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=29533 sample=150 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=29533 request=150 value=536 target=519 state=251 seq=150 model=yolo11n.onnx
+TASK2_ACK seq=150
+TASK3_STATUS_RECEIVED elapsed_ms=29661 request=150 value=328 state=328 sample=150 rtt_ms=128
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=29661 sample=151 output=382 infer_us=1 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=29661 request=151 value=382 target=519 state=328 seq=151 model=yolo11n.onnx
+TASK2_ACK seq=151
+TASK3_STATUS_RECEIVED elapsed_ms=29971 request=151 value=319 state=319 sample=151 rtt_ms=310
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=29971 sample=152 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=29971 request=152 value=200 target=419 state=319 seq=152 model=yolo11n.onnx
+TASK2_ACK seq=152
+TASK3_STATUS_RECEIVED elapsed_ms=30083 request=152 value=251 state=251 sample=152 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=30083 sample=153 output=536 infer_us=6 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=30083 request=153 value=536 target=519 state=251 seq=153 model=yolo11n.onnx
+TASK2_ACK seq=153
+TASK3_STATUS_RECEIVED elapsed_ms=30194 request=153 value=328 state=328 sample=153 rtt_ms=111
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=30194 sample=154 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=30194 request=154 value=382 target=519 state=328 seq=154 model=yolo11n.onnx
+TASK2_ACK seq=154
+TASK3_STATUS_RECEIVED elapsed_ms=30554 request=154 value=319 state=319 sample=154 rtt_ms=360
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=30554 sample=155 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=30554 request=155 value=200 target=419 state=319 seq=155 model=yolo11n.onnx
+TASK2_ACK seq=155
+TASK3_STATUS_RECEIVED elapsed_ms=30666 request=155 value=251 state=251 sample=155 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=30666 sample=156 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=30666 request=156 value=536 target=519 state=251 seq=156 model=yolo11n.onnx
+TASK2_ACK seq=156
+TASK3_STATUS_RECEIVED elapsed_ms=30778 request=156 value=328 state=328 sample=156 rtt_ms=112
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=30778 sample=157 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=30778 request=157 value=382 target=519 state=328 seq=157 model=yolo11n.onnx
+TASK2_ACK seq=157
+TASK3_STATUS_RECEIVED elapsed_ms=31101 request=157 value=319 state=319 sample=157 rtt_ms=323
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=31101 sample=158 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=31101 request=158 value=200 target=419 state=319 seq=158 model=yolo11n.onnx
+TASK2_ACK seq=158
+TASK3_STATUS_RECEIVED elapsed_ms=31215 request=158 value=251 state=251 sample=158 rtt_ms=114
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=31215 sample=159 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=31215 request=159 value=536 target=519 state=251 seq=159 model=yolo11n.onnx
+TASK2_ACK seq=159
+TASK3_STATUS_RECEIVED elapsed_ms=31327 request=159 value=328 state=328 sample=159 rtt_ms=112
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=31327 sample=160 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=31327 request=160 value=382 target=519 state=328 seq=160 model=yolo11n.onnx
+TASK2_ACK seq=160
+TASK3_STATUS_RECEIVED elapsed_ms=31661 request=160 value=319 state=319 sample=160 rtt_ms=334
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=31661 sample=161 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=31661 request=161 value=200 target=419 state=319 seq=161 model=yolo11n.onnx
+TASK2_ACK seq=161
+TASK3_STATUS_RECEIVED elapsed_ms=31774 request=161 value=251 state=251 sample=161 rtt_ms=113
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=31774 sample=162 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=31774 request=162 value=536 target=519 state=251 seq=162 model=yolo11n.onnx
+TASK2_ACK seq=162
+TASK3_STATUS_RECEIVED elapsed_ms=31887 request=162 value=328 state=328 sample=162 rtt_ms=113
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=31887 sample=163 output=382 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=31887 request=163 value=382 target=519 state=328 seq=163 model=yolo11n.onnx
+TASK2_ACK seq=163
+TASK3_STATUS_RECEIVED elapsed_ms=32245 request=163 value=319 state=319 sample=163 rtt_ms=358
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=32245 sample=164 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=32245 request=164 value=200 target=419 state=319 seq=164 model=yolo11n.onnx
+TASK2_ACK seq=164
+TASK3_STATUS_RECEIVED elapsed_ms=32355 request=164 value=251 state=251 sample=164 rtt_ms=110
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=32355 sample=165 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=32355 request=165 value=536 target=519 state=251 seq=165 model=yolo11n.onnx
+TASK2_ACK seq=165
+TASK3_STATUS_RECEIVED elapsed_ms=32467 request=165 value=328 state=328 sample=165 rtt_ms=112
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=32467 sample=166 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=32467 request=166 value=382 target=519 state=328 seq=166 model=yolo11n.onnx
+TASK2_ACK seq=166
+TASK3_STATUS_RECEIVED elapsed_ms=32791 request=166 value=319 state=319 sample=166 rtt_ms=324
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=32791 sample=167 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=32791 request=167 value=200 target=419 state=319 seq=167 model=yolo11n.onnx
+TASK2_ACK seq=167
+TASK3_STATUS_RECEIVED elapsed_ms=32917 request=167 value=251 state=251 sample=167 rtt_ms=126
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=32917 sample=168 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=32917 request=168 value=536 target=519 state=251 seq=168 model=yolo11n.onnx
+TASK2_ACK seq=168
+TASK3_STATUS_RECEIVED elapsed_ms=33041 request=168 value=328 state=328 sample=168 rtt_ms=124
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=33041 sample=169 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=33041 request=169 value=382 target=519 state=328 seq=169 model=yolo11n.onnx
+TASK2_ACK seq=169
+TASK3_STATUS_RECEIVED elapsed_ms=33347 request=169 value=319 state=319 sample=169 rtt_ms=306
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=33347 sample=170 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=33347 request=170 value=200 target=419 state=319 seq=170 model=yolo11n.onnx
+TASK2_ACK seq=170
+TASK3_STATUS_RECEIVED elapsed_ms=33463 request=170 value=251 state=251 sample=170 rtt_ms=116
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=33463 sample=171 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=33463 request=171 value=536 target=519 state=251 seq=171 model=yolo11n.onnx
+TASK2_ACK seq=171
+TASK3_STATUS_RECEIVED elapsed_ms=33577 request=171 value=328 state=328 sample=171 rtt_ms=114
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=33577 sample=172 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=33577 request=172 value=382 target=519 state=328 seq=172 model=yolo11n.onnx
+TASK2_ACK seq=172
+TASK3_STATUS_RECEIVED elapsed_ms=33901 request=172 value=319 state=319 sample=172 rtt_ms=324
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=33901 sample=173 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=33901 request=173 value=200 target=419 state=319 seq=173 model=yolo11n.onnx
+TASK2_ACK seq=173
+TASK3_STATUS_RECEIVED elapsed_ms=34013 request=173 value=251 state=251 sample=173 rtt_ms=112
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=34013 sample=174 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=34013 request=174 value=536 target=519 state=251 seq=174 model=yolo11n.onnx
+TASK2_ACK seq=174
+TASK3_STATUS_RECEIVED elapsed_ms=34129 request=174 value=328 state=328 sample=174 rtt_ms=116
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=34129 sample=175 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=34129 request=175 value=382 target=519 state=328 seq=175 model=yolo11n.onnx
+TASK2_ACK seq=175
+TASK3_STATUS_RECEIVED elapsed_ms=34454 request=175 value=319 state=319 sample=175 rtt_ms=325
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=34454 sample=176 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=34454 request=176 value=200 target=419 state=319 seq=176 model=yolo11n.onnx
+TASK2_ACK seq=176
+TASK3_STATUS_RECEIVED elapsed_ms=34568 request=176 value=251 state=251 sample=176 rtt_ms=114
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=34568 sample=177 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=34568 request=177 value=536 target=519 state=251 seq=177 model=yolo11n.onnx
+TASK2_ACK seq=177
+TASK3_STATUS_RECEIVED elapsed_ms=34680 request=177 value=328 state=328 sample=177 rtt_ms=112
+TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection action=hold_last_target target=519
+TASK3_INFER elapsed_ms=34680 sample=178 output=382 infer_us=0 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=34680 request=178 value=382 target=519 state=328 seq=178 model=yolo11n.onnx
+TASK2_ACK seq=178
+TASK3_STATUS_RECEIVED elapsed_ms=35030 request=178 value=319 state=319 sample=178 rtt_ms=350
+TASK3_DETECTION model=yolo11n.onnx class=75 confidence_milli=832 center_x_milli=419 area_milli=61 target=419
+TASK3_INFER elapsed_ms=35030 sample=179 output=200 infer_us=2 model=yolo11n.onnx target=419
+TASK3_CONTROL_SENT elapsed_ms=35030 request=179 value=200 target=419 state=319 seq=179 model=yolo11n.onnx
+TASK2_ACK seq=179
+TASK3_STATUS_RECEIVED elapsed_ms=35153 request=179 value=251 state=251 sample=179 rtt_ms=123
+TASK3_DETECTION model=yolo11n.onnx class=58 confidence_milli=871 center_x_milli=805 area_milli=29 target=519
+TASK3_INFER elapsed_ms=35153 sample=180 output=536 infer_us=2 model=yolo11n.onnx target=519
+TASK3_CONTROL_SENT elapsed_ms=35153 request=180 value=536 target=519 state=251 seq=180 model=yolo11n.onnx
+
+[Axvisor] detached VM[1] console
+[2Kaxvisor:/$ 
