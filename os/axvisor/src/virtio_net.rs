@@ -11,9 +11,9 @@ use axdevice_base::{
 };
 use axvirtio_common::{GuestMemory, NoGuestMemoryAccessor, VirtioError};
 use axvirtio_net::{
+    switch::{SwitchPort, SwitchPortId, SwitchPortRegistration, VirtualSwitch},
     DeviceEvent, NetworkBackend, NetworkBackendError, RxOutcome, VirtioMmioNetDevice,
     VirtioNetConfig,
-    switch::{SwitchPort, SwitchPortId, SwitchPortRegistration, VirtualSwitch},
 };
 use axvm::{ConfiguredDeviceError, ConfiguredModelRegistration, DeviceInstantiationContext};
 use axvm_types::GuestPhysAddr;
@@ -24,6 +24,7 @@ const IRQ_SLOT: &str = "irq";
 const MMIO_SIZE: u64 = 0x200;
 const INGRESS_CAPACITY: usize = 64;
 const CAPTURE_LIMIT: usize = 65_536;
+const CAPTURE_HEARTBEAT_LIMIT_PER_DIRECTION: usize = 8;
 
 static NEXT_PORT_ID: AtomicUsize = AtomicUsize::new(0);
 static INTERNAL_SWITCH: Mutex<Option<Arc<VirtualSwitch>>> = Mutex::new(None);
@@ -128,6 +129,7 @@ pub fn dump_capture(path: &str) -> Result<(usize, usize), String> {
     let capture = CAPTURE.lock().expect("capture mutex poisoned");
     let mut frames: Vec<_> = capture.frames.iter().collect();
     frames.sort_by_key(|frame| (frame.vm_id, frame.nanos));
+    let mut heartbeat_counts = [[0usize; 2]; 2];
 
     let mut count: [usize; 2] = [0, 0];
     for (index, vm_id) in [1usize, 2usize].into_iter().enumerate() {
@@ -136,7 +138,11 @@ pub fn dump_capture(path: &str) -> Result<(usize, usize), String> {
             File::create(&target).map_err(|error| format!("failed to create {target}: {error}"))?;
         file.write_all(&PCAP_GLOBAL_HEADER)
             .map_err(|error| format!("failed to write pcap header: {error}"))?;
-        for frame in frames.iter().filter(|frame| frame.vm_id == vm_id) {
+        for frame in frames
+            .iter()
+            .filter(|frame| frame.vm_id == vm_id)
+            .filter(|frame| should_dump_frame(frame, &mut heartbeat_counts))
+        {
             let seconds = (frame.nanos / 1_000_000_000) as u32;
             let micros = ((frame.nanos / 1_000) % 1_000_000) as u32;
             let length = frame.frame.len() as u32;
@@ -175,9 +181,13 @@ pub fn dump_capture_to_console() -> (usize, usize) {
     let capture = CAPTURE.lock().expect("capture mutex poisoned");
     let mut frames: Vec<_> = capture.frames.iter().collect();
     frames.sort_by_key(|frame| (frame.vm_id, frame.nanos));
+    let mut heartbeat_counts = [[0usize; 2]; 2];
     let mut count: [usize; 2] = [0, 0];
     println!("CAPDUMP_BEGIN");
-    for frame in frames {
+    for frame in frames
+        .into_iter()
+        .filter(|frame| should_dump_frame(frame, &mut heartbeat_counts))
+    {
         let index = if frame.vm_id == 1 { 0 } else { 1 };
         println!(
             "CAPTURE {} {} {}",
@@ -189,6 +199,26 @@ pub fn dump_capture_to_console() -> (usize, usize) {
     }
     println!("CAPDUMP_END");
     (count[0], count[1])
+}
+
+fn should_dump_frame(frame: &CapturedFrame, heartbeat_counts: &mut [[usize; 2]; 2]) -> bool {
+    if !is_t2n1_heartbeat(&frame.frame) || !(1..=2).contains(&frame.vm_id) {
+        return true;
+    }
+    let count = &mut heartbeat_counts[frame.vm_id - 1][usize::from(frame.outbound)];
+    if *count >= CAPTURE_HEARTBEAT_LIMIT_PER_DIRECTION {
+        return false;
+    }
+    *count += 1;
+    true
+}
+
+fn is_t2n1_heartbeat(frame: &[u8]) -> bool {
+    const T2N1_KIND_HEARTBEAT: u8 = 5;
+
+    frame
+        .windows(6)
+        .any(|payload| payload[..4] == *b"T2N1" && payload[5] == T2N1_KIND_HEARTBEAT)
 }
 
 fn hex_string(bytes: &[u8]) -> alloc::string::String {

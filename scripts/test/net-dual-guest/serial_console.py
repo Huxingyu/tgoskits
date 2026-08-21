@@ -34,6 +34,7 @@ from pathlib import Path
 
 DUMP_BEGIN = "CAPDUMP_BEGIN"
 DUMP_END = "CAPDUMP_END"
+CAPTURE_DUMP_TIMEOUT_SECONDS = 180
 
 PCAP_GLOBAL_HEADER = bytes.fromhex(
     "d4c3b2a1"  # magic, little-endian
@@ -284,7 +285,7 @@ class ConsoleDriver:
         self.dump_lines = []
         self.dumping = True
         self.conn.sendall(b"virtnet capture dump\n")
-        deadline = time.time() + 60
+        deadline = time.time() + CAPTURE_DUMP_TIMEOUT_SECONDS
         got_end = False
         while time.time() < deadline and not self.closed:
             self.poll_reads()
@@ -361,8 +362,13 @@ class ConsoleDriver:
         (destination / "serial-actions.txt").write_text("\n".join(action_log) + "\n")
         (destination / "serial-tail.bin").write_bytes(self.tail)
         self.dumping = True
-        self.conn.sendall(b"virtnet capture dump\n")
-        deadline = time.time() + 60
+        try:
+            self.conn.sendall(b"virtnet capture dump\n")
+        except OSError as error:
+            self.dumping = False
+            print(f"error: capture dump unavailable: {error}", file=sys.stderr)
+            return
+        deadline = time.time() + CAPTURE_DUMP_TIMEOUT_SECONDS
         got_end = False
         while time.time() < deadline and not self.closed:
             self.poll_reads()
@@ -538,6 +544,9 @@ def main() -> int:
             if driver.attached:
                 driver.conn.sendall(b"\x18h")
                 time.sleep(0.3)
+        elif step == "clear-tail":
+            driver.tail = b""
+            driver.progress_tail = ""
         elif step.startswith("dump-pcap "):
             driver.dump_pcap(step.split(" ", 1)[1])
         elif step.startswith("qmp-quit "):

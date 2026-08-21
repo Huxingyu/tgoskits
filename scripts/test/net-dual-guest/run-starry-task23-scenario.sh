@@ -7,6 +7,11 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 scenario="${1:?usage: run-starry-task23-scenario.sh SCENARIO OUTPUT_DIR}"
 output_dir="${2:?usage: run-starry-task23-scenario.sh SCENARIO OUTPUT_DIR}"
+host_config="${STARRY_TASK23_HOST_CONFIG:-scripts/test/net-dual-guest/axvisor-qemu-debug.toml}"
+qemu_config="${STARRY_TASK23_QEMU_CONFIG:-scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-switch-msix1-capture.toml}"
+starry_vm_config="${STARRY_TASK23_STARRY_VM_CONFIG:-scripts/test/net-dual-guest/vm-aarch64-starry-switch.toml}"
+zephyr_vm_config="${STARRY_TASK23_ZEPHYR_VM_CONFIG:-scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml}"
+collect_rt_stat="${STARRY_TASK23_COLLECT_RT_STAT:-0}"
 runtime_dir="$repo_root/tmp/net-dual-guest"
 qemu_sock="$runtime_dir/qmp-starry-zephyr-msix1-capture.sock"
 serial_sock="$runtime_dir/serial-starry-zephyr-msix1-capture.sock"
@@ -15,6 +20,35 @@ steps="$output_dir/steps.txt"
 run_log="$output_dir/run.log"
 build_log="$output_dir/build.log"
 run_pid=""
+
+case "$collect_rt_stat" in
+    0|1) ;;
+    *)
+        printf 'error: STARRY_TASK23_COLLECT_RT_STAT must be 0 or 1\n' >&2
+        exit 2
+        ;;
+esac
+
+resolve_config_path() {
+    if [[ "$1" == /* ]]; then
+        printf '%s\n' "$1"
+    else
+        printf '%s/%s\n' "$repo_root" "$1"
+    fi
+}
+
+host_config_path="$(resolve_config_path "$host_config")"
+qemu_config_path="$(resolve_config_path "$qemu_config")"
+starry_vm_config_path="$(resolve_config_path "$starry_vm_config")"
+zephyr_vm_config_path="$(resolve_config_path "$zephyr_vm_config")"
+for config_path in \
+    "$host_config_path" "$qemu_config_path" \
+    "$starry_vm_config_path" "$zephyr_vm_config_path"; do
+    if [[ ! -f "$config_path" ]]; then
+        printf 'error: missing scenario config: %s\n' "$config_path" >&2
+        exit 1
+    fi
+done
 
 case "$scenario" in
     normal|blackout|model-rejected)
@@ -72,9 +106,15 @@ fi
 rootfs="$repo_root/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img"
 endpoint="$repo_root/target/starryos-task2-rust/aarch64-unknown-linux-musl/release/starryos-task2-endpoint"
 endpoint_script="$repo_root/apps/starry/starryos-task2/t2n1-run.sh"
+yolo_assets="$repo_root/tmp/task3-yolo/ncnn-model"
+yolo_param="$yolo_assets/yolo11n.ncnn.param"
+yolo_model="$yolo_assets/yolo11n.ncnn.bin"
+yolo_input="$yolo_assets/input.ppm"
 starry_image="$repo_root/target/aarch64-unknown-none-softfloat/release/starryos.bin"
 axvisor_image="$repo_root/target/aarch64-unknown-linux-musl/release/axvisor.bin"
-for artifact in "$rootfs" "$endpoint" "$endpoint_script" "$starry_image"; do
+for artifact in \
+    "$rootfs" "$endpoint" "$endpoint_script" "$yolo_param" "$yolo_model" \
+    "$yolo_input" "$starry_image"; do
     if [[ ! -s "$artifact" ]]; then
         printf 'error: missing StarryOS artifact: %s\n' "$artifact" >&2
         exit 1
@@ -91,6 +131,21 @@ rootfs_script_sha256="$(
     debugfs -R 'dump /usr/bin/t2n1-run.sh /dev/stdout' "$rootfs" 2>/dev/null |
         sha256sum | awk '{print $1}'
 )"
+host_yolo_param_sha256="$(sha256sum "$yolo_param" | awk '{print $1}')"
+host_yolo_model_sha256="$(sha256sum "$yolo_model" | awk '{print $1}')"
+host_yolo_input_sha256="$(sha256sum "$yolo_input" | awk '{print $1}')"
+rootfs_yolo_param_sha256="$(
+    debugfs -R 'dump /usr/share/task3-yolo/yolo11n.ncnn.param /dev/stdout' "$rootfs" 2>/dev/null |
+        sha256sum | awk '{print $1}'
+)"
+rootfs_yolo_model_sha256="$(
+    debugfs -R 'dump /usr/share/task3-yolo/yolo11n.ncnn.bin /dev/stdout' "$rootfs" 2>/dev/null |
+        sha256sum | awk '{print $1}'
+)"
+rootfs_yolo_input_sha256="$(
+    debugfs -R 'dump /usr/share/task3-yolo/input.ppm /dev/stdout' "$rootfs" 2>/dev/null |
+        sha256sum | awk '{print $1}'
+)"
 if [[ "$host_endpoint_sha256" != "$rootfs_endpoint_sha256" ]]; then
     printf 'error: rootfs endpoint does not match current release binary\n' >&2
     exit 1
@@ -99,11 +154,25 @@ if [[ "$host_script_sha256" != "$rootfs_script_sha256" ]]; then
     printf 'error: rootfs runner does not match current source script\n' >&2
     exit 1
 fi
+for asset in param model input; do
+    host_hash_variable="host_yolo_${asset}_sha256"
+    rootfs_hash_variable="rootfs_yolo_${asset}_sha256"
+    if [[ "${!host_hash_variable}" != "${!rootfs_hash_variable}" ]]; then
+        printf 'error: rootfs YOLO %s does not match current asset\n' "$asset" >&2
+        exit 1
+    fi
+done
 {
     printf 'host_endpoint_sha256=%s\n' "$host_endpoint_sha256"
     printf 'rootfs_endpoint_sha256=%s\n' "$rootfs_endpoint_sha256"
     printf 'host_script_sha256=%s\n' "$host_script_sha256"
     printf 'rootfs_script_sha256=%s\n' "$rootfs_script_sha256"
+    printf 'host_yolo_param_sha256=%s\n' "$host_yolo_param_sha256"
+    printf 'rootfs_yolo_param_sha256=%s\n' "$rootfs_yolo_param_sha256"
+    printf 'host_yolo_model_sha256=%s\n' "$host_yolo_model_sha256"
+    printf 'rootfs_yolo_model_sha256=%s\n' "$rootfs_yolo_model_sha256"
+    printf 'host_yolo_input_sha256=%s\n' "$host_yolo_input_sha256"
+    printf 'rootfs_yolo_input_sha256=%s\n' "$rootfs_yolo_input_sha256"
 } > "$output_dir/rootfs-content-hashes.txt"
 
 stop_owned_run() {
@@ -137,23 +206,31 @@ cp "$selected_zephyr_dir/zephyr-task2.bin" "$runtime_dir/zephyr-task2/zephyr-tas
 cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml"
 
 {
-    printf 'detach\n'
+    if [[ "$collect_rt_stat" == 1 ]]; then
+        printf 'expect 120 use (Round-robin|Fixed-priority round-robin) scheduler\\.\n'
+        printf 'expect 120 \\[VM 1\\] Use .*apk\n'
+        printf 'detach\n'
+        printf 'expect 20 Welcome to AxVisor Shell!\n'
+    else
+        printf 'detach\n'
+    fi
     printf 'cmd virtnet capture on\n'
     printf 'expect 20 virtnet: capture ON\n'
     printf 'attach 1\n'
     printf 'expect 120 root@starry:/root #\n'
     printf 'cmd (sleep 2; sh /usr/bin/t2n1-run.sh %s) &\n' "$run_mode"
+    printf 'expect 30 TASK3_MODEL_READY model=yolo11n.ncnn\n'
     case "$scenario" in
         normal)
             printf 'attach 2\n'
-            printf 'expect 30 TASK2_CONTROL_RECEIVED seq=1 request=1\n'
+            printf 'expect 120 TASK2_CONTROL_RECEIVED seq=1 request=1\n'
             printf 'attach 1\n'
-            printf 'expect 30 STARRY_T2N1_PASS\n'
-            printf 'expect 30 STARRY_T2N1_STATUS_DELIVERED.*request=3\n'
+            printf 'expect 60 STARRY_T2N1_PASS\n'
+            printf 'expect 180 STARRY_T2N1_STATUS_DELIVERED.*request=3\n'
             ;;
         drop-ack)
             printf 'attach 2\n'
-            printf 'expect 30 TASK2_FAULT_DROP_ACK seq=1\n'
+            printf 'expect 120 TASK2_FAULT_DROP_ACK seq=1\n'
             printf 'attach 1\n'
             printf 'expect 30 STARRY_T2N1_RETRANSMIT seq=1 attempt=1\n'
             printf 'expect 30 STARRY_T2N1_ACK seq=1\n'
@@ -165,15 +242,15 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
             printf 'attach 2\n'
             printf 'expect 30 TASK2_PROTOCOL_ERROR out_of_order=2 expected=1\n'
             printf 'attach 1\n'
-            printf 'expect 30 STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=out-of-order\n'
+            printf 'expect 120 STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=out-of-order\n'
             printf 'expect 30 STARRY_T2N1_PASS\n'
             ;;
         invalid-parameter)
             printf 'attach 2\n'
             printf 'expect 30 TASK2_PROTOCOL_ERROR invalid_parameter seq=1\n'
             printf 'attach 1\n'
-            printf 'expect 30 STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=invalid-parameter\n'
-            printf 'expect 30 STARRY_T2N1_PASS\n'
+            printf 'expect 120 STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=invalid-parameter\n'
+            printf 'expect 120 STARRY_T2N1_PASS\n'
             ;;
         blackout)
             printf 'attach 1\n'
@@ -183,6 +260,8 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
             printf 'expect 20 virtnet: blackout ON\n'
             printf 'attach 1\n'
             printf 'expect 30 STARRY_T2N1_SAFE source=protocol\n'
+            printf 'hold 3\n'
+            printf 'clear-tail\n'
             printf 'attach 2\n'
             printf 'expect 30 TASK2_SAFE state=Safe event=HeartbeatTimeout\n'
             printf 'detach\n'
@@ -190,18 +269,22 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
             printf 'expect 20 virtnet: blackout OFF\n'
             printf 'attach 1\n'
             printf 'expect 30 STARRY_T2N1_RECOVERED state=Active\n'
-            printf 'expect 30 STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=normal\n'
+            printf 'expect 180 STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=normal.*safe_observed=true recovered=true\n'
             printf 'attach 2\n'
-            printf 'expect 30 TASK2_CONTROL_RECEIVED.*request=\n'
+            printf 'expect 60 TASK2_CONTROL_RECEIVED.*request=\n'
             ;;
         model-rejected)
             printf 'attach 1\n'
-            printf 'expect 30 TASK3_MODEL_REJECTED.*reason=NonFiniteOutput\n'
-            printf 'expect 30 STARRY_T2N1_SAFE source=model reason=NonFiniteOutput\n'
+            printf 'expect 30 TASK3_MODEL_REJECTED.*reason=InjectedInvalidOutput\n'
+            printf 'expect 30 STARRY_T2N1_SAFE source=model reason=InjectedInvalidOutput\n'
             printf 'hold 3\n'
             ;;
     esac
     printf 'detach\n'
+    if [[ "$collect_rt_stat" == 1 ]]; then
+        printf 'cmd rt stat\n'
+        printf 'expect 30 RT vCPU wait counters:\n'
+    fi
     printf 'dump-pcap %s\n' "$capture_prefix"
     printf 'qmp-quit %s\n' "$qemu_sock"
 } > "$steps"
@@ -210,16 +293,22 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
     printf 'scenario=%s\n' "$scenario"
     printf 'git_head=%s\n' "$(git -C "$repo_root" rev-parse HEAD)"
     printf 'zephyr_variant=%s\n' "$zephyr_variant"
-    printf 'command=cargo xtask axvisor qemu --config scripts/test/net-dual-guest/axvisor-qemu-debug.toml --qemu-config scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-switch-msix1-capture.toml --vmconfigs scripts/test/net-dual-guest/vm-aarch64-starry-switch.toml --vmconfigs scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml --rootfs tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img\n'
+    printf 'host_config=%s\n' "$host_config"
+    printf 'qemu_config=%s\n' "$qemu_config"
+    printf 'starry_vm_config=%s\n' "$starry_vm_config"
+    printf 'zephyr_vm_config=%s\n' "$zephyr_vm_config"
+    printf 'collect_rt_stat=%s\n' "$collect_rt_stat"
+    printf 'command=cargo xtask axvisor qemu --config %s --qemu-config %s --vmconfigs %s --vmconfigs %s --rootfs tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img\n' \
+        "$host_config" "$qemu_config" "$starry_vm_config" "$zephyr_vm_config"
 } > "$output_dir/command.txt"
 
 (
     cd "$repo_root"
     cargo xtask axvisor qemu \
-        --config scripts/test/net-dual-guest/axvisor-qemu-debug.toml \
-        --qemu-config scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-switch-msix1-capture.toml \
-        --vmconfigs scripts/test/net-dual-guest/vm-aarch64-starry-switch.toml \
-        --vmconfigs scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml \
+        --config "$host_config" \
+        --qemu-config "$qemu_config" \
+        --vmconfigs "$starry_vm_config" \
+        --vmconfigs "$zephyr_vm_config" \
         --rootfs tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img
 ) > "$build_log" 2>&1 &
 run_pid=$!
@@ -261,9 +350,10 @@ done
 cp "$capture_prefix.vm1.pcap" "$output_dir/starry.pcap"
 cp "$capture_prefix.vm2.pcap" "$output_dir/zephyr.pcap"
 cp "$selected_zephyr_dir/manifest.toml" "$output_dir/zephyr-manifest.toml"
-cp "$repo_root/scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-switch-msix1-capture.toml" "$output_dir/qemu.toml"
-cp "$repo_root/scripts/test/net-dual-guest/vm-aarch64-starry-switch.toml" "$output_dir/vm-starry.toml"
-cp "$repo_root/scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml" "$output_dir/vm-zephyr.toml"
+cp "$host_config_path" "$output_dir/host-config.toml"
+cp "$qemu_config_path" "$output_dir/qemu.toml"
+cp "$starry_vm_config_path" "$output_dir/vm-starry.toml"
+cp "$zephyr_vm_config_path" "$output_dir/vm-zephyr.toml"
 
 if [[ "$scenario" == model-rejected ]]; then
     pcap_requirements=(--tag '' --min-udp 2)
@@ -282,6 +372,9 @@ python3 "$repo_root/scripts/test/net-dual-guest/verify_starry_task23.py" \
 {
     sha256sum "$rootfs"
     sha256sum "$endpoint"
+    sha256sum "$yolo_param"
+    sha256sum "$yolo_model"
+    sha256sum "$yolo_input"
     sha256sum "$starry_image"
     sha256sum "$selected_zephyr_dir/zephyr-task2.bin"
     sha256sum "$axvisor_image"

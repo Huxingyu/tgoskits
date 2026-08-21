@@ -159,6 +159,7 @@ class VerifyStarryTask23Tests(unittest.TestCase):
                 "TASK2_SAFE state=Safe event=HeartbeatTimeout",
                 "virtnet: blackout OFF",
                 "STARRY_T2N1_RECOVERED state=Active",
+                "TASK3_INFER model=yolo11n.ncnn infer_us=13000000 request=3",
                 "STARRY_T2N1_FAULT_RECOVERY_COMPLETE mode=normal "
                 "safe_observed=true recovered=true",
                 "TASK2_CONTROL_RECEIVED seq=1 request=3",
@@ -166,6 +167,26 @@ class VerifyStarryTask23Tests(unittest.TestCase):
         )
 
         self.assertEqual(VERIFY.verify_blackout(frames, complete_log), [])
+
+    def test_yolo_model_rejection_keeps_heartbeat_but_emits_no_control(self) -> None:
+        frames = [
+            frame(
+                src=VERIFY.STARRY_IP,
+                dst=VERIFY.ZEPHYR_IP,
+                kind=VERIFY.KIND_HEARTBEAT,
+            )
+        ]
+        log = "\n".join(
+            (
+                "TASK3_MODEL_READY model=yolo11n.ncnn runtime=ncnn "
+                "mode=in-guest run_mode=model-rejected",
+                "TASK3_MODEL_REJECTED model=yolo11n.ncnn "
+                "reason=InjectedInvalidOutput action=safe",
+                "STARRY_T2N1_SAFE source=model reason=InjectedInvalidOutput",
+            )
+        )
+
+        self.assertEqual(VERIFY.verify_model_rejected(frames, log), [])
 
 
 if __name__ == "__main__":

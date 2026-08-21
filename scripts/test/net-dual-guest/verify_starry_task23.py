@@ -20,6 +20,9 @@ KIND_HEARTBEAT = 5
 STARRY_IP = "10.0.42.15"
 ZEPHYR_IP = "10.0.42.2"
 ANSI_RE = re.compile(r"\x1b\[[0-9;]*[A-Za-z]")
+YOLO_READY_PATTERN = (
+    r"TASK3_MODEL_READY model=yolo11n\.ncnn runtime=ncnn[^\n]*mode=in-guest"
+)
 
 
 @dataclass(frozen=True)
@@ -68,10 +71,13 @@ def require_patterns(log: str, patterns: tuple[str, ...]) -> list[str]:
 
 
 def require_order(log: str, markers: tuple[str, ...]) -> list[str]:
-    positions = [log.find(marker) for marker in markers]
-    if all(position >= 0 for position in positions) and positions == sorted(positions):
-        return []
-    return [f"runtime marker order is invalid: {markers}"]
+    position = 0
+    for marker in markers:
+        position = log.find(marker, position)
+        if position < 0:
+            return [f"runtime marker order is invalid: {markers}"]
+        position += len(marker)
+    return []
 
 
 def matching(
@@ -102,7 +108,8 @@ def verify_normal(frames: list[WireFrame], log: str) -> list[str]:
         (
             r"STARRY_T2N1_PASS\b",
             r"STARRY_T2N1_STATUS_DELIVERED[^\n]*request=3\b",
-            r"TASK3_INFER[^\n]*request=3\b",
+            r"TASK3_INFER model=yolo11n\.ncnn[^\n]*request=3\b",
+            r"TASK3_DETECTION model=yolo11n\.ncnn[^\n]*request=3\b",
         ),
     )
     controls = matching(frames, src=STARRY_IP, dst=ZEPHYR_IP, kind=KIND_CONTROL)
@@ -246,6 +253,11 @@ def verify_blackout(frames: list[WireFrame], log: str) -> list[str]:
     )
     if recovery_position < 0 or recovered_control_position < 0:
         failures.append("runtime log has no Zephyr CONTROL after completed recovery")
+    recovered_infer_position = log.find(
+        "TASK3_INFER model=yolo11n.ncnn", log.find("STARRY_T2N1_RECOVERED state=Active")
+    )
+    if recovered_infer_position < 0:
+        failures.append("runtime log has no real YOLO inference after blackout recovery")
     recovered_controls = matching(
         frames,
         src=STARRY_IP,
@@ -273,8 +285,8 @@ def verify_model_rejected(frames: list[WireFrame], log: str) -> list[str]:
         log,
         (
             r"TASK3_MODEL_READY[^\n]*run_mode=model-rejected",
-            r"TASK3_MODEL_REJECTED[^\n]*reason=NonFiniteOutput",
-            r"STARRY_T2N1_SAFE source=model reason=NonFiniteOutput",
+            r"TASK3_MODEL_REJECTED[^\n]*reason=InjectedInvalidOutput",
+            r"STARRY_T2N1_SAFE source=model reason=InjectedInvalidOutput",
         ),
     )
     controls = matching(frames, src=STARRY_IP, dst=ZEPHYR_IP, kind=KIND_CONTROL)
@@ -317,6 +329,19 @@ def main() -> int:
         return 1
 
     failures: list[str] = []
+    failures.extend(require_patterns(log, (YOLO_READY_PATTERN,)))
+    if "embedded:fixture-replay" in log or "model=cnn" in log:
+        failures.append("runtime log contains a fixture or CNN path instead of real ncnn/YOLO")
+    if args.scenario != "model-rejected":
+        failures.extend(
+            require_patterns(
+                log,
+                (
+                    r"TASK3_INFER model=yolo11n\.ncnn",
+                    r"TASK3_DETECTION model=yolo11n\.ncnn",
+                ),
+            )
+        )
     if starry_report["task2_signature"] != zephyr_report["task2_signature"]:
         failures.append("StarryOS and Zephyr captures have different T2N1 ledgers")
     failures.extend(VERIFY_SCENARIO[args.scenario](frames, log))

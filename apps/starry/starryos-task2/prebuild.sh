@@ -20,6 +20,42 @@ if [[ ! -x "$cc" ]]; then
         exit 1
     fi
 fi
+cxx="${CROSS_CXX:-/home/huhu/.local/toolchains/${triple}-cross/bin/${triple}-g++}"
+ar="${CROSS_AR:-/home/huhu/.local/toolchains/${triple}-cross/bin/${triple}-ar}"
+for tool in "$cxx" "$ar"; do
+    if [[ ! -x "$tool" ]]; then
+        echo "prebuild: missing musl cross tool: $tool" >&2
+        exit 1
+    fi
+done
+
+ncnn_prefix="${NCNN_PREFIX:-$workspace/tmp/task3-yolo/ncnn-aarch64/install}"
+yolo_assets="${TASK3_YOLO_ASSETS:-$workspace/tmp/task3-yolo/ncnn-model}"
+if [[ ! -f "$ncnn_prefix/include/ncnn/net.h" || ! -f "$ncnn_prefix/lib/libncnn.a" ]]; then
+    echo "prebuild: incomplete ncnn installation: $ncnn_prefix" >&2
+    exit 1
+fi
+
+verify_asset() {
+    local name="$1"
+    local expected_sha256="$2"
+    local path="$yolo_assets/$name"
+    if [[ ! -f "$path" ]]; then
+        echo "prebuild: missing YOLO asset: $path" >&2
+        exit 1
+    fi
+    local actual_sha256
+    actual_sha256="$(sha256sum "$path" | awk '{print $1}')"
+    if [[ "$actual_sha256" != "$expected_sha256" ]]; then
+        echo "prebuild: YOLO asset hash mismatch for $name" >&2
+        echo "prebuild: expected $expected_sha256, got $actual_sha256" >&2
+        exit 1
+    fi
+}
+
+verify_asset yolo11n.ncnn.param d2c0adf8939dc9ce02964ce8ada104447768ffd8e3bffad8fa11e2e61e709c1f
+verify_asset yolo11n.ncnn.bin 0ae562447923999779b12b4f91f96b9ef263add8c9902d10e22e6dd6a2932c12
+verify_asset input.ppm 608c8a61ff0bb43e5a8613f1f6f8aa08af74b084363610ed2b526ad925e4cb6f
 
 build_dir="$workspace/target/starryos-task2-rust"
 rm -rf "$build_dir"
@@ -28,7 +64,10 @@ linker_dir="$build_dir/linker"
 mkdir -p "$linker_dir"
 ln -sf "$cc" "$linker_dir/aarch64-unknown-linux-musl-ld"
 
+CXX_aarch64_unknown_linux_musl="$cxx" \
+AR_aarch64_unknown_linux_musl="$ar" \
 CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$cc" \
+NCNN_PREFIX="$ncnn_prefix" \
 RUSTFLAGS="-C target-feature=+crt-static" \
 cargo build --release --target aarch64-unknown-linux-musl \
     --manifest-path "$app_dir/rust/Cargo.toml" --target-dir "$build_dir"
@@ -39,4 +78,10 @@ install -Dm0755 "$out" "$overlay_dir/usr/bin/starry-udp-probe"
 install -Dm0755 "$app_dir/udp-probe.sh" "$overlay_dir/usr/bin/starry-udp-probe.sh"
 install -Dm0755 "$out" "$overlay_dir/usr/bin/starry-t2n1-endpoint"
 install -Dm0755 "$app_dir/t2n1-run.sh" "$overlay_dir/usr/bin/t2n1-run.sh"
-echo "prebuild: starryos-task2 UDP probe built for $arch"
+install -Dm0644 "$yolo_assets/yolo11n.ncnn.param" \
+    "$overlay_dir/usr/share/task3-yolo/yolo11n.ncnn.param"
+install -Dm0644 "$yolo_assets/yolo11n.ncnn.bin" \
+    "$overlay_dir/usr/share/task3-yolo/yolo11n.ncnn.bin"
+install -Dm0644 "$yolo_assets/input.ppm" \
+    "$overlay_dir/usr/share/task3-yolo/input.ppm"
+echo "prebuild: starryos-task2 ncnn/YOLO endpoint built for $arch"
