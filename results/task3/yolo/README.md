@@ -35,6 +35,13 @@ The generic COCO model's class IDs are reported verbatim.  They are not
 relabeled as “tennis ball”; this keeps the fixture honest and leaves
 class-specific training/model selection as a later task.
 
+The current final branch validation, Linux endpoint/initramfs hashes, and the
+missing-Zephyr-image QEMU blocker are recorded in
+`current-head-validation-20260821.md` and
+`current-head-build-manifest.toml`. The blocked QEMU attempt is not runtime
+evidence; it is retained so the missing prerequisite and exact resume command
+remain auditable.
+
 ## Boundary
 
 The official Task-3 Guest comparison remains `cnn` versus the frozen P baseline.

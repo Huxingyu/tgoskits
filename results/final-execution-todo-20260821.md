@@ -44,6 +44,9 @@
 - [x] 给 Task1 旧设计、失败复核和历史统计文档加上 `historical` 标识，
       避免旧数字与最终数字混用。
 - [ ] 在当前最终 HEAD 上复跑一次 Task2 网络 + Task3 AI 闭环。
+- [x] 在当前 HEAD 重跑协议/模型 contract gate、YOLO fixture，并重建 YOLO
+      Linux endpoint 与 initramfs；hash 和完整 QEMU 的 Zephyr 资产阻塞已归档到
+      `results/task3/yolo/current-head-validation-20260821.md`。
 - [ ] 统一构建、启动、验证命令及 SHA256 manifest。
 - [ ] 检查 Task2/Task3 与 `dev` 的冲突，创建可审查的 Task1/Task2/Task3 PR。
 - [ ] 准备官网要求的约 5 分钟演示流程和日志 marker 清单。
