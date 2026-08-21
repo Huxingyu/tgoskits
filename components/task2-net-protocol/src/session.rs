@@ -851,5 +851,33 @@ mod tests {
                 .error_code(),
             ErrorCode::SessionMismatch
         );
+        assert_eq!(
+            Frame::parse(&response[..result.response_len])
+                .unwrap()
+                .acknowledgement_number(),
+            SequenceNumber::NONE
+        );
+    }
+
+    #[test]
+    fn reliable_session_mismatch_correlates_rejected_sequence() {
+        let mut endpoint = Endpoint::new(SessionId::new(1), POLICY, 0);
+        let payload = control_payload();
+        let frame = Frame::reliable(
+            MessageKind::Control,
+            SessionId::new(2),
+            SequenceNumber::from_wire(7),
+            &payload,
+        )
+        .unwrap();
+        let mut wire = [0; MAX_DATAGRAM_LEN];
+        let len = frame.encode(&mut wire).unwrap();
+        let mut response = [0; MAX_DATAGRAM_LEN];
+
+        let result = endpoint.receive(&wire[..len], 1, &mut response).unwrap();
+        assert_eq!(result.event, ReceiveEvent::SessionMismatch);
+        let error = Frame::parse(&response[..result.response_len]).unwrap();
+        assert_eq!(error.error_code(), ErrorCode::SessionMismatch);
+        assert_eq!(error.acknowledgement_number(), SequenceNumber::from_wire(7));
     }
 }

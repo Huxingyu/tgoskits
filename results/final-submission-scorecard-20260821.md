@@ -25,11 +25,11 @@ Task 1：在完整系统上改造 AxVisor 调度、IRQ、定时器和关键锁�
 | 评分项 | 满分 | 当前保守分 | 收口目标 | 关键依据 |
 |---|---:|---:|---:|---|
 | 任务一：实时 RTOS 化 | 30 | 26–27 | 27–28 | `results/task1/task1-final-closure-20260820/`、`two-gap-closure-20260820.md` |
-| 任务二：客户机间网络通信 | 25 | 23 | 25 | `book/design/task2-dual-guest-network-final.md`、Task 3 双侧 pcap |
+| 任务二：客户机间网络通信 | 25 | 24 | 25 | `book/design/task2-dual-guest-network-final.md`、Task 3 双侧 pcap |
 | 任务三：AI 控制闭环 | 25 | 25 | 25 | `book/design/task3-ai-design.md`、`results/task3/` |
 | 工程完整性与文档 | 15 | 9 | 14–15 | 当前缺统一索引、Task2 canonical 文档和无冲突 PR |
 | 系统创新与扩展性 | 5 | 4 | 4–5 | FP-RR、内部 L2 switch、可插拔协议/模型 |
-| **主评分合计** | **100** | **89** | **96–98** | 不含加分项 |
+| **主评分合计** | **100** | **90** | **96–98** | 不含加分项 |
 
 ### Task 1 细分
 
@@ -55,7 +55,7 @@ Task 1：在完整系统上改造 AxVisor 调度、IRQ、定时器和关键锁�
 |---|---:|---|
 | 双向 IP 网络链路 | 4 | 4：VirtIO-net、AxVisor switch、双向 UDP/IPv4 |
 | 应用层协议 | 5 | 5：T2N1 版本、类型、长度、序号、ACK、错误码、CRC32 |
-| 控制/状态/错误消息 | 5 | 4：主流程可用；session-mismatch ERROR 互操作仍需补回归 |
+| 控制/状态/错误消息 | 5 | 5：CONTROL/STATUS/ERROR 及 session-mismatch 互操作语义均有回归 |
 | 可靠性/超时/重传/恢复 | 4 | 4：ACK drop、重复、乱序、Safe、恢复均有证据 |
 | 自动化测试数据 | 4 | 3：脚本和 pcap 齐全，但尚未接入上游 CI/xtask 默认路径 |
 | 隔离与访问控制 | 3 | 3：stage-2、DMA carveout、IRQ route、MAC/IP/session/CRC 检查 |

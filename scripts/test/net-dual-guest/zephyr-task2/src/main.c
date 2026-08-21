@@ -157,19 +157,21 @@ static size_t encode_frame(uint8_t *output, uint8_t kind, uint16_t flags,
 static int parse_frame(const uint8_t *frame, size_t length, uint8_t *kind,
 			       uint16_t *flags, uint32_t *sequence,
 			       uint32_t *acknowledgement, uint16_t *error,
-			       const uint8_t **payload, size_t *payload_len)
+			       uint32_t *session_id, const uint8_t **payload,
+			       size_t *payload_len)
 {
 	if (length < FRAME_HEADER_LEN || memcmp(frame, "T2N1", 4) != 0 || frame[4] != 1) {
 		return -EINVAL;
 	}
 	*kind = frame[5];
 	*flags = read_u16(frame + 6);
+	*session_id = read_u32(frame + 8);
 	*sequence = read_u32(frame + 12);
 	*acknowledgement = read_u32(frame + 16);
 	*payload_len = read_u16(frame + 20);
 	*error = read_u16(frame + 22);
 	if ((*flags & ~UINT16_C(1)) != 0 || *payload_len > MAX_PAYLOAD_LEN ||
-	    *payload_len != length - FRAME_HEADER_LEN || read_u32(frame + 8) != SESSION_ID ||
+	    *payload_len != length - FRAME_HEADER_LEN ||
 	    read_u32(frame + 24) != frame_crc(frame, length)) {
 		return -EINVAL;
 	}
@@ -183,8 +185,12 @@ static int parse_frame(const uint8_t *frame, size_t length, uint8_t *kind,
 	     *payload_len != 0)) {
 		return -EINVAL;
 	}
+	/* ERROR frames correlate a reliable request through acknowledgement.  An
+	 * unsequenced HEARTBEAT has no request sequence, so its ERROR is allowed
+	 * to carry acknowledgement 0; reliable-frame errors still carry the
+	 * rejected sequence in acknowledgement. */
 	if (*kind == KIND_ERROR &&
-	    (*flags != 0 || *sequence != 0 || *acknowledgement == 0 || *error == 0)) {
+	    (*flags != 0 || *sequence != 0 || *error == 0)) {
 		return -EINVAL;
 	}
 	if (*kind == KIND_HEARTBEAT &&
@@ -338,13 +344,22 @@ int main(void)
 							(struct sockaddr *)&source, &source_length);
 			uint8_t kind;
 			uint16_t flags, error;
-			uint32_t sequence, acknowledgement;
+			uint32_t session_id, sequence, acknowledgement;
 			const uint8_t *payload;
 			size_t payload_length;
 			if (received < 0 || parse_frame(inbound, (size_t)received, &kind, &flags,
-							       &sequence, &acknowledgement, &error, &payload,
-							       &payload_length) != 0) {
+							       &sequence, &acknowledgement, &error, &session_id,
+							       &payload, &payload_length) != 0) {
 				printk("TASK2_REJECTED malformed_frame\n");
+			} else if (session_id != SESSION_ID) {
+				/* Session identity is a semantic protocol error, not a malformed
+				 * datagram.  Heartbeats are unsequenced, so their ERROR carries
+				 * acknowledgement 0; reliable frames carry the rejected sequence. */
+				size_t error_length = make_error(outbound, sequence,
+								ERROR_SESSION_MISMATCH);
+				(void)send_frame(socket, &source, outbound, error_length);
+				printk("TASK2_SESSION_MISMATCH peer_session=0x%08x ack=%u\n",
+				       session_id, sequence);
 			} else {
 				last_rx = now;
 				int was_safe = state_safe;

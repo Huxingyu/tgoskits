@@ -40,7 +40,7 @@
 
 ## 阶段 1：最终文档与提交收口（高优先级）
 
-- [ ] 将 Task2 canonical 设计/运行摘要和本评分表纳入最终分支。
+- [x] 将 Task2 canonical 设计/运行摘要和本评分表纳入最终分支。
 - [ ] 给 Task1 旧设计、失败复核和历史统计文档加上 `historical` 标识，
       避免旧数字与最终数字混用。
 - [ ] 在当前最终 HEAD 上复跑一次 Task2 网络 + Task3 AI 闭环。
@@ -53,7 +53,8 @@
 
 ## 阶段 2：Task2 缺口（高优先级）
 
-- [ ] 增加 Linux/RTOS `session-mismatch ERROR` 的互操作回归。
+- [x] 增加 Linux/RTOS `session-mismatch ERROR` 的互操作回归；Heartbeat 使用
+      `acknowledgement=0`，可靠帧关联被拒绝的 sequence。
 - [ ] 将双 Guest 网络测试接入可调用的 `xtask`/CI 默认路径，至少保留
       一个不依赖物理板的 QEMU job。
 - [ ] 在当前 HEAD 重新采集双向 UDP、ACK/重传、乱序/重复、Safe/恢复和 pcap。
