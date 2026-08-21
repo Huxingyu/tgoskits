@@ -34,3 +34,15 @@ Per-scenario image hashes:
 Each scenario directory contains `run.log`, `steps.txt`, both pcaps, the
 RT-Thread manifest, and the verifier output. Physical-board validation is a
 separate follow-up and is not claimed by this virtual evidence.
+
+## Task 1 with RT-Thread companion (status: not passing)
+
+The shared-pCPU1 Task 1 scheduler A/B with RT-Thread as the companion Guest
+is **not** claimed. Under the RR arm, StarryOS's ncnn inference either returns
+`RuntimeError code -7` or completes with `NoDetection`; a log-reduced
+RT-Thread image did not resolve it. This is a real integration issue that
+remains open.
+
+After the shared test-harness changes, the Zephyr Task 1 A/B was re-run and
+passes (RR and FP-RR; FP-RR `lower_priority_services=194`). Evidence is in
+`results/starryos-task1-zephyr-regression-20260822/`.

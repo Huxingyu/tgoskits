@@ -1,0 +1,3 @@
+results/starryos-task1-zephyr-regression-20260822/fp-rr/starry.pcap: packets=35 arp=4 udp=23 tagged=0 task2=22 kinds={5: 8, 1: 4, 4: 7, 2: 3}
+results/starryos-task1-zephyr-regression-20260822/fp-rr/zephyr.pcap: packets=35 arp=4 udp=23 tagged=0 task2=22 kinds={5: 8, 1: 4, 4: 7, 2: 3}
+PASS
