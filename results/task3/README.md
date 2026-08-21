@@ -60,6 +60,8 @@ TASK3_CONTROL_LOOP=1 TASK3_MODEL=yolo \
 
 controller 日志会输出 `TASK3_MODEL_READY`、`TASK3_DETECTION`、
 `TASK3_MODEL_REJECTED`、`TASK3_INFER` 和带模型名的 `TASK3_CONTROL_SENT`。
+当前 `yolo` 适配器只接受 `TASK3_MODEL_PATH=embedded:fixture-replay`；传入
+其他路径会显式失败，避免把缺失的 ONNX 文件误报成 Guest 内推理。
 
 ## 构建与运行命令
 

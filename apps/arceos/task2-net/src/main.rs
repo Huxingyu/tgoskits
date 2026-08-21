@@ -121,12 +121,16 @@ impl ModelKind {
             None if TASK3_AI => "cnn",
             None => "baseline",
         };
-        match value {
-            "baseline" => Ok(Self::Baseline),
-            "cnn" => Ok(Self::Cnn),
-            "yolo" => Ok(Self::Yolo),
-            _ => Err("TASK3_MODEL must be baseline, cnn, or yolo"),
+        let model = match value {
+            "baseline" => Self::Baseline,
+            "cnn" => Self::Cnn,
+            "yolo" => Self::Yolo,
+            _ => return Err("TASK3_MODEL must be baseline, cnn, or yolo"),
+        };
+        if model == Self::Yolo && TASK3_MODEL_PATH != "embedded:fixture-replay" {
+            return Err("TASK3_MODEL=yolo currently requires embedded:fixture-replay");
         }
+        Ok(model)
     }
 
     fn name(self) -> &'static str {
@@ -235,6 +239,8 @@ fn report_failure(message: &'static str) -> ! {
 fn run() -> Result<(), &'static str> {
     let local_ip = parse_ipv4(LOCAL_IP).ok_or("TASK2_LOCAL_IP is invalid")?;
     let peer_ip = parse_ipv4(PEER_IP).ok_or("TASK2_PEER_IP is invalid")?;
+    let model = ModelKind::configured()?;
+    let yolo_policy = yolo_policy()?;
     configure_network(local_ip)?;
 
     let socket = UdpSocket::bind(SocketAddr::from((local_ip, LOCAL_PORT)))
@@ -245,8 +251,6 @@ fn run() -> Result<(), &'static str> {
     let mut inbound = [0; MAX_DATAGRAM_LEN];
     let mut response = [0; MAX_DATAGRAM_LEN];
     let mut outbound = [0; MAX_DATAGRAM_LEN];
-    let model = ModelKind::configured()?;
-    let yolo_policy = yolo_policy()?;
     let mut control = Controller::new(model, yolo_policy);
 
     println!("TASK2_READY role={ROLE} local={LOCAL_IP}:{LOCAL_PORT} peer={PEER_IP}:{LOCAL_PORT}");
