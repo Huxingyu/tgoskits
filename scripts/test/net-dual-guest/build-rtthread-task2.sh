@@ -59,12 +59,6 @@ trap cleanup EXIT
 git clone --quiet --shared --no-checkout "$rtthread_cache" "$build_source"
 git -C "$build_source" checkout --quiet --detach "$rtthread_commit"
 git -C "$build_source" apply "$source_dir/rtthread.config.patch"
-if [[ "$task1_quiet" == 1 ]]; then
-    sed -i \
-        -e 's/^CONFIG_RT_LWIP_TCP=y$/# CONFIG_RT_LWIP_TCP is not set/' \
-        -e 's/^CONFIG_RT_LWIP_RAW=y$/# CONFIG_RT_LWIP_RAW is not set/' \
-        "$build_source/bsp/qemu-virt64-aarch64/.config"
-fi
 cp "$source_dir/main.c" \
     "$build_source/bsp/qemu-virt64-aarch64/applications/main.c"
 if [[ "$task1_quiet" == 1 ]]; then
