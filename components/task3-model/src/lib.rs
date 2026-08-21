@@ -24,6 +24,8 @@
 
 #![no_std]
 
+pub mod perception;
+
 /// History window length consumed by the model input.
 pub const WINDOW: usize = 64;
 /// Input feature count: state, target, error, previous output.
