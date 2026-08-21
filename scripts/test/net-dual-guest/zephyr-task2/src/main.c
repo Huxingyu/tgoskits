@@ -27,6 +27,10 @@
 #define HEARTBEAT_INTERVAL_MS 200
 #define PEER_TIMEOUT_MS 10000
 
+#ifndef TASK2_FAULT_DROP_ACK_ONCE
+#define TASK2_FAULT_DROP_ACK_ONCE 0
+#endif
+
 /*
  * Task-3 virtual plant: a nonlinear thermal-like object in 0..1000.
  *
@@ -302,6 +306,9 @@ int main(void)
 	uint32_t last_acknowledged = 0;
 	uint32_t pending_sequence = 0;
 	uint8_t retry_count = 0;
+	bool drop_control_ack_once = TASK2_FAULT_DROP_ACK_ONCE != 0;
+	uint32_t dropped_ack_sequence = 0;
+	bool dropped_ack_duplicate_seen = false;
 	int state_safe = 0;
 	int socket;
 	int64_t now;
@@ -332,6 +339,9 @@ int main(void)
 	}
 	printk("TASK2_NET_CONFIGURED interface=virtio-net ip=10.0.42.2/24\n");
 	printk("TASK2_READY role=managed local=10.0.42.2:4242 peer=10.0.42.15:4242\n");
+	if (drop_control_ack_once) {
+		printk("TASK2_FAULT_MODE mode=drop-ack-once\n");
+	}
 
 	for (;;) {
 		struct zsock_pollfd pollfd = {.fd = socket, .events = ZSOCK_POLLIN};
@@ -411,7 +421,13 @@ int main(void)
 					} else if (sequence == expected_rx_sequence) {
 						expected_rx_sequence = sequence == UINT32_MAX ? 1 : sequence + 1;
 						size_t ack_length = make_ack(outbound, sequence);
-						(void)send_frame(socket, &source, outbound, ack_length);
+						if (kind == KIND_CONTROL && drop_control_ack_once) {
+							drop_control_ack_once = false;
+							dropped_ack_sequence = sequence;
+							printk("TASK2_FAULT_DROP_ACK seq=%u\n", sequence);
+						} else {
+							(void)send_frame(socket, &source, outbound, ack_length);
+						}
 						if (kind == KIND_CONTROL) {
 						int32_t output = (int32_t)read_u32(payload + 4);
 						uint32_t request = read_u32(payload + 8);
@@ -448,10 +464,18 @@ int main(void)
 						printk("TASK3_PLANT_STATE before=%d after=%d dist=%d\n",
 						       state_before, plant_state, plant_disturbance);
 						printk("TASK2_STATUS_SENT seq=%u\n", pending_sequence);
+						if (dropped_ack_duplicate_seen) {
+							printk("TASK2_FAULT_DROP_ACK_RECOVERED duplicate_seq=%u\n",
+							       dropped_ack_sequence);
+							dropped_ack_duplicate_seen = false;
+						}
 					}
 					} else if (sequence == (expected_rx_sequence == 1 ? UINT32_MAX : expected_rx_sequence - 1)) {
 						size_t ack_length = make_ack(outbound, sequence);
 						(void)send_frame(socket, &source, outbound, ack_length);
+						if (sequence == dropped_ack_sequence) {
+							dropped_ack_duplicate_seen = true;
+						}
 						printk("TASK2_DUPLICATE seq=%u\n", sequence);
 					} else {
 						size_t error_length = make_error(outbound, sequence, ERROR_OUT_OF_ORDER);

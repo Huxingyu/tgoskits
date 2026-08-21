@@ -19,10 +19,16 @@ source_dir="$repo_root/scripts/test/net-dual-guest/zephyr-task2"
 memory_base="${TASK2_ZEPHYR_MEMORY_BASE:-0xA0000000}"
 memory_size="${TASK2_ZEPHYR_MEMORY_SIZE:-0x08000000}"
 virtio_slot="${TASK2_ZEPHYR_VIRTIO_SLOT:-30}"
+fault_mode="${TASK2_FAULT_MODE:-none}"
 case "$virtio_slot" in
     0)  device_overlay="$source_dir/app.overlay.switch" ;;
     30) device_overlay="$source_dir/app.overlay" ;;
     *)  printf 'error: TASK2_ZEPHYR_VIRTIO_SLOT must be 0 or 30\n' >&2; exit 1 ;;
+esac
+case "$fault_mode" in
+    none)          fault_define=0 ;;
+    drop-ack-once) fault_define=1 ;;
+    *) printf 'error: TASK2_FAULT_MODE must be none or drop-ack-once\n' >&2; exit 1 ;;
 esac
 
 case "$memory_base" in
@@ -64,7 +70,7 @@ ZEPHYR_SDK_INSTALL_DIR="$zephyr_sdk" \
     -d "$build_dir" \
     -- \
     -DDTC_OVERLAY_FILE="$device_overlay;$memory_overlay" \
-    -DEXTRA_CFLAGS=-DCONFIG_MAX_IRQ_LINES=64
+    -DEXTRA_CFLAGS:STRING="-DCONFIG_MAX_IRQ_LINES=64 -DTASK2_FAULT_DROP_ACK_ONCE=$fault_define"
 popd >/dev/null
 
 elf="$out_dir/zephyr-task2.elf"
@@ -115,6 +121,7 @@ manifest="$out_dir/manifest.toml"
     printf 'linked_base = "%s"\n' "$linked_base"
     printf 'fdt_path = "/virtio_mmio@a003c00"\n'
     printf 'host_hwirq = 46\n'
+    printf 'fault_mode = "%s"\n' "$fault_mode"
     printf 'sha256 = "%s"\n' "$sha256"
     printf 'elf_sha256 = "%s"\n' "$elf_sha256"
     printf 'elf_path = "%s"\n' "$elf"

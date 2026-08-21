@@ -15,5 +15,6 @@ args = [
 ]
 fail_regex = ["TASK2_ERROR=", "(?i)panic"]
 success_regex = ["NEVER_MATCH_EVIDENCE_CAPTURE"]
+timeout = 180
 to_bin = true
 uefi = false
