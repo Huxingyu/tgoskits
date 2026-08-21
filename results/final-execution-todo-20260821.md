@@ -62,8 +62,9 @@
       `acknowledgement=0`，可靠帧关联被拒绝的 sequence。
 - [x] 将协议/controller 回归接入可调用的 CI 默认路径；完整双 Guest QEMU
       运行仍由显式脚本和已有 AArch64 QEMU 证据 job 负责。
-- [ ] 在当前 HEAD 重新采集 ACK/重传、乱序/重复、Safe/恢复和 fault pcap；
-      正常双向 UDP、ACK/STATUS 和基础 pcap 已由当前 HEAD YOLO 运行覆盖。
+- [x] 在当前 HEAD 重新采集正常双向 UDP、ACK/STATUS、Safe/恢复和 fault pcap；
+      故障证据位于 `results/task3/switch/fault-current-head-yolo-fault-validated/`，
+      仍需另行补齐 ACK drop/乱序/重复的专门回归样本。
 
 验收：Task2 从当前保守 24/25 提升到 24–25/25 的证据完整度，且失败时能
 指出具体协议阶段。
@@ -115,7 +116,8 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 - [ ] 统计控制 RMSE、settling time、超调、周期级 RTT、模型推理时间、
       检测置信度和拒绝次数。
 - [ ] 单独报告模型推理成本，不能把 YOLO 推理耗时误报成网络延迟或 RTOS 延迟。
-- [ ] 在一次 link-blackout/恢复运行中验证 YOLO 模式的 Safe→Active 行为。
+- [x] 在一次 link-blackout/恢复运行中验证 YOLO 模式的 Safe→Active 行为；
+      `fault-current-head-yolo-fault-validated` 已通过 runner 门禁。
 - [ ] 更新 Task3 设计文档、README、summary.csv、pcap/log/hash 清单。
 
 验收：YOLO 结果与 CNN/baseline 的比较条件、模型 hash、命令和原始数据齐全；

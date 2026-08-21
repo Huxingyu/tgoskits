@@ -71,6 +71,13 @@ STATUS marker；pcap 必须通过 `verify_pcap.py --require-task2` 才可引用�
 `serial_console.py dump-pcap` 现在会实际发送 `virtnet capture dump` 并写出
 两侧 classic pcap，而不是只清空内存缓存。
 
+YOLO 故障恢复证据位于
+`results/task3/switch/fault-current-head-yolo-fault-validated/`：黑障期间进入
+`TASK2_SAFE`，恢复后出现 `TASK2_RECOVERED state=Active`，并继续产生
+`TASK3_CONTROL_SENT`/`TASK3_STATUS_RECEIVED`。fault runner 在归档前强制检查
+marker 顺序、恢复后的续跑、双端非空 pcap、T2N1 ledger 和 SHA256 manifest。
+该证据同样是 QEMU SIL，不能解读为物理板硬实时或真实 ONNX 推理耗时。
+
 ## 构建与运行命令
 
 见 `book/design/task3-ai-design.md` §8。

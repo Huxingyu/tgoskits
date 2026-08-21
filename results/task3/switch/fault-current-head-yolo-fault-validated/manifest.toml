@@ -1,0 +1,11 @@
+label = "current-head-yolo-fault-validated"
+mode = "fault"
+blackout_expected = true
+recovery_elapsed_min_ms = 45000
+log_sha256 = "db02de11d0326d3858cbcfb82f519c657af7a3ed600ac28ef9fca8b5d44728b2"
+build_log_sha256 = "0419189926d88b0af6819eeb06e6eac64b7a55a3046341b3c34b8fe6792bcba0"
+linux_pcap_sha256 = "2d108f3241d4e7630af80d2b8f56df64ab8dc4d3dbbec81329bad03bed61ae79"
+rtos_pcap_sha256 = "86bd88d30f61d67c24007c4e50256323c07c7074276f7e0017161f7b4070867e"
+linux_initramfs_sha256 = "5e947966e8f113c703cf02d65b2a38f1555e75bf2d7d7c7e42ba31236bebc20b"
+zephyr_binary_sha256 = "49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433"
+zephyr_manifest_sha256 = "c95c5f131febffbd18e6992907e45eca05bb8bf2cb851985e615f9ef33c19394"

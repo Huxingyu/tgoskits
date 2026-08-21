@@ -80,10 +80,30 @@ retained as archaeology only; it is superseded by the successful run above.
 
 ## Remaining YOLO gap
 
-The normal YOLO control loop is now proven through the T2N1 path. A separate
-YOLO-mode blackout → Safe → recovery run is still required before claiming the
-YOLO fault-recovery requirement. The next command is:
+The normal YOLO control loop and a separate YOLO-mode blackout → Safe → recovery
+run are now proven through the T2N1 path. The fault runner requires marker order,
+post-recovery control/status activity, non-empty dual captures, and the pcap
+ledger verifier before archiving evidence.
+
+Reproduce the fault run with:
 
 ```bash
-bash scripts/task3/run-task3-switch-fault.sh current-head-yolo-fault
+bash scripts/task3/run-task3-switch-fault.sh current-head-yolo-fault-validated
 ```
+
+Evidence: `results/task3/switch/fault-current-head-yolo-fault-validated/`.
+
+| Fault observation | Result |
+|---|---:|
+| blackout marker | `virtnet: blackout ON` → `virtnet: blackout OFF` |
+| Safe transition | `TASK2_SAFE` after blackout |
+| recovery | `TASK2_RECOVERED state=Active elapsed_ms=40586` |
+| YOLO control before/after recovery | 156 / 33 `TASK3_CONTROL_SENT` markers |
+| status before/after recovery | present on both sides of recovery |
+| dual pcap | 812 packets each; 806 T2N1 frames each |
+| verifier | `verify_pcap.py --require-task2`: PASS |
+| final elapsed window | `45396 ms` |
+
+The result is still QEMU AArch64 SIL evidence. The adapter is
+`embedded:fixture-replay`, so this proves model-contract and network recovery
+integration, not in-Guest ONNX runtime performance.

@@ -109,15 +109,104 @@ if [ "$driver_status" -ne 0 ]; then
     exit "$driver_status"
 fi
 
+if [ ! -s "$log" ]; then
+    echo "missing or empty fault log: $log" >&2
+    exit 1
+fi
+for pcap in "$workdir"/switch.vm1.pcap "$workdir"/switch.vm2.pcap; do
+    if [ ! -s "$pcap" ]; then
+        echo "missing or empty capture: $pcap" >&2
+        exit 1
+    fi
+done
+
+# Validate the fault contract before archiving it.  The checks deliberately
+# require evidence on both sides of the blackout: a Safe event alone is not a
+# recovery proof, and a non-empty pcap alone is not a T2N1 proof.
+python3 - "$log" <<'PY'
+import re
+import sys
+
+text = open(sys.argv[1], encoding="utf-8", errors="replace").read()
+required = [
+    "TASK3_MODEL_READY",
+    "virtnet: blackout ON",
+    "TASK2_SAFE",
+    "virtnet: blackout OFF",
+    "TASK2_RECOVERED",
+    "TASK3_CONTROL_SENT",
+    "TASK3_STATUS_RECEIVED",
+    "CAPDUMP_END",
+]
+missing = [marker for marker in required if marker not in text]
+if missing:
+    raise SystemExit("fault evidence missing markers: " + ", ".join(missing))
+
+def first(marker: str) -> int:
+    match = re.search(re.escape(marker), text)
+    assert match is not None
+    return match.start()
+
+blackout_on = first("virtnet: blackout ON")
+safe = first("TASK2_SAFE")
+blackout_off = first("virtnet: blackout OFF")
+recovered = first("TASK2_RECOVERED")
+capture_end = first("CAPDUMP_END")
+if not blackout_on < safe < blackout_off < recovered < capture_end:
+    raise SystemExit("fault marker order is invalid")
+
+before_recovery = text[:recovered]
+after_recovery = text[recovered:]
+if "TASK3_CONTROL_SENT" not in before_recovery:
+    raise SystemExit("no YOLO control was sent before recovery")
+if "TASK3_STATUS_RECEIVED" not in before_recovery:
+    raise SystemExit("no status was received before recovery")
+if "TASK3_CONTROL_SENT" not in after_recovery:
+    raise SystemExit("YOLO control did not resume after recovery")
+if "TASK3_STATUS_RECEIVED" not in after_recovery:
+    raise SystemExit("status did not resume after recovery")
+
+elapsed = [int(value) for value in re.findall(r"elapsed_ms=(\d+)", after_recovery)]
+if not elapsed or max(elapsed) < 45000:
+    raise SystemExit(
+        f"recovery run did not continue to 45s elapsed window: max={max(elapsed, default=None)}"
+    )
+PY
+
+python3 scripts/test/net-dual-guest/verify_pcap.py \
+    --tag '' --require-task2 "$workdir/switch.vm1.pcap" "$workdir/switch.vm2.pcap"
+
 echo "run $label (fault) finished; log=$log build_log=$build_log"
-ls -la "$workdir"/switch.vm*.pcap 2>/dev/null || true
+ls -la "$workdir"/switch.vm*.pcap
 
 # Archive the evidence under results/task3/switch/fault-<label>/.
 out_dir="$repo_root/results/task3/switch/fault-$label"
 mkdir -p "$out_dir"
 cp "$log" "$out_dir/run.log" 2>/dev/null || true
 cp "$build_log" "$out_dir/build.log" 2>/dev/null || true
-cp "$workdir/switch.vm1.pcap" "$out_dir/linux.pcap" 2>/dev/null || true
-cp "$workdir/switch.vm2.pcap" "$out_dir/rtos.pcap" 2>/dev/null || true
-printf 'label = "%s"\nmode = "fault"\n' "$label" > "$out_dir/manifest.toml"
+cp "$workdir/switch.vm1.pcap" "$out_dir/linux.pcap"
+cp "$workdir/switch.vm2.pcap" "$out_dir/rtos.pcap"
+zephyr_manifest="$workdir/zephyr-task2/manifest.toml"
+sha256_or_none() {
+    if [ -f "$1" ]; then
+        sha256sum "$1" | awk '{print $1}'
+    else
+        printf 'unavailable'
+    fi
+}
+{
+    printf 'label = "%s"\n' "$label"
+    printf 'mode = "fault"\n'
+    printf 'blackout_expected = true\n'
+    printf 'recovery_elapsed_min_ms = 45000\n'
+    printf 'log_sha256 = "%s"\n' "$(sha256sum "$out_dir/run.log" | awk '{print $1}')"
+    printf 'build_log_sha256 = "%s"\n' "$(sha256sum "$out_dir/build.log" | awk '{print $1}')"
+    printf 'linux_pcap_sha256 = "%s"\n' "$(sha256sum "$out_dir/linux.pcap" | awk '{print $1}')"
+    printf 'rtos_pcap_sha256 = "%s"\n' "$(sha256sum "$out_dir/rtos.pcap" | awk '{print $1}')"
+    printf 'linux_initramfs_sha256 = "%s"\n' "$(sha256_or_none "$workdir/linux-task2/task2-linux-initramfs-ai.cpio.gz")"
+    printf 'zephyr_binary_sha256 = "%s"\n' "$(sha256_or_none "$workdir/zephyr-task2/zephyr-task2.bin")"
+    if [ -f "$zephyr_manifest" ]; then
+        printf 'zephyr_manifest_sha256 = "%s"\n' "$(sha256sum "$zephyr_manifest" | awk '{print $1}')"
+    fi
+} > "$out_dir/manifest.toml"
 echo "archived evidence under $out_dir"
