@@ -39,6 +39,13 @@ verifier because it contains the one expected missing ACK; it passes
 `verify_fault_pcap.py`, which checks the exact one-frame delta plus retransmit and
 duplicate markers.
 
+The runtime captures record `git_head=5bb5c7957` in their own manifests. Commits
+after that point only archived existing captures or changed verifier/docs; they
+did not change the Guest protocol, model, hypervisor, or image-building code.
+Strict proof against a future rebased/integrated PR head still requires one fresh
+full QEMU run after that integration; this manifest does not silently upgrade
+the parent-commit captures into such proof.
+
 ## Reproduction gates
 
 ```bash

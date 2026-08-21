@@ -153,7 +153,10 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 - [x] 按评分表逐项填写“证据路径、命令、结果、限制”；评分映射见
       `results/final-submission-scorecard-20260821.md`，统一 manifest 见
       `results/final-evidence-manifest-20260821.md`。
-- [ ] 检查所有新提交均可从远程分支重放；检查 PR head 与结果 hash 一致。
+- [ ] 在最终 review/PR head 上重新跑一条完整 QEMU 闭环，并检查 PR head 与
+      结果 hash 一致；当前已归档运行记录的 runtime head 是
+      `5bb5c7957`，后续提交只涉及证据归档、verifier 和文档，边界见
+      `results/final-evidence-manifest-20260821.md`。
 - [ ] 每个阶段的 commit message 使用 `type(scope): subject`，并推送到相应
       `origin/openrace/*` 分支。
 - [x] 最终报告明确区分：已证明、部分证明、未验证和外部阻塞项；见
