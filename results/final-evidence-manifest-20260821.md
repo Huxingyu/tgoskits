@@ -1,9 +1,9 @@
 # Final evidence manifest (2026-08-21)
 
 This is the human-readable index for the current delivery branch. Hashes are
-SHA-256 of the files at `openrace/task1-rt-partition` HEAD
-`8843699ff` and are included to prevent an old run being silently substituted
-for the current evidence.
+SHA-256 of the tracked files in the delivery branch at the time of this
+manifest refresh and are included to prevent an old run being silently
+substituted for the current evidence.
 
 ## Canonical design and score documents
 
