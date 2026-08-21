@@ -292,7 +292,37 @@ latency and a higher RMSE (see the latency characteristics in §9).
 Evidence: `results/task3/switch/fault-switch-fault-run1/` (guest log + both
 pcaps) and `results/task3/fault/` (guest/proxy logs + both pcaps + SHA-256).
 
-### 7.3 Evidence-Chain Tooling
+### 7.3 Protocol fault injection on the real Guest wire
+
+The P3 proxy can inject one syntactically valid but semantically invalid CONTROL
+after sequence 1. The runner waits for protocol rejection markers before
+quitting, and the verifier checks the injected frame in the RTOS-side pcap, the
+proxy injection record, and the Linux/RTOS error logs:
+
+| Injection | Wire evidence | Rejection evidence |
+|---|---|---|
+| `out-of-order` | `CONTROL sequence=99` | RTOS `TASK2_PROTOCOL_ERROR out_of_order=99`; Linux `TASK2_REMOTE_ERROR code=OutOfOrder` |
+| `invalid-parameter` | `CONTROL sequence=2`, value `1001` | RTOS invalid-parameter rejection; Linux `TASK2_REMOTE_ERROR code=InvalidParameter` |
+
+Evidence directories:
+
+- `results/task3/fault-current-head-yolo-injection-out-of-order/`
+- `results/task3/fault-current-head-yolo-injection-invalid-parameter-v2/`
+
+The commands are:
+
+```bash
+bash scripts/task3/run-task3-fault.sh <label> yolo injection out-of-order
+bash scripts/task3/run-task3-fault.sh <label> yolo injection invalid-parameter
+```
+
+`verify_protocol_injection.py` accepts the endpoint-specific spelling of the
+invalid-payload marker (`invalid_payload` in Rust or `invalid_parameter` in
+Zephyr), while requiring the common remote `ErrorCode` and the captured wire
+frame. This is protocol rejection evidence, not a physical-link fault claim or
+a real ONNX runtime benchmark.
+
+### 7.4 Evidence-Chain Tooling
 
 | Capability | Implementation |
 |---|---|

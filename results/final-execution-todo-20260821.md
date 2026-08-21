@@ -64,7 +64,10 @@
       运行仍由显式脚本和已有 AArch64 QEMU 证据 job 负责。
 - [x] 在当前 HEAD 重新采集正常双向 UDP、ACK/STATUS、Safe/恢复和 fault pcap；
       故障证据位于 `results/task3/switch/fault-current-head-yolo-fault-validated/`，
-      仍需另行补齐 ACK drop/乱序/重复的专门回归样本。
+      ACK-drop 专门证据位于 `results/task3/fault-current-head-yolo-ack-drop-v2/`，
+      乱序和 invalid-parameter 注入证据分别位于
+      `results/task3/fault-current-head-yolo-injection-out-of-order/` 与
+      `results/task3/fault-current-head-yolo-injection-invalid-parameter-v2/`。
 
 验收：Task2 从当前保守 24/25 提升到 24–25/25 的证据完整度，且失败时能
 指出具体协议阶段。

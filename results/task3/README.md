@@ -78,6 +78,20 @@ YOLO 故障恢复证据位于
 marker 顺序、恢复后的续跑、双端非空 pcap、T2N1 ledger 和 SHA256 manifest。
 该证据同样是 QEMU SIL，不能解读为物理板硬实时或真实 ONNX 推理耗时。
 
+当前 HEAD 的协议故障注入也已形成专门证据：
+
+- `results/task3/fault-current-head-yolo-injection-out-of-order/`：代理在真实
+  QEMU 数据面注入 `CONTROL sequence=99`，RTOS 记录
+  `TASK2_PROTOCOL_ERROR out_of_order=99`，Linux 收到
+  `TASK2_REMOTE_ERROR code=OutOfOrder`；
+- `results/task3/fault-current-head-yolo-injection-invalid-parameter-v2/`：代理
+  注入越界 `CONTROL value=1001`，RTOS 记录 invalid-parameter 拒绝，Linux
+  收到 `TASK2_REMOTE_ERROR code=InvalidParameter`。
+
+两次运行均通过 `verify_protocol_injection.py`，并保存双端 pcap、guest/proxy
+日志和 SHA256 manifest。这里验证的是协议错误传播和安全拒绝，不把注入帧当作
+正常控制输出。
+
 ## 当前 HEAD 三模式量化结果
 
 baseline、CNN、YOLO fixture replay 已在同一固定场景下交错各运行 3 次，原始

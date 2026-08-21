@@ -46,7 +46,14 @@ def main() -> int:
     if args.mode == "out-of-order":
         required = (r"TASK2_PROTOCOL_ERROR out_of_order=99", r"TASK2_REMOTE_ERROR code=OutOfOrder")
     else:
-        required = (r"TASK2_PROTOCOL_ERROR invalid_payload=", r"TASK2_REMOTE_ERROR code=InvalidParameter")
+        # The Linux/Rust endpoint reports InvalidPayload while the Zephyr C
+        # endpoint reports invalid_parameter.  Both are the same wire-level
+        # InvalidParameter rejection and the combined QEMU log may contain
+        # either form depending on which side received the injected frame.
+        required = (
+            r"TASK2_PROTOCOL_ERROR (?:invalid_payload=|invalid_parameter seq=)",
+            r"TASK2_REMOTE_ERROR code=InvalidParameter",
+        )
     failures.extend(
         f"guest log missing {pattern!r}"
         for pattern in required
