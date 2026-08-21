@@ -1,0 +1,15 @@
+0dda0715e668b1cadd3ed4a64f5e9ebaa6ab8d666a6c4b572990a647708f06cf  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/artifact-hashes.txt
+71c2def575c4dac2e87edc7fee9d0dc3e1541c35fd87c9b95ec495a184f42daf  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/build.log
+b5af7d0b28048445386293cfbbaa9995da5c8fb4606db2e381266540cade8a9b  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/command.txt
+ac3affc5178fd37566c17a501e8e12a3c7a1726a5d8c6962bd326efa73be7ea1  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/host-config.toml
+d8896b748b350bc92cc123b5c45f5b9923cbdea9fbf6c24457efc37d80e4e14f  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/qemu.toml
+3c31855c7b6a319b928fcb1cead5e2628dcf1a83172807c9cd949638aeb4dfeb  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/rootfs-content-hashes.txt
+1afe14cdbe11ef9d6b504f4a28bff6b758c7d3cba417bd9ff449b0e87cdafbdf  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/run.log
+501874200e1d5deacccc605cfa91d9cb9671f71c9c130c4a6bbaa738bddf20fc  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/starry.pcap
+8754b2c63ae059afb2f62cbe167d6772d124cbe27463596ad8e0c21f03c9d7b4  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/steps.txt
+03ef210f944ea5a854804650eebb2bab5691a28014efb05962297dc599c33776  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/verify-pcap.log
+692f8900478c7255f0551f6a4422e5a0702eeaf8f52ecf8ed00de3d08c2c355d  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/verify-scenario.log
+99a0aaa373bc22d55675682f40988f66f28e5db97647d261ad637504252cc828  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/vm-starry.toml
+0f7449a76d2cf117262b809c8fbac122e1c47b796bb52c87fa82e5c4a96c2be6  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/vm-zephyr.toml
+5e82909b0b31f491f1a88bb625c55e6bbc04e70df9d04532241bb40113843b25  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/zephyr-manifest.toml
+3544486663e23adc58c8c05c419c84cee10c6142112c49e5c774515381a95406  results/starryos-task123-final-db42f6168-20260822/task23/drop-ack/zephyr.pcap

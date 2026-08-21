@@ -1,0 +1,13 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.04s
+     Running unittests src/main.rs (apps/starry/starryos-task2/rust/target/debug/deps/starryos_task2_endpoint-6243cb5bf5a5fd38)
+
+running 6 tests
+test tests::model_rejection_mode_does_not_call_the_runtime ... ok
+test tests::out_of_order_mode_emits_valid_sequence_two_control ... ok
+test tests::invalid_parameter_mode_preserves_framing_and_crc ... ok
+test tests::validates_yolo_detection_before_control ... ok
+test tests::safe_and_recovery_reset_application_request_lifecycle ... ok
+test tests::parses_supported_run_modes ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

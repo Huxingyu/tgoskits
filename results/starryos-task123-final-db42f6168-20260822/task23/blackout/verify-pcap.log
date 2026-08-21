@@ -1,0 +1,3 @@
+results/starryos-task123-final-db42f6168-20260822/task23/blackout/starry.pcap: packets=32 arp=5 udp=19 tagged=0 task2=16 kinds={5: 8, 1: 2, 4: 4, 2: 2}
+results/starryos-task123-final-db42f6168-20260822/task23/blackout/zephyr.pcap: packets=32 arp=5 udp=19 tagged=0 task2=16 kinds={5: 8, 1: 2, 4: 4, 2: 2}
+PASS

@@ -1,0 +1,3 @@
+TASK3_NCNN_READY status=0 param=/home/huhu/tgoskits-starry/tmp/task3-yolo/ncnn-model/yolo11n.ncnn.param model=/home/huhu/tgoskits-starry/tmp/task3-yolo/ncnn-model/yolo11n.ncnn.bin input=/home/huhu/tgoskits-starry/tmp/task3-yolo/ncnn-model/input.ppm
+TASK3_NCNN_INFER infer_us=11881506
+TASK3_NCNN_DETECTION class=75 confidence_milli=843 center_x_milli=421 area_milli=63

@@ -1,0 +1,22 @@
+    Checking thiserror v2.0.20
+   Compiling task3-ncnn v0.1.0 (/home/huhu/tgoskits-starry/components/task3-ncnn)
+    Checking task3-model v0.1.0 (/home/huhu/tgoskits-starry/components/task3-model)
+    Checking task2-net-protocol v0.1.0 (/home/huhu/tgoskits-starry/components/task2-net-protocol)
+warning: task3-ncnn@0.1.0: task3-ncnn disabled: NCNN_PREFIX is not set
+error: unsafe function's docs are missing a `# Safety` section
+  --> components/task3-ncnn/src/lib.rs:30:1
+   |
+30 | / pub unsafe fn infer(
+31 | |     param_path: *const c_char,
+32 | |     model_path: *const c_char,
+33 | |     input_path: *const c_char,
+34 | | ) -> Result<(Detection, u64), (i32, u64)> {
+   | |_________________________________________^
+   |
+   = help: for further information visit https://rust-lang.github.io/rust-clippy/master/index.html#missing_safety_doc
+   = note: `-D clippy::missing-safety-doc` implied by `-D warnings`
+   = help: to override `-D warnings` add `#[allow(clippy::missing_safety_doc)]`
+
+warning: task3-ncnn@0.1.0: task3-ncnn disabled: NCNN_PREFIX is not set
+error: could not compile `task3-ncnn` (lib) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...

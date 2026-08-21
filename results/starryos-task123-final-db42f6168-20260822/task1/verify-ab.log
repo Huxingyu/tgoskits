@@ -1,0 +1,2 @@
+rr controls=3 statuses=3 rtt=RttSummary(count=3, minimum=142, median=472, p95=661, maximum=661) fp-rr controls=4 statuses=3 rtt=RttSummary(count=3, minimum=145, median=510, p95=533, maximum=533) lower_priority_services=192
+PASS: StarryOS Task 1 scheduler A/B; summary=results/starryos-task123-final-db42f6168-20260822/task1/comparison.md

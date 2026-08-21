@@ -1,0 +1,13 @@
+git_head=db42f616846f601dac641a125491593629033e97
+
+TASK3_CONTROL_LOOP=1 TASK3_MODEL=yolo \
+TASK3_MODEL_PATH=/usr/share/task3-yolo \
+TASK3_YOLO_MIN_CONFIDENCE_MILLI=600 \
+TASK3_YOLO_MIN_AREA_MILLI=10 \
+TASK3_YOLO_MAX_TARGET_STEP=100 \
+scripts/test/net-dual-guest/build-linux-task2.sh
+
+TASK3_MODEL=yolo scripts/test/net-dual-guest/build-linux-initramfs.sh
+cp tmp/net-dual-guest/linux-task2/task2-linux-initramfs.cpio.gz \
+  tmp/net-dual-guest/linux-task2/task2-linux-initramfs-yolo.cpio.gz
+scripts/task3/run-task3-switch.sh db42f6168-linux-yolo yolo
