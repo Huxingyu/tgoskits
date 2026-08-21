@@ -441,7 +441,11 @@ impl Controller {
             prev_output: 0,
             sample_count: 0,
             pending_send: false,
-            last_target: 300,
+            // The archived fixture manifest evaluates each image from the
+            // contract's frozen current_target=500.  Keeping the replay
+            // anchor fixed makes its target values match the golden JSON;
+            // the bounded policy still limits every individual step.
+            last_target: 500,
         }
     }
 

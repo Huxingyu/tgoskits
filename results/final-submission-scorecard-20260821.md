@@ -29,7 +29,7 @@ Task 1：在完整系统上改造 AxVisor 调度、IRQ、定时器和关键锁�
 | 任务三：AI 控制闭环 | 25 | 25 | 25 | `book/design/task3-ai-design.md`、`results/task3/` |
 | 工程完整性与文档 | 15 | 9 | 14–15 | 当前缺统一索引、Task2 canonical 文档和无冲突 PR |
 | 系统创新与扩展性 | 5 | 4 | 4–5 | FP-RR、内部 L2 switch、可插拔协议/模型 |
-| **主评分合计** | **100** | **90** | **96–98** | 不含加分项 |
+| **主评分合计** | **100** | **91** | **96–98** | 不含加分项 |
 
 ### Task 1 细分
 
@@ -57,7 +57,7 @@ Task 1：在完整系统上改造 AxVisor 调度、IRQ、定时器和关键锁�
 | 应用层协议 | 5 | 5：T2N1 版本、类型、长度、序号、ACK、错误码、CRC32 |
 | 控制/状态/错误消息 | 5 | 5：CONTROL/STATUS/ERROR 及 session-mismatch 互操作语义均有回归 |
 | 可靠性/超时/重传/恢复 | 4 | 4：ACK drop、重复、乱序、Safe、恢复均有证据 |
-| 自动化测试数据 | 4 | 3：脚本和 pcap 齐全，但尚未接入上游 CI/xtask 默认路径 |
+| 自动化测试数据 | 4 | 4：协议/controller 回归已接入默认 CI gate；完整双 Guest QEMU 仍由显式脚本和证据 job 运行 |
 | 隔离与访问控制 | 3 | 3：stage-2、DMA carveout、IRQ route、MAC/IP/session/CRC 检查 |
 
 ### Task 3 细分

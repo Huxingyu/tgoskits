@@ -4,6 +4,10 @@
 > `openrace/task1-rt-partition`，工作区为 `/home/huhu/tgoskits-rt`；
 > `/home/huhu/tgoskits` 未修改。
 
+> **HISTORICAL SESSION SUMMARY**：本文按 2026-08-18 的状态冻结，保留代码考古
+> 和失败路径。当前实现/证据请以 `two-gap-closure-20260820.md`、
+> `irq-tail-preemption-design.md` 和最终评分表为准。
+
 ## 0. 目标与验收纪律
 
 目标是让 AxVisor 支持 RT 分区：RTOS vCPU 独占物理核，消除 host 周期 tick

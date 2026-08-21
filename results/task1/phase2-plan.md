@@ -5,6 +5,10 @@
 > 上游输入：[`24h-exploration-retrospective.md`](24h-exploration-retrospective.md) 第 8、13、14 节，以及本轮对其代码级核验的补充发现
 > 定位：替代复盘文档第 14 节的"阶段 A-E"草案，作为下一阶段唯一执行依据
 
+> **HISTORICAL PLAN**：本文记录阶段二的设计、候选机制和实验过程。部分候选
+> 已被后续 bounded-service FP-RR、priority-aware IRQ-tail 和 hold/release
+> 收口实现取代；最终交付状态以 `../two-gap-closure-20260820.md` 和评分表为准。
+
 ## 1. 诊断与目标重定义
 
 第一阶段的机制实现质量已经过源码核验（no-tick、有界 vIRQ 队列、console 隔离、`IRQ_ROUTES` 死锁修复均属实且有回归覆盖），但端到端延迟只取得个位数百分比改善。本节先固定失败根因，再据此重定义第二阶段可以合法追求的目标，避免继续在一个数学上无解的比较框架里投入实验时间。

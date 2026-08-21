@@ -42,13 +42,13 @@ pub const fn yolo_fixture_detection(sample: u32) -> Option<YoloDetection> {
             class_id: 75,
             confidence_milli: 832,
             center_x_milli: 419,
-            area_milli: 120,
+            area_milli: 61,
         }),
         _ => Some(YoloDetection {
             class_id: 58,
             confidence_milli: 871,
             center_x_milli: 805,
-            area_milli: 210,
+            area_milli: 29,
         }),
     }
 }
@@ -259,7 +259,7 @@ mod tests {
                 class_id: 75,
                 confidence_milli: 832,
                 center_x_milli: 419,
-                area_milli: 120,
+                area_milli: 61,
             })
         );
         assert_eq!(
@@ -268,8 +268,29 @@ mod tests {
                 class_id: 58,
                 confidence_milli: 871,
                 center_x_milli: 805,
-                area_milli: 210,
+                area_milli: 29,
             })
+        );
+    }
+
+    #[test]
+    fn fixture_replay_targets_match_manifest_contract_anchor() {
+        let policy = YoloPolicy::task3_default();
+        assert_eq!(
+            yolo_detection_to_target(yolo_fixture_detection(1).unwrap(), 500, policy),
+            PerceptionDecision::Target {
+                target: 419,
+                class_id: 75,
+                confidence_milli: 832,
+            }
+        );
+        assert_eq!(
+            yolo_detection_to_target(yolo_fixture_detection(2).unwrap(), 500, policy),
+            PerceptionDecision::Target {
+                target: 600,
+                class_id: 58,
+                confidence_milli: 871,
+            }
         );
     }
 

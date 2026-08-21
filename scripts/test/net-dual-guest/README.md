@@ -69,6 +69,17 @@ cargo test -p task2-net-protocol
 cargo clippy -p task2-net-protocol --all-targets -- -D warnings
 ```
 
+The normal repository CI gate runs the hardware-independent protocol and
+controller contract checks, including the `baseline`/`cnn`/`yolo` model modes:
+
+```bash
+bash scripts/test/net-dual-guest/run-ci-regression.sh
+```
+
+This gate does not substitute for the explicit AArch64 dual-Guest QEMU run;
+the latter remains the source of packet-capture, isolation, and fault-recovery
+evidence.
+
 ## Packet and isolation verification
 
 Verify both packet captures and the application protocol:

@@ -46,8 +46,8 @@ Zephyr vCPU0 / VM[2] 10.0.42.2:4242
 
 ## 尚未冒充完成的部分
 
-- 双 Guest 流程尚未接入上游 CI 默认矩阵；提交材料必须使用脚本命令并保存
-  成功/失败退出码。
+- 完整双 Guest QEMU 流程仍由显式脚本驱动并保存成功/失败退出码；协议和
+  controller contract gate 已接入仓库默认 CI。
 - session-mismatch Heartbeat 的 ERROR 语义已补 Rust/Python 回归，并在 Zephyr
   parser 中区分“格式错误”和“陌生 session”；陌生 session 会返回
   `ERROR(SessionMismatch, acknowledgement=0)`，不改变 Safe 状态。

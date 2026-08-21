@@ -79,5 +79,6 @@ ledger；故障目录保存了 blackout、Safe、恢复及续跑证据。历史 
   `acknowledgement=0`；陌生可靠帧则关联被拒绝的 sequence。Rust、Python
   responder 和 Zephyr parser 共用该语义，正常 CONTROL/STATUS、ACK、重传、
   乱序和链路恢复已经闭环。
-- 双 Guest 流程目前由脚本驱动，尚未成为上游 CI 的默认矩阵；提交材料中必须
-  明确给出命令、成功标记和失败退出码。
+- 协议/controller contract 已由 `scripts/test/net-dual-guest/run-ci-regression.sh`
+  接入默认 CI；完整双 Guest QEMU 流程仍由显式脚本驱动，提交材料中明确给出
+  命令、成功标记和失败退出码。
