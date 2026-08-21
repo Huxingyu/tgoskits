@@ -18,7 +18,7 @@ substituted for the current evidence.
 | `book/design/task2-dual-guest-network-final.md` | `4cd228e46fc1aeb3e8e3cd98b0429cc2ab95e33318c886e8ae71d97c34d489fe` |
 | `book/design/task3-ai-design.md` | `d8ca620893f9066c5a9b9ecce6ee0620916d014ce52e80fcc332c2c5eb2dafc2` |
 | `results/task3/README.md` | `931a6a12f6ea7758241f4c7614d0367de77720c925e186eec27ed252c4493767` |
-| `results/bonus-path-audit-20260821.md` | `3a42efcd6eba2014535b1fd9227fc7ba14805f2236d134d929bcb6a70c1cb149` |
+| `results/bonus-path-audit-20260821.md` | `8cae078fc190e4f45aea1ae566b40bd6a4201d99d25f03a8b1dbc495b4f197db` |
 | `results/demo-runbook-20260821.md` | `39fc866b66923d50ba117b7077987ab517694a454584da0b03cdde40135386b2` |
 
 ## Current HEAD Task3 evidence
