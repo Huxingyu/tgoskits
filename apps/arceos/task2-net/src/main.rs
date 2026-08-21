@@ -15,6 +15,7 @@ use core::net::{Ipv4Addr, SocketAddr};
 #[cfg(not(feature = "arceos"))]
 use std::{
     net::UdpSocket,
+    sync::mpsc::{self, Receiver, TryRecvError},
     thread,
     time::{Duration, Instant},
 };
@@ -404,7 +405,11 @@ fn run() -> Result<(), &'static str> {
                 // TASK2_RECOVERED resend below returns early and the
                 // request-response loop stays stalled after link recovery.
                 control.request_in_flight = false;
+                control.cancel_yolo_inference(now);
             }
+        }
+        if TASK3_CONTROL && ROLE == "controller" && !control.pending_send {
+            control.send_next_or_defer(&socket, &peer, &mut endpoint, &mut outbound, now)?;
         }
         #[cfg(feature = "arceos")]
         ax_net::request_poll();
@@ -434,6 +439,44 @@ struct Controller {
     sample_count: u32,
     pending_send: bool,
     last_target: i32,
+    #[cfg(not(feature = "arceos"))]
+    yolo_worker: Option<YoloInferenceWorker>,
+}
+
+#[cfg(not(feature = "arceos"))]
+type YoloInferenceResult = Result<(task3_ncnn::Detection, u64), (i32, u64)>;
+
+#[cfg(not(feature = "arceos"))]
+struct YoloInferenceWorker {
+    receiver: Receiver<YoloInferenceResult>,
+}
+
+#[cfg(not(feature = "arceos"))]
+impl YoloInferenceWorker {
+    fn start() -> Self {
+        let (sender, receiver) = mpsc::sync_channel(1);
+        thread::spawn(move || {
+            let result = unsafe {
+                task3_ncnn::infer(
+                    TASK3_NCNN_PARAM_PATH.as_ptr().cast(),
+                    TASK3_NCNN_MODEL_PATH.as_ptr().cast(),
+                    TASK3_NCNN_INPUT_PATH.as_ptr().cast(),
+                )
+            };
+            // Safe-state cancellation deliberately drops the receiver while a
+            // non-cancellable ncnn forward pass finishes.
+            let _ = sender.send(result);
+        });
+        Self { receiver }
+    }
+
+    fn try_finish(&self) -> Option<YoloInferenceResult> {
+        match self.receiver.try_recv() {
+            Ok(result) => Some(result),
+            Err(TryRecvError::Empty) => None,
+            Err(TryRecvError::Disconnected) => Some(Err((-127, 0))),
+        }
+    }
 }
 
 /// Why queueing the next Task-3 CONTROL did not complete immediately.
@@ -468,6 +511,8 @@ impl Controller {
             // anchor fixed makes its target values match the golden JSON;
             // the bounded policy still limits every individual step.
             last_target: 500,
+            #[cfg(not(feature = "arceos"))]
+            yolo_worker: None,
         }
     }
 
@@ -538,14 +583,10 @@ impl Controller {
     /// normalized detection through the shared bounded perception contract.
     /// A rejected frame holds the last accepted target, so model noise or a
     /// no-detection frame cannot create a control jump.
-    fn yolo_target(&mut self) -> (i32, u64) {
-        let result = unsafe {
-            task3_ncnn::infer(
-                TASK3_NCNN_PARAM_PATH.as_ptr().cast(),
-                TASK3_NCNN_MODEL_PATH.as_ptr().cast(),
-                TASK3_NCNN_INPUT_PATH.as_ptr().cast(),
-            )
-        };
+    fn process_yolo_result(
+        &mut self,
+        result: Result<(task3_ncnn::Detection, u64), (i32, u64)>,
+    ) -> (i32, u64) {
         let (detection, infer_us, runtime_error) = match result {
             Ok((value, elapsed)) => (
                 Some(task3_model::perception::YoloDetection {
@@ -613,6 +654,44 @@ impl Controller {
         }
     }
 
+    #[cfg(not(feature = "arceos"))]
+    fn poll_yolo_target(&mut self, request_id: u32, now_ms: u64) -> Option<(i32, u64)> {
+        if self.yolo_worker.is_none() {
+            println!(
+                "TASK3_INFER_STARTED elapsed_ms={now_ms} sample={request_id} model=yolo11n.ncnn"
+            );
+            self.yolo_worker = Some(YoloInferenceWorker::start());
+            return None;
+        }
+        let result = self
+            .yolo_worker
+            .as_ref()
+            .and_then(YoloInferenceWorker::try_finish)?;
+        self.yolo_worker = None;
+        Some(self.process_yolo_result(result))
+    }
+
+    #[cfg(feature = "arceos")]
+    fn poll_yolo_target(&mut self, _request_id: u32, _now_ms: u64) -> Option<(i32, u64)> {
+        let result = unsafe {
+            task3_ncnn::infer(
+                TASK3_NCNN_PARAM_PATH.as_ptr().cast(),
+                TASK3_NCNN_MODEL_PATH.as_ptr().cast(),
+                TASK3_NCNN_INPUT_PATH.as_ptr().cast(),
+            )
+        };
+        Some(self.process_yolo_result(result))
+    }
+
+    fn cancel_yolo_inference(&mut self, now_ms: u64) {
+        #[cfg(not(feature = "arceos"))]
+        if self.yolo_worker.take().is_some() {
+            println!("TASK3_INFER_DISCARDED reason=protocol_safe elapsed_ms={now_ms}");
+        }
+        #[cfg(feature = "arceos")]
+        let _ = now_ms;
+    }
+
     fn send_next(
         &mut self,
         socket: &UdpSocket,
@@ -621,22 +700,27 @@ impl Controller {
         outbound: &mut [u8; MAX_DATAGRAM_LEN],
         now_ms: u64,
     ) -> Result<(), SendNextError> {
-        if self.request_in_flight {
+        if self.request_in_flight || endpoint.state() != EndpointState::Active {
             return Ok(());
         }
         if now_ms < self.next_send_at_ms {
-            thread::sleep(Duration::from_millis(self.next_send_at_ms - now_ms));
+            return Ok(());
         }
-        self.request_id = self.request_id.wrapping_add(1);
+        if endpoint.has_pending_frame() {
+            return Err(SendNextError::PendingAck);
+        }
+        let request_id = next_request_id(self.request_id);
         let requested_target = self.target_for(now_ms);
         let (target, output) = match self.model {
             ModelKind::Yolo => {
-                let (target, infer_us) = self.yolo_target();
+                let Some((target, infer_us)) = self.poll_yolo_target(request_id, now_ms) else {
+                    return Ok(());
+                };
                 let output = self.baseline_output(target, self.last_state);
                 println!(
                     "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={} \
                      model=yolo11n.ncnn target={}",
-                    self.request_id, output, infer_us, target
+                    request_id, output, infer_us, target
                 );
                 (target, output)
             }
@@ -644,7 +728,7 @@ impl Controller {
                 let (output, infer_us) = self.ai_output(requested_target);
                 println!(
                     "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={} model=cnn",
-                    self.request_id, output, infer_us
+                    request_id, output, infer_us
                 );
                 (requested_target, output)
             }
@@ -653,6 +737,7 @@ impl Controller {
                 self.baseline_output(requested_target, self.last_state),
             ),
         };
+        self.request_id = request_id;
         self.push_output(output);
 
         let mut payload = [0; 12];
@@ -1012,6 +1097,11 @@ fn configure_network(_local_ip: Ipv4Addr) -> Result<(), &'static str> {
 
 fn now_ms(start: &Instant) -> u64 {
     start.elapsed().as_millis() as u64
+}
+
+const fn next_request_id(current: u32) -> u32 {
+    let next = current.wrapping_add(1);
+    if next == 0 { 1 } else { next }
 }
 
 fn parse_ipv4(value: &str) -> Option<Ipv4Addr> {

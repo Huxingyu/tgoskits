@@ -75,14 +75,24 @@ cp "$initramfs" "$workdir/linux-task2/task2-linux-initramfs.cpio.gz"
 rm -f "$qemu_sock" "$serial_sock" "$log" \
     "$workdir/switch.vm1.pcap" "$workdir/switch.vm2.pcap"
 
+capture_ready_marker="TASK3_CONTROL_SENT"
+post_capture_expect=""
+if [[ "$mode" == "yolo" ]]; then
+    # YOLO inference is long enough to arm capture after model initialization
+    # and still retain the first CONTROL/ACK/STATUS transaction.
+    capture_ready_marker="TASK3_MODEL_READY"
+    post_capture_expect="expect 120 TASK3_CONTROL_SENT"
+fi
+
 cat > "$steps" <<EOF
-# Wait for the control loop inside the boot-time console multiplex.
-expect 420 TASK3_CONTROL_SENT
+# Wait until the control loop is ready inside the boot-time console multiplex.
+expect 420 ${capture_ready_marker}
 # Start frame capture, then watch the Linux controller console.
 detach
 cmd virtnet capture on
 expect 20 virtnet: capture ON
 attach 1
+${post_capture_expect}
 # Hold until the controller reports MIN_ELAPSED_MS of loop time.
 expect 120 elapsed_ms=${elapsed_pattern}
 detach

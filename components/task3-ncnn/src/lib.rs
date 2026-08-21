@@ -27,6 +27,12 @@ unsafe extern "C" {
     ) -> i32;
 }
 
+/// Runs one file-backed ncnn inference and returns the decoded detection.
+///
+/// # Safety
+///
+/// Each path must be a non-null pointer to a valid NUL-terminated string that
+/// remains readable for the duration of the call.
 pub unsafe fn infer(
     param_path: *const c_char,
     model_path: *const c_char,
