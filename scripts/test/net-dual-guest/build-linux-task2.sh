@@ -9,6 +9,9 @@ set -euo pipefail
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 out_dir="${OUT_DIR:-$repo_root/tmp/net-dual-guest/linux-task2}"
 cross_cc="${CROSS_CC:-/home/huhu/.local/toolchains/aarch64-linux-musl-cross/bin/aarch64-linux-musl-gcc}"
+cross_cxx="${CROSS_CXX:-/home/huhu/.local/toolchains/aarch64-linux-musl-cross/bin/aarch64-linux-musl-g++}"
+cross_ar="${CROSS_AR:-/home/huhu/.local/toolchains/aarch64-linux-musl-cross/bin/aarch64-linux-musl-ar}"
+ncnn_prefix="${NCNN_PREFIX:-$repo_root/tmp/task3-yolo/ncnn-aarch64/install}"
 target_triple="aarch64-unknown-linux-musl"
 
 if [[ ! -x "$cross_cc" ]]; then
@@ -42,6 +45,9 @@ build_role() {
         ${TASK3_YOLO_MIN_CONFIDENCE_MILLI:+TASK3_YOLO_MIN_CONFIDENCE_MILLI="$TASK3_YOLO_MIN_CONFIDENCE_MILLI"} \
         ${TASK3_YOLO_MIN_AREA_MILLI:+TASK3_YOLO_MIN_AREA_MILLI="$TASK3_YOLO_MIN_AREA_MILLI"} \
         ${TASK3_YOLO_MAX_TARGET_STEP:+TASK3_YOLO_MAX_TARGET_STEP="$TASK3_YOLO_MAX_TARGET_STEP"} \
+        NCNN_PREFIX="$ncnn_prefix" \
+        CXX_aarch64_unknown_linux_musl="$cross_cxx" \
+        AR_aarch64_unknown_linux_musl="$cross_ar" \
         CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER="$cross_cc" \
         cargo build \
         --package arceos-task2-net \

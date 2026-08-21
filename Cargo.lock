@@ -396,6 +396,7 @@ dependencies = [
  "ax-std",
  "task2-net-protocol",
  "task3-model",
+ "task3-ncnn",
 ]
 
 [[package]]
@@ -8205,6 +8206,13 @@ dependencies = [
 [[package]]
 name = "task3-model"
 version = "0.1.0"
+
+[[package]]
+name = "task3-ncnn"
+version = "0.1.0"
+dependencies = [
+ "cc",
+]
 
 [[package]]
 name = "tempfile"

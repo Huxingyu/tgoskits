@@ -15,6 +15,6 @@ cargo test -p arceos-task2-net --no-default-features
 python3 -m unittest discover -s scripts/test/net-dual-guest -p 'test_*.py'
 TASK3_CONTROL_LOOP=1 TASK3_MODEL=cnn cargo check -p arceos-task2-net --no-default-features
 TASK3_CONTROL_LOOP=1 TASK3_MODEL=yolo \
-  TASK3_MODEL_PATH=embedded:fixture-replay \
+  TASK3_MODEL_PATH=/usr/share/task3-yolo \
   cargo check -p arceos-task2-net --no-default-features
 echo "TASK2_CI_GATE_PASS"

@@ -91,8 +91,11 @@ const TASK3_AI: bool = option_env!("TASK3_AI").is_some();
 
 const TASK3_MODEL_PATH: &str = match option_env!("TASK3_MODEL_PATH") {
     Some(path) => path,
-    None => "embedded:fixture-replay",
+    None => "/usr/share/task3-yolo",
 };
+const TASK3_NCNN_PARAM_PATH: &[u8] = b"/usr/share/task3-yolo/yolo11n.ncnn.param\0";
+const TASK3_NCNN_MODEL_PATH: &[u8] = b"/usr/share/task3-yolo/yolo11n.ncnn.bin\0";
+const TASK3_NCNN_INPUT_PATH: &[u8] = b"/usr/share/task3-yolo/input.ppm\0";
 
 const TASK3_YOLO_MIN_CONFIDENCE: &str = match option_env!("TASK3_YOLO_MIN_CONFIDENCE_MILLI") {
     Some(value) => value,
@@ -127,9 +130,6 @@ impl ModelKind {
             "yolo" => Self::Yolo,
             _ => return Err("TASK3_MODEL must be baseline, cnn, or yolo"),
         };
-        if model == Self::Yolo && TASK3_MODEL_PATH != "embedded:fixture-replay" {
-            return Err("TASK3_MODEL=yolo currently requires embedded:fixture-replay");
-        }
         Ok(model)
     }
 
@@ -137,7 +137,7 @@ impl ModelKind {
         match self {
             Self::Baseline => "baseline",
             Self::Cnn => "cnn",
-            Self::Yolo => task3_model::perception::YOLO_FIXTURE_MODEL,
+            Self::Yolo => "yolo11n.ncnn",
         }
     }
 
@@ -145,7 +145,7 @@ impl ModelKind {
         match self {
             Self::Baseline => "p-controller-v1",
             Self::Cnn => "task3-temporal-cnn-m0",
-            Self::Yolo => task3_model::perception::YOLO_FIXTURE_VERSION,
+            Self::Yolo => "ultralytics-yolo11n-ncnn",
         }
     }
 
@@ -153,7 +153,7 @@ impl ModelKind {
         match self {
             Self::Baseline => "none",
             Self::Cnn => "embedded:task3-model/model.json",
-            Self::Yolo => task3_model::perception::YOLO_FIXTURE_SHA256,
+            Self::Yolo => "manifest:yolo11n.ncnn",
         }
     }
 }
@@ -516,12 +516,32 @@ impl Controller {
         )
     }
 
-    /// Replays the archived YOLO detections through the same bounded target
-    /// policy used by a future ONNX/NPU adapter.  A rejected frame holds the
-    /// last accepted target, so perception noise cannot create a control jump.
+    /// Runs the deployed ncnn model inside the Linux Guest and feeds only its
+    /// normalized detection through the shared bounded perception contract.
+    /// A rejected frame holds the last accepted target, so model noise or a
+    /// no-detection frame cannot create a control jump.
     fn yolo_target(&mut self) -> (i32, u64) {
-        let detection = task3_model::perception::yolo_fixture_detection(self.sample_count);
-        let infer_start = Instant::now();
+        let result = unsafe {
+            task3_ncnn::infer(
+                TASK3_NCNN_PARAM_PATH.as_ptr().cast(),
+                TASK3_NCNN_MODEL_PATH.as_ptr().cast(),
+                TASK3_NCNN_INPUT_PATH.as_ptr().cast(),
+            )
+        };
+        let (detection, infer_us, runtime_error) = match result {
+            Ok((value, elapsed)) => (
+                Some(task3_model::perception::YoloDetection {
+                    class_id: value.class_id,
+                    confidence_milli: value.confidence_milli,
+                    center_x_milli: value.center_x_milli,
+                    area_milli: value.area_milli,
+                }),
+                elapsed,
+                None,
+            ),
+            Err((1, elapsed)) => (None, elapsed, None),
+            Err((code, elapsed)) => (None, elapsed, Some(code)),
+        };
         let decision = detection.map(|value| {
             task3_model::perception::yolo_detection_to_target(
                 value,
@@ -529,8 +549,7 @@ impl Controller {
                 self.yolo_policy,
             )
         });
-        let infer_us = infer_start.elapsed().as_micros() as u64;
-        match (detection, decision) {
+        match (detection, decision, runtime_error) {
             (
                 Some(value),
                 Some(task3_model::perception::PerceptionDecision::Target {
@@ -538,28 +557,37 @@ impl Controller {
                     class_id,
                     confidence_milli,
                 }),
+                None,
             ) => {
                 self.last_target = target;
                 println!(
-                    "TASK3_DETECTION model=yolo11n.onnx class={} confidence_milli={} \
+                    "TASK3_DETECTION model=yolo11n.ncnn class={} confidence_milli={} \
                      center_x_milli={} area_milli={} target={}",
                     class_id, confidence_milli, value.center_x_milli, value.area_milli, target
                 );
                 (target, infer_us)
             }
-            (Some(_), Some(task3_model::perception::PerceptionDecision::Reject(reason))) => {
+            (Some(_), Some(task3_model::perception::PerceptionDecision::Reject(reason)), None) => {
                 println!(
-                    "TASK3_MODEL_REJECTED model=yolo11n.onnx reason={reason:?} \
+                    "TASK3_MODEL_REJECTED model=yolo11n.ncnn reason={reason:?} \
                      action=hold_last_target target={}",
                     self.last_target
                 );
                 (self.last_target, infer_us)
             }
-            (None, None) => {
+            (None, None, None) => {
                 println!(
-                    "TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection \
+                    "TASK3_MODEL_REJECTED model=yolo11n.ncnn reason=no_detection \
                      action=hold_last_target target={}",
                     self.last_target
+                );
+                (self.last_target, infer_us)
+            }
+            (None, None, Some(code)) => {
+                println!(
+                    "TASK3_MODEL_REJECTED model=yolo11n.ncnn reason=runtime_error_{:?} \
+                     action=hold_last_target target={}",
+                    code, self.last_target
                 );
                 (self.last_target, infer_us)
             }
