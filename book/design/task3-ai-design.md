@@ -133,6 +133,31 @@ Dense 32->1
   regenerates the Rust golden vectors from the final `weights.bin`, keeping
   "weights ↔ inference ↔ metadata" consistent.
 
+### 4.3 YOLO perception supplement
+
+The official AArch64 Guest path remains the no-std temporal CNN above.  A
+separate YOLO11n ONNX fixture now exercises the perception side of the same
+Task-3 contract without adding an ONNX runtime to the small Guest image:
+
+```text
+YOLO11n ONNX
+  → letterbox/preprocess + channel-first decode
+  → confidence/area/coordinate validation
+  → bounded center-x target mapping
+  → T2N1 CONTROL (future Guest/NPU adapter)
+```
+
+The reusable Rust boundary is `task3_model::perception`: it decodes a
+YOLOv8-style channel-first tensor, reports malformed/non-finite output, and
+limits one-frame target changes before the result can drive control.  The host
+fixture is reproducible with `scripts/task3/run_yolo_fixture.py`; its model and
+input hashes are archived under `results/task3/yolo/`.
+
+This supplement is intentionally not counted as an in-Guest YOLO performance
+claim.  The K230/Starry `.kmodel` path remains hardware-specific and is tracked
+as a separate StarryOS/NPU extension.  Until an AArch64-compatible runtime is
+available, `TASK3_MODEL=cnn` remains the official Guest mode.
+
 ## 5. Controller, Baseline, and Latency Measurement
 
 ### 5.1 Controller

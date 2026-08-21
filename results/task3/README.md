@@ -32,6 +32,17 @@
 `weights.bin` SHA-256 内联记录）；golden-vector / golden-window 测试随
 `cargo test -p task3-model` 可复算。
 
+## YOLO 感知补充
+
+`results/task3/yolo/` 保存了 YOLO11n ONNX 的固定图片 fixture 结果。它验证
+模型 hash、YOLOv8-style 输出解码、置信度/面积门限、中心位置到控制目标的
+有界映射，以及低置信度无检测时的安全拒绝。运行命令和当前结果见该目录
+的 README 与 `yolo-fixture-manifest.json`。
+
+这不是当前 AArch64 Guest 内的 ONNX runtime；正式 Guest 对比仍是已验证的
+时序 CNN 与 baseline。YOLO 作为可复现的感知补充和后续 Guest/NPU adapter
+契约，不能把 fixture 推理耗时当成 Task3 网络或 RTOS 延迟。
+
 ## 构建与运行命令
 
 见 `book/design/task3-ai-design.md` §8。
