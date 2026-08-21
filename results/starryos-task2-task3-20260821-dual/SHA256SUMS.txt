@@ -1,0 +1,19 @@
+# StarryOS Task2/Task3 dual-Guest evidence manifest
+# Generated 2026-08-21 in /home/huhu/tgoskits-starry
+# Git HEAD: e886b65a3f3e85a5cf79e92a13cc4cc9990d8f2d
+
+a77cc39184f6a70438758144bbb06adb973c2127db1b4431e9a1b20cebb5f0a5  target/aarch64-unknown-none-softfloat/release/starryos.bin
+9d11f94b23ce2060b2b4e31a118c87e7cb356a73c2e8c7b4321f1e5814a30be0  target/aarch64-unknown-linux-musl/release/axvisor.bin
+49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433  tmp/net-dual-guest/zephyr-task2/zephyr-task2.bin
+824167b6ef954b3e5c8f39c334c397ffb2d8e1efcdccc93ef3b2db55a89be147  tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img
+53760db8aff4e391018dbc3394b6ebcd8e87777cf76445ab6b3255a62adbded6  components/task3-model/model/weights.bin
+3c66df186f4c475794fd26c04e4c30a4a2762a9cf5df752d8f714e78ad69ebb6  components/task3-model/model/model.json
+
+582a3fc45edb46dd1cca886122b615910b7ebee05e37f9990441d2142f8252c8  results/starryos-task2-task3-20260821-dual/final.vm1.pcap
+4c8d0cbaa8487e27c12e791c08f241676e9d234d692972b0aa03bd89daa0a1f2  results/starryos-task2-task3-20260821-dual/final.vm2.pcap
+a787a12ae316210b61b9539e66fdd3e2090d7b33f59b934403d2e61f5ba6c57e  results/starryos-task2-task3-20260821-dual/run-final-evidence3.log
+38e4526564adbdd7628940e8e70fcac5d2f67e1b09694e4f3b81cd2c32a63d17  results/starryos-task2-task3-20260821-dual/build-final-evidence3.log
+ce495fa6d536b8840f211b2d19a8fc6c89d7f33b1066485a6003ac4e586fe7b9  scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-switch-msix1-capture.toml
+99a0aaa373bc22d55675682f40988f66f28e5db97647d261ad637504252cc828  scripts/test/net-dual-guest/vm-aarch64-starry-switch.toml
+0f7449a76d2cf117262b809c8fbac122e1c47b796bb52c87fa82e5c4a96c2be6  scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml
+62604bc2e7a04b583fe768703a2d9bc9ffd743d0f13dc0df0ea444c6b7686a47  apps/starry/starryos-task2/t2n1-run.sh
