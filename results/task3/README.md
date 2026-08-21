@@ -63,6 +63,14 @@ controller 日志会输出 `TASK3_MODEL_READY`、`TASK3_DETECTION`、
 当前 `yolo` 适配器只接受 `TASK3_MODEL_PATH=embedded:fixture-replay`；传入
 其他路径会显式失败，避免把缺失的 ONNX 文件误报成 Guest 内推理。
 
+当前 HEAD 的双 Guest QEMU YOLO 运行证据位于
+`results/task3/switch/current-head-yolo-capture/`，对应记录见
+`results/task3/yolo/current-head-validation-20260821.md`。该运行包含双端
+pcap、QMP 正常退出、`TASK3_MODEL_READY`、检测/无检测拒绝、CONTROL 和
+STATUS marker；pcap 必须通过 `verify_pcap.py --require-task2` 才可引用。
+`serial_console.py dump-pcap` 现在会实际发送 `virtnet capture dump` 并写出
+两侧 classic pcap，而不是只清空内存缓存。
+
 ## 构建与运行命令
 
 见 `book/design/task3-ai-design.md` §8。

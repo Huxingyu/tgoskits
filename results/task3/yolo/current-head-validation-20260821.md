@@ -1,88 +1,89 @@
 # Task3 YOLO current-HEAD validation (2026-08-21)
 
-This record separates the checks that completed on commit `0d8789a81` from the
-full dual-Guest QEMU run that could not start because a required Zephyr image
-was absent. It must not be cited as current-HEAD QEMU runtime evidence.
+This record contains the current `openrace/task1-rt-partition` HEAD validation.
+All measurements are QEMU AArch64 software-in-the-loop evidence; the fixture
+replay adapter is not an in-Guest ONNX runtime and its `infer_us` values are
+not physical YOLO inference performance.
 
-## Completed checks
-
-The hardware-independent Task2/Task3 contract gate passed:
+## Contract and fixture gates
 
 ```bash
 bash scripts/test/net-dual-guest/run-ci-regression.sh
-```
-
-Observed results:
-
-- `task2-net-protocol`: 21 passed;
-- Python network tooling: 14 passed;
-- CNN controller compile check: passed;
-- YOLO controller compile check with
-  `TASK3_MODEL_PATH=embedded:fixture-replay`: passed;
-- final marker: `TASK2_CI_GATE_PASS`.
-
-The pinned YOLO11n fixture also reproduced the checked-in decision contract:
-
-```bash
 python3 scripts/task3/run_yolo_fixture.py \
   --model tmp/task3-yolo/yolo11n.onnx \
   --out-dir /tmp/task3-yolo-current-head
 ```
 
-The model SHA-256 was
+The protocol/model gate passed: 21 Rust protocol tests, 14 Python network tests,
+CNN compile check, YOLO compile check, and `TASK2_CI_GATE_PASS`. The YOLO11n
+artifact SHA-256 is
 `634279b40c07c6391472c51ad45b81ebc48706a9a1fe72dd3396322acd0c053b`.
-The three fixture outcomes were no detection, target `419`, and a step-limited
-target `600`, matching `yolo-fixture-manifest.json`.
+The fixture covers no detection, target `419`, and a step-limited target `600`.
 
-The current HEAD Linux endpoints were rebuilt with:
+## Zephyr build inputs
 
-```bash
-TASK3_CONTROL_LOOP=1 \
-TASK3_MODEL=yolo \
-TASK3_MODEL_PATH=embedded:fixture-replay \
-scripts/test/net-dual-guest/build-linux-task2.sh
-```
-
-The controller, managed endpoint, input artifacts, and generated initramfs
-hashes are recorded in `current-head-build-manifest.toml`.
-
-## Full QEMU attempt
-
-The following current-HEAD run was attempted after installing the YOLO
-controller initramfs into the expected switch-run location:
+The managed Guest was built with Zephyr 4.4.2 and SDK 1.0.1:
 
 ```bash
-MIN_ELAPSED_MS=12000 \
-  bash scripts/task3/run-task3-switch.sh current-head-yolo ai
-```
-
-Axvisor stopped during its build-script input validation:
-
-```text
-Error: Path /home/huhu/tgoskits-rt/tmp/net-dual-guest/zephyr-task2/zephyr-task2.bin not found
-```
-
-No Guest booted, so this attempt proves neither UDP exchange nor YOLO
-Safe/recovery behavior. The local cached Zephyr source is an incomplete dirty
-recovery checkout, and no usable Zephyr SDK toolchain is installed. Reusing an
-unversioned binary was rejected because it would not prove the current source.
-
-## Resume command
-
-After restoring a versioned Zephyr source tree and SDK, rebuild the switch-slot
-image and rerun the same experiment:
-
-```bash
-ZEPHYR_BASE=<zephyr-source> \
-ZEPHYR_SDK_INSTALL_DIR=<zephyr-sdk> \
+OUT_DIR=tmp/net-dual-guest/zephyr-task2-sdk101f \
+ZEPHYR_BASE=/tmp/zephyrproject/zephyr-4.4.2 \
+ZEPHYR_SDK_INSTALL_DIR=/tmp/zephyr-sdk-1.0.1 \
+OBJCOPY=/tmp/zephyr-sdk-1.0.1/gnu/aarch64-zephyr-elf/bin/aarch64-zephyr-elf-objcopy \
+READELF=/tmp/zephyr-sdk-1.0.1/gnu/aarch64-zephyr-elf/bin/aarch64-zephyr-elf-readelf \
 TASK2_ZEPHYR_VIRTIO_SLOT=0 \
-  scripts/test/net-dual-guest/build-zephyr-task2.sh
-
-MIN_ELAPSED_MS=12000 \
-  bash scripts/task3/run-task3-switch.sh current-head-yolo ai
+scripts/test/net-dual-guest/build-zephyr-task2.sh
 ```
 
-Acceptance requires `TASK3_MODEL_READY`, at least one accepted
-`TASK3_DETECTION`, `TASK3_CONTROL_SENT`, matching `TASK2_STATUS_RECEIVED`, two
-verifiable pcaps, and a normal QMP exit. A separate blackout run is still
-required to claim YOLO-mode Safe to Active recovery.
+The resulting raw image SHA-256 is
+`49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433`.
+Zephyr commit: `dccb09599635bdff17633fa7e9dab014b91dce90`.
+
+## Current HEAD dual-Guest YOLO run
+
+The reproducible run command is:
+
+```bash
+MIN_ELAPSED_MS=12000 \
+  bash scripts/task3/run-task3-switch.sh current-head-yolo-capture ai
+```
+
+Evidence: `results/task3/switch/current-head-yolo-capture/`.
+
+| Observation | Result |
+|---|---:|
+| `TASK3_MODEL_READY` | 1 |
+| `TASK3_INFER` / `TASK3_CONTROL_SENT` | 74 / 74 |
+| `TASK3_DETECTION` | 49 |
+| `TASK3_MODEL_REJECTED` (no detection → hold-last-target) | 25 |
+| `TASK3_STATUS_RECEIVED` | 73 |
+| Linux-side pcap frames | 330 |
+| RTOS-side pcap frames | 330 |
+| T2N1 UDP frames per pcap | 324 |
+
+Both pcaps pass:
+
+```bash
+python3 scripts/test/net-dual-guest/verify_pcap.py \
+  --tag '' --require-task2 \
+  results/task3/switch/current-head-yolo-capture/linux.pcap \
+  results/task3/switch/current-head-yolo-capture/rtos.pcap
+```
+
+The run reached `elapsed_ms=12079`, exited through QMP, and produced matching
+directed T2N1 ledgers. Pcap SHA-256 values are recorded in the run manifest.
+
+## Previous blocked attempt
+
+The earlier `current-head-yolo` attempt failed before Guest boot because
+`tmp/net-dual-guest/zephyr-task2/zephyr-task2.bin` was absent. That failure is
+retained as archaeology only; it is superseded by the successful run above.
+
+## Remaining YOLO gap
+
+The normal YOLO control loop is now proven through the T2N1 path. A separate
+YOLO-mode blackout → Safe → recovery run is still required before claiming the
+YOLO fault-recovery requirement. The next command is:
+
+```bash
+bash scripts/task3/run-task3-switch-fault.sh current-head-yolo-fault
+```

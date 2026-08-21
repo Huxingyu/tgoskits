@@ -4,6 +4,15 @@
  *
  * Build with TASK2_ZEPHYR_VIRTIO_SLOT=0 to select this overlay. */
 
+/* Zephyr's QEMU networking choice enables the generic UART pipe helper even
+ * though this Guest uses virtio-net. Bind that helper to the console UART so
+ * the driver remains linkable; no SLIP traffic is used. */
+/ {
+	chosen {
+		zephyr,uart-pipe = &uart0;
+	};
+};
+
 /* The board's generic PCIe node is not part of this MMIO-only Guest.  Disable
  * both the host controller and its E1000 child; this also prevents the board
  * Kconfig from selecting PCIe support for the image. */

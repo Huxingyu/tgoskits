@@ -14,6 +14,34 @@ repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 label="${1:?label required}"
 mode="${2:?mode required: ai or baseline}"
 min_elapsed_ms="${MIN_ELAPSED_MS:-35000}"
+if ! [[ "$min_elapsed_ms" =~ ^[0-9]+$ ]]; then
+    echo "MIN_ELAPSED_MS must be a non-negative integer" >&2
+    exit 2
+fi
+# Generate a Python-regex lower bound for the elapsed_ms marker.
+elapsed_pattern="$(python3 - "$min_elapsed_ms" <<'PY'
+import re
+import sys
+
+value = int(sys.argv[1])
+if value == 0:
+    print(r"[0-9]+")
+    raise SystemExit
+
+digits = str(value)
+length = len(digits)
+alternatives = [re.escape(digits)]
+for index, digit in enumerate(digits):
+    if digit == "9":
+        continue
+    next_digit = str(int(digit) + 1)
+    remaining = length - index - 1
+    suffix = rf"\d{{{remaining}}}" if remaining else ""
+    alternatives.append(re.escape(digits[:index]) + f"[{next_digit}-9]" + suffix)
+alternatives.append(rf"[1-9]\d{{{length},}}")
+print("(?:" + "|".join(alternatives) + ")")
+PY
+)"
 workdir="$repo_root/tmp/net-dual-guest"
 log="/tmp/task3-${label}.log"
 build_log="/tmp/task3-${label}-build.log"
@@ -46,9 +74,8 @@ detach
 cmd virtnet capture on
 expect 20 virtnet: capture ON
 attach 1
-# Hold until the controller reports MIN_ELAPSED_MS of loop time
-# (elapsed_ms=35000..39999 or 40000+).
-expect 120 elapsed_ms=(3[5-9]|[4-9][0-9])[0-9]{3}
+# Hold until the controller reports MIN_ELAPSED_MS of loop time.
+expect 120 elapsed_ms=${elapsed_pattern}
 detach
 dump-pcap $workdir/switch
 qmp-quit $qemu_sock
@@ -97,8 +124,32 @@ if [ "$driver_status" -ne 0 ]; then
     exit "$driver_status"
 fi
 
+python3 - "$log" "$min_elapsed_ms" <<'PY'
+import re
+import sys
+
+log_path, minimum = sys.argv[1], int(sys.argv[2])
+text = open(log_path, encoding="utf-8", errors="replace").read()
+values = [int(value) for value in re.findall(r"elapsed_ms=(\d+)", text)]
+if not values or max(values) < minimum:
+    raise SystemExit(
+        f"run did not reach MIN_ELAPSED_MS={minimum}: "
+        f"max={max(values, default=None)}"
+    )
+PY
+
 echo "run $label ($mode) finished; log=$log build_log=$build_log"
-ls -la "$workdir"/switch.vm*.pcap 2>/dev/null || true
+for pcap in "$workdir"/switch.vm1.pcap "$workdir"/switch.vm2.pcap; do
+    if [ ! -s "$pcap" ]; then
+        echo "missing or empty capture: $pcap" >&2
+        exit 1
+    fi
+done
+python3 scripts/test/net-dual-guest/verify_pcap.py \
+    --tag '' --require-task2 "$workdir/switch.vm1.pcap"
+python3 scripts/test/net-dual-guest/verify_pcap.py \
+    --tag '' --require-task2 "$workdir/switch.vm2.pcap"
+ls -la "$workdir"/switch.vm*.pcap
 
 # Archive the evidence under results/task3/switch/<label>/ so the next run's
 # cleanup cannot overwrite it.
@@ -108,5 +159,16 @@ cp "$log" "$out_dir/run.log" 2>/dev/null || true
 cp "$build_log" "$out_dir/build.log" 2>/dev/null || true
 cp "$workdir/switch.vm1.pcap" "$out_dir/linux.pcap" 2>/dev/null || true
 cp "$workdir/switch.vm2.pcap" "$out_dir/rtos.pcap" 2>/dev/null || true
-printf 'label = "%s"\nmode = "%s"\n' "$label" "$mode" > "$out_dir/manifest.toml"
+zephyr_manifest="$workdir/zephyr-task2/manifest.toml"
+{
+    printf 'label = "%s"\n' "$label"
+    printf 'mode = "%s"\n' "$mode"
+    printf 'min_elapsed_ms = %s\n' "$min_elapsed_ms"
+    printf 'linux_pcap_sha256 = "%s"\n' "$(sha256sum "$out_dir/linux.pcap" | awk '{print $1}')"
+    printf 'rtos_pcap_sha256 = "%s"\n' "$(sha256sum "$out_dir/rtos.pcap" | awk '{print $1}')"
+    if [ -f "$zephyr_manifest" ]; then
+        printf 'zephyr_manifest = "%s"\n' "$zephyr_manifest"
+        printf 'zephyr_binary_sha256 = "%s"\n' "$(awk -F'"' '/^sha256 = / {print $2}' "$zephyr_manifest")"
+    fi
+} > "$out_dir/manifest.toml"
 echo "archived evidence under $out_dir"

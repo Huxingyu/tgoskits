@@ -43,10 +43,12 @@
 - [x] 将 Task2 canonical 设计/运行摘要和本评分表纳入最终分支。
 - [x] 给 Task1 旧设计、失败复核和历史统计文档加上 `historical` 标识，
       避免旧数字与最终数字混用。
-- [ ] 在当前最终 HEAD 上复跑一次 Task2 网络 + Task3 AI 闭环。
+- [x] 在当前最终 HEAD 上复跑一次 Task2 网络 + Task3 AI 闭环；YOLO
+      双 Guest 运行、双端 pcap 和 QMP 正常退出证据见
+      `results/task3/switch/current-head-yolo-capture/`。
 - [x] 在当前 HEAD 重跑协议/模型 contract gate、YOLO fixture，并重建 YOLO
-      Linux endpoint 与 initramfs；hash 和完整 QEMU 的 Zephyr 资产阻塞已归档到
-      `results/task3/yolo/current-head-validation-20260821.md`。
+      Linux endpoint、initramfs 和 Zephyr managed Guest；完整命令、hash 和
+      pcap 见 `results/task3/yolo/current-head-validation-20260821.md`。
 - [ ] 统一构建、启动、验证命令及 SHA256 manifest。
 - [ ] 检查 Task2/Task3 与 `dev` 的冲突，创建可审查的 Task1/Task2/Task3 PR。
 - [ ] 准备官网要求的约 5 分钟演示流程和日志 marker 清单。
@@ -60,7 +62,8 @@
       `acknowledgement=0`，可靠帧关联被拒绝的 sequence。
 - [x] 将协议/controller 回归接入可调用的 CI 默认路径；完整双 Guest QEMU
       运行仍由显式脚本和已有 AArch64 QEMU 证据 job 负责。
-- [ ] 在当前 HEAD 重新采集双向 UDP、ACK/重传、乱序/重复、Safe/恢复和 pcap。
+- [ ] 在当前 HEAD 重新采集 ACK/重传、乱序/重复、Safe/恢复和 fault pcap；
+      正常双向 UDP、ACK/STATUS 和基础 pcap 已由当前 HEAD YOLO 运行覆盖。
 
 验收：Task2 从当前保守 24/25 提升到 24–25/25 的证据完整度，且失败时能
 指出具体协议阶段。

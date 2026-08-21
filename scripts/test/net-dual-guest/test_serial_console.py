@@ -115,6 +115,31 @@ class SerialConsoleTest(unittest.TestCase):
             ],
         )
 
+    def test_dump_pcap_streams_guest_records_and_writes_both_files(self):
+        driver = object.__new__(MODULE.ConsoleDriver)
+        driver.conn = FakeConnection()
+        driver.closed = False
+        driver.dump_lines = []
+
+        def fake_poll_reads():
+            driver.dump_lines = [
+                "CAPDUMP_BEGIN\n"
+                "CAPTURE 1 100 0011\n"
+                "CAPTURE 2 200 aabb\n"
+                "CAPDUMP_END\n"
+            ]
+
+        driver.poll_reads = fake_poll_reads
+        with tempfile.TemporaryDirectory() as directory:
+            driver.dump_pcap(str(Path(directory) / "switch"))
+            vm1 = Path(directory) / "switch.vm1.pcap"
+            vm2 = Path(directory) / "switch.vm2.pcap"
+            self.assertEqual(driver.conn.sent, [b"virtnet capture dump\n"])
+            self.assertEqual(vm1.read_bytes()[:4], MODULE.PCAP_GLOBAL_HEADER[:4])
+            self.assertEqual(vm2.read_bytes()[:4], MODULE.PCAP_GLOBAL_HEADER[:4])
+            self.assertGreater(len(vm1.read_bytes()), len(MODULE.PCAP_GLOBAL_HEADER))
+            self.assertGreater(len(vm2.read_bytes()), len(MODULE.PCAP_GLOBAL_HEADER))
+
 
 if __name__ == "__main__":
     unittest.main()

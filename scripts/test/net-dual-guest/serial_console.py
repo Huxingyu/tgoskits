@@ -280,6 +280,54 @@ class ConsoleDriver:
         self.attach(vm_id)
 
     def dump_pcap(self, prefix: str) -> None:
+        """Stream the in-hypervisor capture and write one pcap per Guest."""
+        self.dump_lines = []
+        self.dumping = True
+        self.conn.sendall(b"virtnet capture dump\n")
+        deadline = time.time() + 60
+        got_end = False
+        while time.time() < deadline and not self.closed:
+            self.poll_reads()
+            joined = "".join(self.dump_lines)
+            if DUMP_END in joined:
+                got_end = True
+                break
+            time.sleep(0.3)
+        self.dumping = False
+        if not got_end:
+            raise RuntimeError("capture dump did not complete")
+
+        joined = "".join(self.dump_lines)
+        begin = joined.find(DUMP_BEGIN)
+        end = joined.find(DUMP_END)
+        if begin < 0 or end <= begin:
+            raise RuntimeError("capture dump markers are malformed")
+        body = joined[begin + len(DUMP_BEGIN):end]
+        frames = {1: [], 2: []}
+        for line in body.splitlines():
+            match = re.match(r"CAPTURE (\d+) (\d+) ([0-9a-f]+)", line.strip())
+            if not match:
+                continue
+            vm = int(match.group(1))
+            nanos = int(match.group(2))
+            frame = bytes.fromhex(match.group(3))
+            frames.setdefault(vm, []).append((nanos, frame))
+
+        prefix_path = Path(prefix)
+        prefix_path.parent.mkdir(parents=True, exist_ok=True)
+        for vm, records in sorted(frames.items()):
+            pcap_path = prefix_path.with_name(f"{prefix_path.name}.vm{vm}.pcap")
+            with pcap_path.open("wb") as pcap_file:
+                pcap_file.write(PCAP_GLOBAL_HEADER)
+                for nanos, frame in records:
+                    seconds = nanos // 1_000_000_000
+                    micros = (nanos // 1_000) % 1_000_000
+                    length = len(frame)
+                    pcap_file.write(
+                        struct.pack("<IIII", seconds, micros, length, length)
+                    )
+                    pcap_file.write(frame)
+            print(f"pcap: wrote {len(records)} frames to {pcap_path}")
         self.dump_lines = []
 
     def collect_forensics(self, qmp_sock: str | None, artifact_dir: str | None) -> None:

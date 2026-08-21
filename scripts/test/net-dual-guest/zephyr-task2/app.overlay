@@ -1,6 +1,12 @@
 /* The board's generic PCIe node is not part of this MMIO-only Guest.  Disable
  * both the host controller and its E1000 child; this also prevents the board
  * Kconfig from selecting PCIe support for the image. */
+/ {
+	chosen {
+		zephyr,uart-pipe = &uart0;
+	};
+};
+
 &pcie {
 	status = "disabled";
 };

@@ -1,0 +1,7 @@
+label = "current-head-yolo-capture"
+mode = "ai"
+min_elapsed_ms = 12000
+linux_pcap_sha256 = "484642ced477f20e2fd09261e638167e1a7bd846a1bab65622b23959e606bb1c"
+rtos_pcap_sha256 = "ec424697d6094d73968d04236f8377bf64f5c52f18e95aa36eaf15b4f6561669"
+zephyr_manifest = "/home/huhu/tgoskits-rt/tmp/net-dual-guest/zephyr-task2/manifest.toml"
+zephyr_binary_sha256 = "49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433"
