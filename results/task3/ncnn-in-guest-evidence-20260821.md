@@ -17,6 +17,7 @@ assets under `/usr/share/task3-yolo/`.
 ## Reproducible checks
 
 ```bash
+scripts/task3/prepare-yolo-ncnn-input.sh
 scripts/task3/run-ncnn-smoke.sh
 TASK3_CONTROL_LOOP=1 TASK3_MODEL=yolo \
   TASK3_MODEL_PATH=/usr/share/task3-yolo \
