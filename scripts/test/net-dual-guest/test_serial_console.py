@@ -25,6 +25,17 @@ class FakeConnection:
         self.sent.append(payload)
 
 
+class ChunkedConnection:
+    def __init__(self, chunks):
+        self.chunks = iter(chunks)
+
+    def recv(self, _size):
+        try:
+            return next(self.chunks)
+        except StopIteration as error:
+            raise MODULE.socket.timeout from error
+
+
 class FakeQmpSession:
     commands = []
 
@@ -43,6 +54,26 @@ class FakeQmpSession:
 
 
 class SerialConsoleTest(unittest.TestCase):
+    def test_poll_reads_tracks_attachment_marker_split_across_receives(self):
+        driver = object.__new__(MODULE.ConsoleDriver)
+        driver.conn = ChunkedConnection(
+            [b"[Axvisor] attached VM[", b"2] console; use Ctrl+X\n"]
+        )
+        driver.closed = False
+        driver.dumping = False
+        driver.dump_lines = []
+        driver.tail = b""
+        driver.attached = False
+        driver.last_vm = None
+        driver.write_log = mock.Mock()
+        driver.observe_progress = mock.Mock()
+
+        with mock.patch.object(MODULE.sys, "stdout"):
+            driver.poll_reads()
+
+        self.assertTrue(driver.attached)
+        self.assertEqual(driver.last_vm, 2)
+
     def test_send_until_retries_gate_byte_until_marker_arrives(self):
         driver = object.__new__(MODULE.ConsoleDriver)
         driver.conn = FakeConnection()

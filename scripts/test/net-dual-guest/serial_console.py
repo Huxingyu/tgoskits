@@ -213,10 +213,10 @@ class ConsoleDriver:
             if self.dumping:
                 self.dump_lines.append(text)
             self.tail = (self.tail + data)[-1_000_000:]
-            match = re.search(
-                r"\[Axvisor\] (attached|detached) VM\[(\d+)\]", text
-            )
-            if match:
+            console_tail = self.tail[-512:].decode("utf-8", errors="replace")
+            for match in re.finditer(
+                r"\[Axvisor\] (attached|detached) VM\[(\d+)\]", console_tail
+            ):
                 self.attached = match.group(1) == "attached"
                 self.last_vm = int(match.group(2))
 
