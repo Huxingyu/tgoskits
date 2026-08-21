@@ -112,13 +112,16 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 
 ## 阶段 5：Task3 量化补充实验
 
-- [ ] 在同一固定场景下交错运行 `cnn`、`yolo` 和 baseline，各至少 3 次。
-- [ ] 统计控制 RMSE、settling time、超调、周期级 RTT、模型推理时间、
-      检测置信度和拒绝次数。
-- [ ] 单独报告模型推理成本，不能把 YOLO 推理耗时误报成网络延迟或 RTOS 延迟。
+- [x] 在同一固定场景下交错运行 `cnn`、`yolo` 和 baseline，各 3 次；原始证据
+      见 `results/task3/switch/quant-{baseline,cnn,yolo}-{1,2,3}/`。
+- [x] 统计控制 RMSE、settling time、超调、周期级 RTT、模型推理时间、
+      检测置信度和拒绝次数，汇总见 `results/task3/quant-20260821/`。
+- [x] 单独报告模型推理成本；报告明确把 YOLO fixture replay overhead 与
+      网络 RTT、RTOS 控制延迟分开。
 - [x] 在一次 link-blackout/恢复运行中验证 YOLO 模式的 Safe→Active 行为；
       `fault-current-head-yolo-fault-validated` 已通过 runner 门禁。
-- [ ] 更新 Task3 设计文档、README、summary.csv、pcap/log/hash 清单。
+- [x] 更新 Task3 README、量化 summary、pcap/log/hash 清单；设计文档仍需将
+      量化结果纳入最终章节。
 
 验收：YOLO 结果与 CNN/baseline 的比较条件、模型 hash、命令和原始数据齐全；
 不把 QEMU TCG 数字表述为硬实时保证。

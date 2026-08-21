@@ -78,6 +78,15 @@ YOLO 故障恢复证据位于
 marker 顺序、恢复后的续跑、双端非空 pcap、T2N1 ledger 和 SHA256 manifest。
 该证据同样是 QEMU SIL，不能解读为物理板硬实时或真实 ONNX 推理耗时。
 
+## 当前 HEAD 三模式量化结果
+
+baseline、CNN、YOLO fixture replay 已在同一固定场景下交错各运行 3 次，原始
+日志、双端 pcap、每次 manifest 和汇总脚本输出见
+`results/task3/quant-20260821/` 以及
+`results/task3/switch/quant-{baseline,cnn,yolo}-{1,2,3}/`。报告明确区分了
+模型 target 跟踪误差、冻结场景误差、RTT、settling、超调、检测/拒绝次数和
+fixture replay overhead；YOLO 的 `infer_us` 不当作真实 ONNX 推理性能。
+
 ## 构建与运行命令
 
 见 `book/design/task3-ai-design.md` §8。

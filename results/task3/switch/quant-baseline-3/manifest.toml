@@ -1,0 +1,7 @@
+label = "quant-baseline-3"
+mode = "baseline"
+min_elapsed_ms = 26000
+linux_pcap_sha256 = "a7c344897e570f3a2a852bff64076536af970b0b2e7ee7253aaf09b8c43f1f3f"
+rtos_pcap_sha256 = "383cf75d990773f857272bb4e1fa231b98c8a9f84cb8649ecc99131ee6168ddb"
+zephyr_manifest = "/home/huhu/tgoskits-rt/tmp/net-dual-guest/zephyr-task2/manifest.toml"
+zephyr_binary_sha256 = "49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433"

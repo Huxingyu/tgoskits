@@ -1,0 +1,7 @@
+label = "quant-yolo-1"
+mode = "yolo"
+min_elapsed_ms = 26000
+linux_pcap_sha256 = "b550619a8ad1178ef555ca44af4042b49499306bd1af09ade1b104010cd1a9c7"
+rtos_pcap_sha256 = "95aab30fafb2729cbea4b64ff8fa909cdf61e54d6cccdaeb73184ae4b3d3c1af"
+zephyr_manifest = "/home/huhu/tgoskits-rt/tmp/net-dual-guest/zephyr-task2/manifest.toml"
+zephyr_binary_sha256 = "49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433"

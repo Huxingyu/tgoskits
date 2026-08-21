@@ -310,19 +310,17 @@ python3 scripts/task3/train_model.py --epochs 60
 python3 scripts/task3/dagger_train.py --iterations 6 --epochs 25 --closed-loop-weight 3
 python3 scripts/task3/export_golden.py && cargo test -p task3-model
 
-# Build the guests (baseline / AI)
-TASK3_CONTROL_LOOP=1 bash scripts/test/net-dual-guest/build-linux-task2.sh
-TASK3_CONTROL_LOOP=1 TASK3_AI=1 bash scripts/test/net-dual-guest/build-linux-task2.sh
-bash scripts/test/net-dual-guest/build-linux-initramfs.sh
+# Build the guests (baseline / CNN / YOLO)
+scripts/task3/build-quant-variants.sh
 # requires the Zephyr SDK and source; slot 0 = software-switch link,
 # slot 30 = QEMU socket-pair topology
 TASK2_ZEPHYR_VIRTIO_SLOT=0 bash scripts/test/net-dual-guest/build-zephyr-task2.sh
 
-# Experiments (AI/baseline comparison; safe recovery is an extension; the
-# software-switch link is the current data plane)
-bash scripts/task3/run-task3-switch.sh ai-runX ai
+# Experiments (same frozen scenario; software-switch link is the current data plane)
+bash scripts/task3/run-task3-switch.sh cnn-runX cnn
 bash scripts/task3/run-task3-switch.sh baseline-runX baseline
-bash scripts/task3/run-task3-switch-fault.sh fault-runX
+bash scripts/task3/run-task3-switch.sh yolo-runX yolo
+bash scripts/task3/run-task3-switch-fault.sh yolo-fault-runX
 
 # Earlier experiment flow on the QEMU socket direct-connect environment
 # (data under results/task3/)
@@ -334,7 +332,17 @@ bash scripts/task3/run-task3-fault.sh fault-runX
 python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
   --out-dir results/task3/switch --label switch --modes ai,ai,ai,baseline,baseline,baseline \
   --plot results/task3/switch/comparison.png
+
+# Current three-mode quantitative report.  YOLO replay overhead is reported
+# separately from network RTT and RTOS control latency.
+python3 scripts/task3/quantify-model-runs.py <logs...> \
+  --modes baseline,baseline,baseline,cnn,cnn,cnn,yolo,yolo,yolo \
+  --out-dir results/task3/quant-20260821
 ```
+
+The current batch is archived under `results/task3/quant-20260821/` and
+`results/task3/switch/quant-{baseline,cnn,yolo}-{1,2,3}/`. The YOLO mode is
+`embedded:fixture-replay`; its replay timing is not an ONNX-runtime benchmark.
 
 ## 9. Known Limitations and Honest Claims
 
@@ -347,11 +355,12 @@ python3 scripts/test/net-dual-guest/task3_metrics.py <logs...> \
   reaching the target;
 - The baseline is the frozen Kp=2 pure P controller, not deliberately
   de-tuned;
-- The "3+3 runs" are replays of the same frozen scenario (high
-  reproducibility, not a statistically significant sample);
+- The current batch has three interleaved runs each for baseline, CNN and YOLO
+  fixture replay. It demonstrates reproducibility and contract behavior, not a
+  statistically significant sample;
 - Cycle-level latency includes the rate limit and inference and must not
   be read as pure network RTT (see §5.2);
-- Safe recovery is an extension; `set_link` is ineffective in this
+- Safe recovery is validated as an extension; `set_link` is ineffective in this
   environment (a platform boundary), so fault injection uses the
   `virtnet drop` blackout gate (the P3-proxy blackout in the QEMU socket
   direct-connect environment);

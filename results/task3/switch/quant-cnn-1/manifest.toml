@@ -1,0 +1,7 @@
+label = "quant-cnn-1"
+mode = "cnn"
+min_elapsed_ms = 26000
+linux_pcap_sha256 = "65c20863dc307facfddaa286343304e1e1ab3a3bb1faf7957e51d6e552e081e5"
+rtos_pcap_sha256 = "49b13f4cd065a104a1eaaf20ae683a062cd1d3ad09b17dcde1d13f74891cd30a"
+zephyr_manifest = "/home/huhu/tgoskits-rt/tmp/net-dual-guest/zephyr-task2/manifest.toml"
+zephyr_binary_sha256 = "49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433"
