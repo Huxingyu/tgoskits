@@ -85,11 +85,108 @@ const SEND_P1_PROBE: bool = option_env!("TASK2_SEND_P1_PROBE").is_some();
 // stays available so the Task-2 evidence remains reproducible.
 const TASK3_CONTROL: bool = option_env!("TASK3_CONTROL_LOOP").is_some();
 
-// Presence of this build-time variable selects the AI controller inside the
-// Task-3 loop: the output is the frozen P term plus the model's learned
-// loss/disturbance compensation (see task3-model).  Absent, the loop uses the
-// pure P baseline with identical scenario and protocol behaviour.
+// Legacy build-time switch retained for existing `TASK3_AI=1` artifacts.  New
+// builds should use TASK3_MODEL=cnn|yolo explicitly.
 const TASK3_AI: bool = option_env!("TASK3_AI").is_some();
+
+const TASK3_MODEL_PATH: &str = match option_env!("TASK3_MODEL_PATH") {
+    Some(path) => path,
+    None => "embedded:fixture-replay",
+};
+
+const TASK3_YOLO_MIN_CONFIDENCE: &str = match option_env!("TASK3_YOLO_MIN_CONFIDENCE_MILLI") {
+    Some(value) => value,
+    None => "600",
+};
+const TASK3_YOLO_MIN_AREA: &str = match option_env!("TASK3_YOLO_MIN_AREA_MILLI") {
+    Some(value) => value,
+    None => "10",
+};
+const TASK3_YOLO_MAX_STEP: &str = match option_env!("TASK3_YOLO_MAX_TARGET_STEP") {
+    Some(value) => value,
+    None => "100",
+};
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ModelKind {
+    Baseline,
+    Cnn,
+    Yolo,
+}
+
+impl ModelKind {
+    fn configured() -> Result<Self, &'static str> {
+        let value = match option_env!("TASK3_MODEL") {
+            Some(value) => value,
+            None if TASK3_AI => "cnn",
+            None => "baseline",
+        };
+        match value {
+            "baseline" => Ok(Self::Baseline),
+            "cnn" => Ok(Self::Cnn),
+            "yolo" => Ok(Self::Yolo),
+            _ => Err("TASK3_MODEL must be baseline, cnn, or yolo"),
+        }
+    }
+
+    fn name(self) -> &'static str {
+        match self {
+            Self::Baseline => "baseline",
+            Self::Cnn => "cnn",
+            Self::Yolo => task3_model::perception::YOLO_FIXTURE_MODEL,
+        }
+    }
+
+    fn version(self) -> &'static str {
+        match self {
+            Self::Baseline => "p-controller-v1",
+            Self::Cnn => "task3-temporal-cnn-m0",
+            Self::Yolo => task3_model::perception::YOLO_FIXTURE_VERSION,
+        }
+    }
+
+    fn sha256(self) -> &'static str {
+        match self {
+            Self::Baseline => "none",
+            Self::Cnn => "embedded:task3-model/model.json",
+            Self::Yolo => task3_model::perception::YOLO_FIXTURE_SHA256,
+        }
+    }
+}
+
+fn parse_nonnegative_i32(value: &str) -> Option<i32> {
+    let mut result = 0i32;
+    if value.is_empty() {
+        return None;
+    }
+    for byte in value.bytes() {
+        if !byte.is_ascii_digit() {
+            return None;
+        }
+        result = result
+            .checked_mul(10)?
+            .checked_add(i32::from(byte - b'0'))?;
+    }
+    Some(result)
+}
+
+fn yolo_policy() -> Result<task3_model::perception::YoloPolicy, &'static str> {
+    let min_confidence_milli = parse_nonnegative_i32(TASK3_YOLO_MIN_CONFIDENCE)
+        .and_then(|value| u16::try_from(value).ok())
+        .ok_or("TASK3_YOLO_MIN_CONFIDENCE_MILLI is invalid")?;
+    let min_area_milli = parse_nonnegative_i32(TASK3_YOLO_MIN_AREA)
+        .and_then(|value| u16::try_from(value).ok())
+        .ok_or("TASK3_YOLO_MIN_AREA_MILLI is invalid")?;
+    let max_target_step = parse_nonnegative_i32(TASK3_YOLO_MAX_STEP)
+        .ok_or("TASK3_YOLO_MAX_TARGET_STEP is invalid")?;
+    Ok(task3_model::perception::YoloPolicy {
+        min_confidence_milli,
+        min_area_milli,
+        target_min: scenario::OUTPUT_MIN,
+        target_max: scenario::OUTPUT_MAX,
+        max_target_step,
+    })
+}
 
 /// Fixed Task-3 scenario parameters (frozen in M0, see
 /// book/design/task3-ai-control-todo.md).  Values must not be tuned after
@@ -148,11 +245,29 @@ fn run() -> Result<(), &'static str> {
     let mut inbound = [0; MAX_DATAGRAM_LEN];
     let mut response = [0; MAX_DATAGRAM_LEN];
     let mut outbound = [0; MAX_DATAGRAM_LEN];
-    let mut control = Controller::new();
+    let model = ModelKind::configured()?;
+    let yolo_policy = yolo_policy()?;
+    let mut control = Controller::new(model, yolo_policy);
 
     println!("TASK2_READY role={ROLE} local={LOCAL_IP}:{LOCAL_PORT} peer={PEER_IP}:{LOCAL_PORT}");
     if ROLE == "controller" {
         if TASK3_CONTROL {
+            println!(
+                "TASK3_MODEL_READY model={} version={} sha256={} path={} mode=bounded-contract",
+                model.name(),
+                model.version(),
+                model.sha256(),
+                TASK3_MODEL_PATH
+            );
+            if model == ModelKind::Yolo {
+                println!(
+                    "TASK3_MODEL_POLICY min_confidence_milli={} min_area_milli={} \
+                     max_target_step={}",
+                    yolo_policy.min_confidence_milli,
+                    yolo_policy.min_area_milli,
+                    yolo_policy.max_target_step
+                );
+            }
             control
                 .send_next(&socket, &peer, &mut endpoint, &mut outbound, now_ms(&start))
                 .map_err(|_| "failed to send first Task-3 control")?;
@@ -282,6 +397,8 @@ fn run() -> Result<(), &'static str> {
 /// currently awaiting its STATUS; history keeps the last state samples for the
 /// model input (M3).
 struct Controller {
+    model: ModelKind,
+    yolo_policy: task3_model::perception::YoloPolicy,
     request_id: u32,
     request_in_flight: bool,
     request_sent_at_ms: u64,
@@ -294,6 +411,7 @@ struct Controller {
     prev_output: i32,
     sample_count: u32,
     pending_send: bool,
+    last_target: i32,
 }
 
 /// Why queueing the next Task-3 CONTROL did not complete immediately.
@@ -307,8 +425,10 @@ enum SendNextError {
 }
 
 impl Controller {
-    fn new() -> Self {
+    fn new(model: ModelKind, yolo_policy: task3_model::perception::YoloPolicy) -> Self {
         Self {
+            model,
+            yolo_policy,
             request_id: 0,
             request_in_flight: false,
             request_sent_at_ms: 0,
@@ -321,6 +441,7 @@ impl Controller {
             prev_output: 0,
             sample_count: 0,
             pending_send: false,
+            last_target: 300,
         }
     }
 
@@ -387,6 +508,57 @@ impl Controller {
         )
     }
 
+    /// Replays the archived YOLO detections through the same bounded target
+    /// policy used by a future ONNX/NPU adapter.  A rejected frame holds the
+    /// last accepted target, so perception noise cannot create a control jump.
+    fn yolo_target(&mut self) -> (i32, u64) {
+        let detection = task3_model::perception::yolo_fixture_detection(self.sample_count);
+        let infer_start = Instant::now();
+        let decision = detection.map(|value| {
+            task3_model::perception::yolo_detection_to_target(
+                value,
+                self.last_target,
+                self.yolo_policy,
+            )
+        });
+        let infer_us = infer_start.elapsed().as_micros() as u64;
+        match (detection, decision) {
+            (
+                Some(value),
+                Some(task3_model::perception::PerceptionDecision::Target {
+                    target,
+                    class_id,
+                    confidence_milli,
+                }),
+            ) => {
+                self.last_target = target;
+                println!(
+                    "TASK3_DETECTION model=yolo11n.onnx class={} confidence_milli={} \
+                     center_x_milli={} area_milli={} target={}",
+                    class_id, confidence_milli, value.center_x_milli, value.area_milli, target
+                );
+                (target, infer_us)
+            }
+            (Some(_), Some(task3_model::perception::PerceptionDecision::Reject(reason))) => {
+                println!(
+                    "TASK3_MODEL_REJECTED model=yolo11n.onnx reason={reason:?} \
+                     action=hold_last_target target={}",
+                    self.last_target
+                );
+                (self.last_target, infer_us)
+            }
+            (None, None) => {
+                println!(
+                    "TASK3_MODEL_REJECTED model=yolo11n.onnx reason=no_detection \
+                     action=hold_last_target target={}",
+                    self.last_target
+                );
+                (self.last_target, infer_us)
+            }
+            _ => (self.last_target, infer_us),
+        }
+    }
+
     fn send_next(
         &mut self,
         socket: &UdpSocket,
@@ -402,16 +574,30 @@ impl Controller {
             thread::sleep(Duration::from_millis(self.next_send_at_ms - now_ms));
         }
         self.request_id = self.request_id.wrapping_add(1);
-        let target = self.target_for(now_ms);
-        let output = if TASK3_AI {
-            let (output, infer_us) = self.ai_output(target);
-            println!(
-                "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={infer_us}",
-                self.request_id, output
-            );
-            output
-        } else {
-            self.baseline_output(target, self.last_state)
+        let requested_target = self.target_for(now_ms);
+        let (target, output) = match self.model {
+            ModelKind::Yolo => {
+                let (target, infer_us) = self.yolo_target();
+                let output = self.baseline_output(target, self.last_state);
+                println!(
+                    "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={} \
+                     model=yolo11n.onnx target={}",
+                    self.request_id, output, infer_us, target
+                );
+                (target, output)
+            }
+            ModelKind::Cnn => {
+                let (output, infer_us) = self.ai_output(requested_target);
+                println!(
+                    "TASK3_INFER elapsed_ms={now_ms} sample={} output={} infer_us={} model=cnn",
+                    self.request_id, output, infer_us
+                );
+                (requested_target, output)
+            }
+            ModelKind::Baseline => (
+                requested_target,
+                self.baseline_output(requested_target, self.last_state),
+            ),
         };
         self.push_output(output);
 
@@ -439,12 +625,14 @@ impl Controller {
         self.next_send_at_ms = now_ms + scenario::MIN_CYCLE_MS;
         self.pending_send = false;
         println!(
-            "TASK3_CONTROL_SENT elapsed_ms={now_ms} request={} value={} target={} state={} seq={}",
+            "TASK3_CONTROL_SENT elapsed_ms={now_ms} request={} value={} target={} state={} seq={} \
+             model={}",
             self.request_id,
             output,
             target,
             self.last_state,
-            transmission.sequence().get()
+            transmission.sequence().get(),
+            self.model.name()
         );
         Ok(())
     }

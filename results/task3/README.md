@@ -39,9 +39,27 @@
 有界映射，以及低置信度无检测时的安全拒绝。运行命令和当前结果见该目录
 的 README 与 `yolo-fixture-manifest.json`。
 
-这不是当前 AArch64 Guest 内的 ONNX runtime；正式 Guest 对比仍是已验证的
-时序 CNN 与 baseline。YOLO 作为可复现的感知补充和后续 Guest/NPU adapter
-契约，不能把 fixture 推理耗时当成 Task3 网络或 RTOS 延迟。
+当前 AArch64 Guest 通过 `TASK3_MODEL=yolo` 使用一个确定性的 fixture replay
+adapter：它重放同一 manifest 中的无检测、正常检测和大步长检测，并通过
+`task3_model::perception` 的置信度/面积/坐标/单帧步长边界后再产生 CONTROL。
+这验证了 YOLO 感知结果进入 T2N1 控制链路的安全接线；它仍不是 Guest 内的
+ONNX runtime，fixture replay 的推理耗时不能当成真实 YOLO 推理性能。
+
+编译时选择模型（默认行为保持兼容）：
+
+```bash
+TASK3_CONTROL_LOOP=1 TASK3_MODEL=cnn \
+  bash scripts/test/net-dual-guest/build-linux-task2.sh
+TASK3_CONTROL_LOOP=1 TASK3_MODEL=yolo \
+  TASK3_MODEL_PATH=embedded:fixture-replay \
+  TASK3_YOLO_MIN_CONFIDENCE_MILLI=600 \
+  TASK3_YOLO_MIN_AREA_MILLI=10 \
+  TASK3_YOLO_MAX_TARGET_STEP=100 \
+  bash scripts/test/net-dual-guest/build-linux-task2.sh
+```
+
+controller 日志会输出 `TASK3_MODEL_READY`、`TASK3_DETECTION`、
+`TASK3_MODEL_REJECTED`、`TASK3_INFER` 和带模型名的 `TASK3_CONTROL_SENT`。
 
 ## 构建与运行命令
 

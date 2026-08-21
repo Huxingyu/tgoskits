@@ -153,10 +153,17 @@ limits one-frame target changes before the result can drive control.  The host
 fixture is reproducible with `scripts/task3/run_yolo_fixture.py`; its model and
 input hashes are archived under `results/task3/yolo/`.
 
-This supplement is intentionally not counted as an in-Guest YOLO performance
-claim.  The K230/Starry `.kmodel` path remains hardware-specific and is tracked
-as a separate StarryOS/NPU extension.  Until an AArch64-compatible runtime is
-available, `TASK3_MODEL=cnn` remains the official Guest mode.
+The controller now accepts `TASK3_MODEL=baseline|cnn|yolo`.  `cnn` preserves the
+validated temporal-CNN path; `yolo` uses a deterministic replay adapter for the
+three archived fixture observations, then calls the same bounded Rust
+`perception` contract before emitting T2N1 CONTROL.  A no-detection frame holds
+the last accepted target and emits `TASK3_MODEL_REJECTED`, while confidence,
+area, coordinate and one-frame target-step limits remain enforced.
+
+This is a real control-path integration and a reproducible contract test, not an
+in-Guest ONNX runtime performance claim.  The K230/Starry `.kmodel` path remains
+hardware-specific and is tracked as a separate StarryOS/NPU extension.  The
+model name, version, SHA256 and source path are emitted by `TASK3_MODEL_READY`.
 
 ## 5. Controller, Baseline, and Latency Measurement
 

@@ -19,6 +19,40 @@ pub struct YoloDetection {
     pub area_milli: u16,
 }
 
+/// Fixed YOLO11n fixture metadata used by the no-std replay adapter.
+///
+/// The actual ONNX inference runs in `scripts/task3/run_yolo_fixture.py`.
+/// This small deterministic adapter replays the three archived detections so
+/// the AArch64 controller can exercise the same bounded contract without
+/// embedding an ONNX runtime in the Guest image.
+pub const YOLO_FIXTURE_MODEL: &str = "yolo11n.onnx";
+pub const YOLO_FIXTURE_VERSION: &str = "ultralytics-yolo11n-v8.3.0";
+pub const YOLO_FIXTURE_SHA256: &str =
+    "634279b40c07c6391472c51ad45b81ebc48706a9a1fe72dd3396322acd0c053b";
+
+/// Return one of the archived fixture observations in capture order.
+///
+/// The sequence mirrors `results/task3/yolo/yolo-fixture-manifest.json`:
+/// close/no-detection, plant/normal detection, and black-box/large target
+/// step.  `None` is intentional and exercises the safe hold-last-target path.
+pub const fn yolo_fixture_detection(sample: u32) -> Option<YoloDetection> {
+    match sample % 3 {
+        0 => None,
+        1 => Some(YoloDetection {
+            class_id: 75,
+            confidence_milli: 832,
+            center_x_milli: 419,
+            area_milli: 120,
+        }),
+        _ => Some(YoloDetection {
+            class_id: 58,
+            confidence_milli: 871,
+            center_x_milli: 805,
+            area_milli: 210,
+        }),
+    }
+}
+
 /// Policy limiting how a detection may affect the control target.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct YoloPolicy {
@@ -214,6 +248,29 @@ mod tests {
             center_x_milli,
             area_milli: 200,
         }
+    }
+
+    #[test]
+    fn fixture_replay_matches_archived_detection_sequence() {
+        assert_eq!(yolo_fixture_detection(0), None);
+        assert_eq!(
+            yolo_fixture_detection(1),
+            Some(YoloDetection {
+                class_id: 75,
+                confidence_milli: 832,
+                center_x_milli: 419,
+                area_milli: 120,
+            })
+        );
+        assert_eq!(
+            yolo_fixture_detection(2),
+            Some(YoloDetection {
+                class_id: 58,
+                confidence_milli: 871,
+                center_x_milli: 805,
+                area_milli: 210,
+            })
+        );
     }
 
     #[test]

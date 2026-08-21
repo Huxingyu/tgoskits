@@ -65,14 +65,14 @@
 
 - [x] 建立 `task3_model::perception` 的模型输出契约、YOLO tensor 解码、
       置信度/面积/坐标校验和单帧目标变化率限制。
-- [ ] 将 Linux controller 的模型选择显式化为 `cnn` 与 `yolo` 两种模式；
-      默认仍为当前经过验证的 `cnn`。
+- [x] 将 Linux controller 的模型选择显式化为 `baseline`、`cnn` 与 `yolo` 三种模式；
+      `TASK3_AI=1` 仍兼容旧 CNN 构建；新构建显式选择模式。
 - [x] 为模型输出定义统一的 `PerceptionDecision`/目标值边界：模型只能给出
       目标区间、置信度和来源，最终控制仍经过范围、变化率、sequence 和
       Safe 状态校验。
-- [ ] 保持 T2N1 CONTROL/STATUS/ACK/HEARTBEAT/ERROR 协议不变；模型替换不能
+- [x] 保持 T2N1 CONTROL/STATUS/ACK/HEARTBEAT/ERROR 协议不变；模型替换不能
       改变可靠传输和恢复语义。
-- [ ] 在日志中增加模型名、模型版本/hash、推理耗时、置信度、目标值和拒绝原因。
+- [x] 在日志中增加模型名、模型版本/hash、推理耗时、置信度、目标值和拒绝原因。
 
 验收：`cnn` 模式的现有结果逐字节/逐字段保持兼容；无效模型输出会被拒绝，
 不会绕过 RTOS 侧安全边界。
@@ -90,11 +90,12 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
       输入尺寸和 SHA256；缺少依赖或 hash 不匹配时显式失败。
 - [x] 增加固定小型图像 fixture 和 detection→target manifest，覆盖无检测、
       正常检测和单帧目标步长限制。
-- [ ] 实现 YOLO 输出到控制目标的适配：例如用目标框中心/面积映射到 0..1000
-      的 setpoint，同时设置置信度阈值、最大变化率和无目标 Safe 行为。
-- [ ] 给 Linux controller 增加 `TASK3_MODEL=yolo`、模型路径和阈值参数；
-      `TASK3_MODEL=cnn` 保持现有默认闭环。
-- [ ] 增加模型日志 marker：`TASK3_MODEL_READY`、`TASK3_DETECTION`、
+- [x] 实现 YOLO 输出到控制目标的适配：目标框中心/面积经过置信度阈值、
+      最大变化率和 hold-last-target 安全行为后映射到 0..1000
+      的 setpoint；无目标不会产生新的越界控制跳变。
+- [x] 给 Linux controller 增加 `TASK3_MODEL=yolo`、模型路径和可配置阈值参数；
+      `TASK3_MODEL=cnn` 保持现有 CNN 闭环。
+- [x] 增加模型日志 marker：`TASK3_MODEL_READY`、`TASK3_DETECTION`、
       `TASK3_MODEL_REJECTED`、`TASK3_CONTROL_SENT`。
 
 验收：固定 fixture 上检测框、置信度和 setpoint 与 golden JSON 一致；YOLO
