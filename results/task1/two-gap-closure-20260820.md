@@ -102,7 +102,7 @@ handler 唤醒高优先级 vCPU 后，VM-exit 返回点不一定消费 `need_res
 ```text
 cargo check -p ax-hal -p ax-task -p axvm                 PASS
 cargo test -p ax-sched                                   20 passed
-cargo test -p ax-task --features test,smp,sched-prio-rr  53 passed
+cargo test -p ax-task --features test,smp,sched-prio-rr  56 passed
 cargo test -p ax-hal --features axtest,host-test         4 passed
 Python rt-partition tests                                 55 passed
 真实 QEMU RR/FP-RR 共核 smoke                              均 accepted
