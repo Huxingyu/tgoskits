@@ -12,10 +12,11 @@ set -euo pipefail
 # endpoints exhaust retransmission/heartbeat and enter Safe, then
 # resynchronize when the gate is lifted.
 #
-# Usage: run-task3-switch-fault.sh <label>
+# Usage: run-task3-switch-fault.sh <label> [baseline|cnn|yolo]
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 label="${1:?label required}"
+mode="${2:-yolo}"
 workdir="$repo_root/tmp/net-dual-guest"
 log="/tmp/task3-${label}.log"
 build_log="/tmp/task3-${label}-build.log"
@@ -30,7 +31,27 @@ cleanup() {
 }
 trap cleanup EXIT
 
-cp "$workdir/linux-task2/task2-linux-initramfs-ai.cpio.gz" \
+case "$mode" in
+    baseline|cnn|yolo)
+        initramfs="$workdir/linux-task2/task2-linux-initramfs-${mode}.cpio.gz"
+        ;;
+    ai)
+        # Keep the historical alias usable while making the selected model
+        # explicit in new evidence.
+        initramfs="$workdir/linux-task2/task2-linux-initramfs-cnn.cpio.gz"
+        mode="cnn"
+        ;;
+    *)
+        echo "mode must be baseline, cnn, or yolo" >&2
+        exit 2
+        ;;
+esac
+if [ ! -s "$initramfs" ]; then
+    echo "missing or empty initramfs for mode=$mode: $initramfs" >&2
+    exit 1
+fi
+
+cp "$initramfs" \
     "$workdir/linux-task2/task2-linux-initramfs.cpio.gz"
 rm -f "$qemu_sock" "$serial_sock" "$log" \
     "$workdir/switch.vm1.pcap" "$workdir/switch.vm2.pcap"
@@ -176,7 +197,7 @@ PY
 python3 scripts/test/net-dual-guest/verify_pcap.py \
     --tag '' --require-task2 "$workdir/switch.vm1.pcap" "$workdir/switch.vm2.pcap"
 
-echo "run $label (fault) finished; log=$log build_log=$build_log"
+echo "run $label mode=$mode (fault) finished; log=$log build_log=$build_log"
 ls -la "$workdir"/switch.vm*.pcap
 
 # Archive the evidence under results/task3/switch/fault-<label>/.
@@ -196,7 +217,8 @@ sha256_or_none() {
 }
 {
     printf 'label = "%s"\n' "$label"
-    printf 'mode = "fault"\n'
+    printf 'mode = "%s"\n' "$mode"
+    printf 'fault = "blackout"\n'
     printf 'blackout_expected = true\n'
     printf 'recovery_elapsed_min_ms = 45000\n'
     printf 'log_sha256 = "%s"\n' "$(sha256sum "$out_dir/run.log" | awk '{print $1}')"
