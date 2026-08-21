@@ -32,7 +32,6 @@ GUEST_ARTIFACT_SUFFIXES = {
     "yolo_model": "yolo11n.ncnn.bin",
     "yolo_input": "input.ppm",
     "starry": "starryos.bin",
-    "zephyr": "zephyr-task2.bin",
 }
 RTT_RE = re.compile(r"STARRY_T2N1_STATUS_DELIVERED[^\n]*\brtt_ms=(\d+)")
 LOWER_SERVICE_RE = re.compile(r"\blower_priority_services=(\d+)")
@@ -117,10 +116,12 @@ def verify_scheduler_log(label: str, log: str) -> tuple[list[str], int | None]:
 
 
 def verify_guest_artifact_equivalence(
-    rr_hashes: dict[str, str], fp_rr_hashes: dict[str, str]
+    rr_hashes: dict[str, str], fp_rr_hashes: dict[str, str], rtos_name: str
 ) -> list[str]:
     failures: list[str] = []
-    for role in GUEST_ARTIFACT_SUFFIXES:
+    suffixes = dict(GUEST_ARTIFACT_SUFFIXES)
+    suffixes[rtos_name] = f"{rtos_name}-task2.bin"
+    for role in suffixes:
         rr_hash = rr_hashes.get(role)
         fp_rr_hash = fp_rr_hashes.get(role)
         if rr_hash is None or fp_rr_hash is None:
@@ -130,13 +131,16 @@ def verify_guest_artifact_equivalence(
     return failures
 
 
-def verify_shared_pcpu_configs(starry_path: Path, zephyr_path: Path) -> list[str]:
+def verify_shared_pcpu_configs(
+    starry_path: Path, rtos_path: Path, rtos_name: str
+) -> list[str]:
     starry = load_toml(starry_path).get("base", {})
-    zephyr = load_toml(zephyr_path).get("base", {})
+    rtos = load_toml(rtos_path).get("base", {})
     failures: list[str] = []
+    rtos_label = "RT-Thread" if rtos_name == "rtthread" else "Zephyr"
     expectations = (
         ("StarryOS", starry, 89),
-        ("Zephyr", zephyr, 90),
+        (rtos_label, rtos, 90),
     )
     for guest, base, priority in expectations:
         if not isinstance(base, dict):
@@ -163,22 +167,22 @@ def verify_rootfs_content_hashes(path: Path) -> list[str]:
 
 
 def verify_ab(
-    rr_dir: Path, fp_rr_dir: Path
+    rr_dir: Path, fp_rr_dir: Path, rtos_name: str
 ) -> tuple[list[str], ArmEvidence, ArmEvidence]:
-    rr, rr_failures = load_arm(rr_dir, "rr")
-    fp_rr, fp_rr_failures = load_arm(fp_rr_dir, "fp-rr")
+    rr, rr_failures = load_arm(rr_dir, "rr", rtos_name)
+    fp_rr, fp_rr_failures = load_arm(fp_rr_dir, "fp-rr", rtos_name)
     failures = rr_failures + fp_rr_failures
     failures.extend(
         verify_host_config_pair(
             rr_dir / "host-config.toml", fp_rr_dir / "host-config.toml"
         )
     )
-    for name in ("qemu.toml", "vm-starry.toml", "vm-zephyr.toml"):
+    for name in ("qemu.toml", "vm-starry.toml", f"vm-{rtos_name}.toml"):
         if (rr_dir / name).read_bytes() != (fp_rr_dir / name).read_bytes():
             failures.append(f"{name} differs between scheduler arms")
     failures.extend(
         verify_shared_pcpu_configs(
-            rr_dir / "vm-starry.toml", rr_dir / "vm-zephyr.toml"
+            rr_dir / "vm-starry.toml", rr_dir / f"vm-{rtos_name}.toml", rtos_name
         )
     )
     if rr.git_head != fp_rr.git_head:
@@ -186,17 +190,21 @@ def verify_ab(
             f"scheduler arms used different Git revisions: {rr.git_head}/{fp_rr.git_head}"
         )
     failures.extend(
-        verify_guest_artifact_equivalence(rr.artifact_hashes, fp_rr.artifact_hashes)
+        verify_guest_artifact_equivalence(
+            rr.artifact_hashes, fp_rr.artifact_hashes, rtos_name
+        )
     )
     return failures, rr, fp_rr
 
 
-def load_arm(directory: Path, label: str) -> tuple[ArmEvidence, list[str]]:
+def load_arm(
+    directory: Path, label: str, rtos_name: str
+) -> tuple[ArmEvidence, list[str]]:
     log = ANSI_RE.sub("", (directory / "run.log").read_text(errors="replace"))
     command = read_key_values(directory / "command.txt")
     frames = task2_frames(directory / "starry.pcap")
     starry_report = analyze(directory / "starry.pcap", None)
-    zephyr_report = analyze(directory / "zephyr.pcap", None)
+    rtos_report = analyze(directory / f"{rtos_name}.pcap", None)
     controls = len(
         matching(frames, src=STARRY_IP, dst=ZEPHYR_IP, kind=KIND_CONTROL)
     )
@@ -228,7 +236,7 @@ def load_arm(directory: Path, label: str) -> tuple[ArmEvidence, list[str]]:
         failures.append(f"{label} arm has only {controls}/{statuses} CONTROL/STATUS frames")
     if rtt.count < 3:
         failures.append(f"{label} arm has only {rtt.count} RTT samples")
-    if starry_report["task2_signature"] != zephyr_report["task2_signature"]:
+    if starry_report["task2_signature"] != rtos_report["task2_signature"]:
         failures.append(f"{label} arm dual-ended T2N1 ledgers differ")
     for verifier_log in ("verify-pcap.log", "verify-scenario.log"):
         if "PASS" not in (directory / verifier_log).read_text(errors="replace"):
@@ -241,7 +249,9 @@ def load_arm(directory: Path, label: str) -> tuple[ArmEvidence, list[str]]:
             statuses=statuses,
             rtt=rtt,
             lower_priority_services=lower_priority_services,
-            artifact_hashes=read_artifact_hashes(directory / "artifact-hashes.txt"),
+            artifact_hashes=read_artifact_hashes(
+                directory / "artifact-hashes.txt", rtos_name
+            ),
         ),
         failures,
     )
@@ -261,13 +271,15 @@ def read_key_values(path: Path) -> dict[str, str]:
     return values
 
 
-def read_artifact_hashes(path: Path) -> dict[str, str]:
+def read_artifact_hashes(path: Path, rtos_name: str) -> dict[str, str]:
     hashes: dict[str, str] = {}
+    suffixes = dict(GUEST_ARTIFACT_SUFFIXES)
+    suffixes[rtos_name] = f"{rtos_name}-task2.bin"
     for line in path.read_text(errors="replace").splitlines():
         digest, separator, artifact = line.partition("  ")
         if not separator:
             continue
-        for role, suffix in GUEST_ARTIFACT_SUFFIXES.items():
+        for role, suffix in suffixes.items():
             if artifact.endswith(suffix):
                 hashes[role] = digest
     return hashes
@@ -281,7 +293,7 @@ def require_patterns(log: str, patterns: tuple[str, ...]) -> list[str]:
     ]
 
 
-def format_summary(rr: ArmEvidence, fp_rr: ArmEvidence) -> str:
+def format_summary(rr: ArmEvidence, fp_rr: ArmEvidence, rtos_name: str) -> str:
     def row(arm: ArmEvidence) -> str:
         rtt = arm.rtt
         service = (
@@ -300,7 +312,7 @@ def format_summary(rr: ArmEvidence, fp_rr: ArmEvidence) -> str:
             "",
             f"Git revision: `{rr.git_head}`",
             "",
-            "Both arms use the same StarryOS rootfs/endpoint/kernel, Zephyr image, "
+            f"Both arms use the same StarryOS rootfs/endpoint/kernel, {rtos_name} image, "
             "QEMU topology and shared-pCPU Guest configs. Only the AxVisor scheduler "
             "feature changes. Results are QEMU software-in-the-loop observations, not "
             "physical-board WCET bounds.",
@@ -324,10 +336,15 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--rr-dir", type=Path, required=True)
     parser.add_argument("--fp-rr-dir", type=Path, required=True)
+    parser.add_argument(
+        "--rtos-name", choices=("zephyr", "rtthread"), default="zephyr"
+    )
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        failures, rr, fp_rr = verify_ab(args.rr_dir, args.fp_rr_dir)
+        failures, rr, fp_rr = verify_ab(
+            args.rr_dir, args.fp_rr_dir, args.rtos_name
+        )
     except (OSError, ValueError, tomllib.TOMLDecodeError) as error:
         print(f"FAIL: {error}")
         return 1
@@ -340,7 +357,7 @@ def main() -> int:
         print("FAIL")
         print("\n".join(f"- {failure}" for failure in failures))
         return 1
-    args.output.write_text(format_summary(rr, fp_rr))
+    args.output.write_text(format_summary(rr, fp_rr, args.rtos_name))
     print(f"PASS: StarryOS Task 1 scheduler A/B; summary={args.output}")
     return 0
 
