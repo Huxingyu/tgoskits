@@ -98,7 +98,7 @@ pub(super) fn patch_runtime_fdt(
                 plan.timer_profile().clone(),
             ))
         })?;
-    super::fdt::core::create::patch_guest_fdt_for_runtime(
+    let patched = super::fdt::core::create::patch_guest_fdt_for_runtime(
         fdt_bytes,
         &vm.memory_regions(),
         crate_config,
@@ -110,7 +110,37 @@ pub(super) fn patch_runtime_fdt(
         Some(&timer_profile),
         initrd,
         true,
-    )
+    )?;
+    if let Ok(fdt) = fdt_edit::Fdt::from_bytes(&patched) {
+        for node_id in fdt.iter_node_ids() {
+            let path = fdt.path_of(node_id);
+            if path == "/pcie@10000000" {
+                if let Some(node) = fdt.node(node_id) {
+                    let properties = [
+                        "compatible",
+                        "reg",
+                        "ranges",
+                        "interrupt-map",
+                        "interrupt-map-mask",
+                        "msi-parent",
+                        "msi-map",
+                        "dma-ranges",
+                        "bus-range",
+                    ]
+                    .into_iter()
+                    .filter_map(|name| node.get_property(name).map(|property| (name, property.data.len())))
+                    .collect::<std::vec::Vec<_>>();
+                    info!(
+                        "VM[{}] runtime-FDT PCI properties={:?} bytes={}",
+                        vm.id(),
+                        properties,
+                        patched.len()
+                    );
+                }
+            }
+        }
+    }
+    Ok(patched)
 }
 
 pub(super) fn patch_provided_fdt(

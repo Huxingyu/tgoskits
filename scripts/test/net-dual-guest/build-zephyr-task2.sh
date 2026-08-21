@@ -2,8 +2,16 @@
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
-zephyr_base="${ZEPHYR_BASE:-/tmp/zephyrproject/zephyr}"
-zephyr_sdk="${ZEPHYR_SDK_INSTALL_DIR:-/tmp/zephyr-sdk}"
+default_zephyr_base="/tmp/zephyrproject/zephyr"
+if [[ -d /tmp/zephyrproject/zephyr-4.4.2 ]]; then
+    default_zephyr_base="/tmp/zephyrproject/zephyr-4.4.2"
+fi
+default_zephyr_sdk="/tmp/zephyr-sdk"
+if [[ -d /tmp/zephyr-sdk-1.0.1 ]]; then
+    default_zephyr_sdk="/tmp/zephyr-sdk-1.0.1"
+fi
+zephyr_base="${ZEPHYR_BASE:-$default_zephyr_base}"
+zephyr_sdk="${ZEPHYR_SDK_INSTALL_DIR:-$default_zephyr_sdk}"
 west_bin="${WEST_BIN:-/home/huhu/.local/bin/west}"
 out_dir="${OUT_DIR:-$repo_root/tmp/net-dual-guest/zephyr-task2}"
 build_dir="$out_dir/cargo-target"
@@ -45,15 +53,19 @@ mkdir -p "$out_dir"
 memory_overlay="$out_dir/memory.overlay"
 printf '/* Generated; keep Zephyr physical, virtual and DMA addresses identical. */\n&sram0 {\n\treg = <0x0 %s 0x0 %s>;\n};\n' \
     "$memory_base" "$memory_size" > "$memory_overlay"
+workspace_dir="$(dirname "$zephyr_base")"
+pushd "$workspace_dir" >/dev/null
 ZEPHYR_BASE="$zephyr_base" \
 ZEPHYR_SDK_INSTALL_DIR="$zephyr_sdk" \
-"$west_bin" build \
+"$west_bin" -z "$zephyr_base" build \
+    -p always \
     -b qemu_cortex_a53 \
     "$source_dir" \
     -d "$build_dir" \
     -- \
     -DDTC_OVERLAY_FILE="$device_overlay;$memory_overlay" \
     -DEXTRA_CFLAGS=-DCONFIG_MAX_IRQ_LINES=64
+popd >/dev/null
 
 elf="$out_dir/zephyr-task2.elf"
 binary="$out_dir/zephyr-task2.bin"

@@ -24,19 +24,13 @@
 	status = "disabled";
 };
 
-/* The board enables slot 3 for its ramfb/input demo; disable it so only the
- * switch-port endpoint below is present. */
-&virtio_mmio3 {
-	status = "disabled";
-};
-
+/* The switch topology uses the first AxVisor virtio-mmio window. */
 &virtio_mmio0 {
 	status = "okay";
 
 	virtio_net: virtio-net {
 		compatible = "virtio,net";
 		status = "okay";
-		/* Keep the Guest MAC identical to the switch-port configuration. */
 		local-mac-address = [52 54 00 12 34 02];
 	};
 };

@@ -320,9 +320,12 @@ pub(crate) fn build_axvm_config(cfg: &GuestConfig) -> AxVMConfig {
     }
     let mut virtual_device_catalog = axvm::ConfiguredDeviceCatalog::new();
     virtual_device_catalog
+        .register(crate::virtio_blk::REGISTRATION)
+        .expect("the static virtio-blk model registration is valid and unique");
+    virtual_device_catalog
         .register(crate::virtio_net::REGISTRATION)
         .expect("the static virtio-net model registration is valid and unique");
-    AxVMConfig::new(AxVMConfigParams {
+    let mut vm_config = AxVMConfig::new(AxVMConfigParams {
         id: cfg.base.id,
         name: cfg.base.name.clone(),
         phys_cpu_ls: PhysCpuList::new(
@@ -364,7 +367,21 @@ pub(crate) fn build_axvm_config(cfg: &GuestConfig) -> AxVMConfig {
         serial_backend_factory: Some(crate::guest_console::serial_backend_factory(cfg.base.id)),
         virtual_device_requests: cfg.devices.virtual_devices.clone(),
         virtual_device_catalog: Some(alloc::sync::Arc::new(virtual_device_catalog)),
-    })
+    });
+
+    // QEMU's virt PCI host maps slot 2 INTA to GIC SPI 5.  The passthrough
+    // StarryOS root disk is the NVMe endpoint in that slot; retain the small
+    // INTx fallback route so the guest can bring its block controller online
+    // when MSI-X is not available through the passthrough path.
+    if cfg
+        .devices
+        .passthrough
+        .iter()
+        .any(|device| device.path == "/pcie@10000000")
+    {
+        vm_config.add_pass_through_irq(5, axvm_types::InterruptTriggerMode::EdgeTriggered);
+    }
+    vm_config
 }
 
 fn sync_axvm_config_from_crate_config(vm_config: &mut AxVMConfig, cfg: &GuestConfig) {
@@ -380,9 +397,13 @@ fn sync_axvm_config_from_crate_config(vm_config: &mut AxVMConfig, cfg: &GuestCon
     )
 ))]
 fn vm_config_needs_host_filesystem_release(config: &GuestConfig) -> bool {
-    config.kernel.image_location.as_deref() == Some("fs")
-        && (config.base.guest_type == GuestType::Passthrough
-            || !config.devices.passthrough.is_empty())
+    // A passthrough Guest may still boot a raw kernel from memory while
+    // owning a physical PCI block device (StarryOS is one such Guest).  The
+    // host filesystem must release the PCI controller in that case too;
+    // restricting this check to `image_location = "fs"` leaves the host NVMe
+    // driver holding the device and the Guest sees no usable root disk.
+    config.base.guest_type == GuestType::Passthrough
+        || !config.devices.passthrough.is_empty()
 }
 
 #[cfg(all(

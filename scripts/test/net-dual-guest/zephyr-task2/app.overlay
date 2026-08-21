@@ -15,9 +15,9 @@
 	status = "disabled";
 };
 
-/* The board enables slot 3 for its ramfb/input demo; this Guest receives only
- * the explicitly passed-through slot 30 endpoint. */
-&virtio_mmio3 {
+/* Zephyr 4.x's qemu_cortex_a53 board already declares the 32 QEMU
+ * virtio-mmio windows.  The socket-pair topology uses slot 30 (GIC SPI 46). */
+&virtio_mmio31 {
 	status = "disabled";
 };
 
@@ -27,7 +27,6 @@
 	virtio_net: virtio-net {
 		compatible = "virtio,net";
 		status = "okay";
-		/* Keep the Guest MAC identical to QEMU's second endpoint. */
 		local-mac-address = [52 54 00 12 34 02];
 	};
 };

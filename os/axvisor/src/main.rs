@@ -37,6 +37,7 @@ mod manager;
 mod realtime_probe;
 mod rt_burner;
 mod shell;
+mod virtio_blk;
 mod virtio_net;
 
 #[cfg(any(

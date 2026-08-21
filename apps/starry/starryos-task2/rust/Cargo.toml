@@ -1,0 +1,11 @@
+[package]
+name = "starryos-task2-endpoint"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[workspace]
+
+[dependencies]
+task2-net-protocol = { path = "../../../../components/task2-net-protocol" }
+task3-model = { path = "../../../../components/task3-model" }
