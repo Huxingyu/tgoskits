@@ -145,14 +145,18 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 - [x] 审计 StarryOS/STERRORS、K230/SG2002 和第二 RTOS/板卡路径；审计结论与
       外部阻塞见 `results/bonus-path-audit-20260821.md`。审计不把配置、README
       或启动能力当作当前 Task3 闭环证据。
-- [ ] 如果 StarryOS 能完成同一个可观察 Task3 闭环，再争取官网 StarryOS 替代
+- [~] 如果 StarryOS 能完成同一个可观察 Task3 闭环，再争取官网 StarryOS 替代
       Linux 的加分；单纯启动不计入完成。
-- [ ] 将已有 K230 YOLOv8n/NNCase 路径作为 StarryOS/NPU 扩展证据，保持与
+- [~] 将已有 K230 YOLOv8n/NNCase 路径作为 StarryOS/NPU 扩展证据，保持与
       QEMU/AArch64 Task3 的模型契约分离。
-- [ ] 第二种 RTOS 或第二块板卡只在已有构建、镜像和运行路径稳定后进行；
+- [~] 第二种 RTOS 或第二块板卡只在已有构建、镜像和运行路径稳定后进行；
       它最多争取 2 分，不得阻塞主线提交。
-- [ ] Task1 补充实验只在成本低且能直接补“可比最坏情况数据”缺口时执行；
+- [~] Task1 补充实验只在成本低且能直接补“可比最坏情况数据”缺口时执行；
       不为追求单个漂亮 P99 重开调度机制探索。
+
+> `[~]` 表示已完成可行性审计，但当前被外部资产或运行环境阻塞，不能把
+> 配置、源码或历史 ELF 当作正式加分证据。具体阻塞见
+> `results/bonus-path-audit-20260821.md`。
 
 ## 阶段 7：最终审计与远程交付
 
@@ -166,3 +170,14 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
       `origin/openrace/task1-rt-partition`。
 - [x] 最终报告明确区分：已证明、部分证明、未验证和外部阻塞项；见
       `results/bonus-path-audit-20260821.md` 和各 Task README。
+
+## 当前收口状态（2026-08-21）
+
+- 主线 `openrace/task1-rt-partition` 已冻结在可交付证据 HEAD，远程同步；
+  工作区仅保留用户原有的 `results/task1/*` 未跟踪实验目录。
+- 已在独立 `openrace/task1-rt-partition-review` worktree 试合并
+  `origin/dev`。冲突集中在 AxVM AArch64/IRQ/FDT/vCPU 运行时和
+  `rt_latency_stats`/Zephyr 测试工具，属于需要逐项重新验证的集成工作；
+  未将未验证的合并结果带回证据分支。
+- 因此当前开发优先级保持为：最终提交包与远程重放收口 > 可获得运行资产时的
+  StarryOS/STERRORS 闭环 > 第二 RTOS/板卡；Task1 补充实验仅在能直接补分时执行。
