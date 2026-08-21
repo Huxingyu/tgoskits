@@ -66,6 +66,95 @@ pub enum PerceptionDecision {
     Reject(PerceptionRejectReason),
 }
 
+/// Errors found while decoding a YOLOv8 channel-first output tensor.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum YoloTensorError {
+    InvalidShape,
+    NonFiniteValue,
+}
+
+/// Return the highest-confidence detection from a YOLOv8-style output.
+///
+/// `data` is one batch in channel-first layout:
+/// `[cx, cy, w, h, class_0, ..., class_n] x rows`.  The model runtime is
+/// responsible for resize/letterbox correction and NMS; this small decoder
+/// only makes the tensor-to-contract conversion deterministic and bounded.
+pub fn top_yolo_detection(
+    data: &[f32],
+    rows: usize,
+    class_count: usize,
+    input_width: u32,
+    input_height: u32,
+    confidence_threshold_milli: u16,
+) -> Result<Option<YoloDetection>, YoloTensorError> {
+    if rows == 0 || class_count == 0 || input_width == 0 || input_height == 0 {
+        return Err(YoloTensorError::InvalidShape);
+    }
+    let channels = 4usize
+        .checked_add(class_count)
+        .ok_or(YoloTensorError::InvalidShape)?;
+    let expected_len = channels
+        .checked_mul(rows)
+        .ok_or(YoloTensorError::InvalidShape)?;
+    if data.len() != expected_len {
+        return Err(YoloTensorError::InvalidShape);
+    }
+
+    let mut best: Option<(usize, f32)> = None;
+    for row in 0..rows {
+        for class_id in 0..class_count {
+            let score = data[(4 + class_id) * rows + row];
+            if !score.is_finite() {
+                return Err(YoloTensorError::NonFiniteValue);
+            }
+            if score >= f32::from(confidence_threshold_milli) / 1000.0
+                && best.is_none_or(|(_, best_score)| score > best_score)
+            {
+                best = Some((row, score));
+            }
+        }
+    }
+
+    let Some((row, score)) = best else {
+        return Ok(None);
+    };
+    let mut class_id = 0;
+    for candidate in 1..class_count {
+        let candidate_score = data[(4 + candidate) * rows + row];
+        if candidate_score > data[(4 + class_id) * rows + row] {
+            class_id = candidate;
+        }
+    }
+    let cx = data[row];
+    let cy = data[rows + row];
+    let width = data[2 * rows + row];
+    let height = data[3 * rows + row];
+    if !cx.is_finite() || !cy.is_finite() || !width.is_finite() || !height.is_finite() {
+        return Err(YoloTensorError::NonFiniteValue);
+    }
+    if width < 0.0 || height < 0.0 {
+        return Ok(None);
+    }
+
+    let normalized_x = (cx / input_width as f32).clamp(0.0, 1.0);
+    let normalized_area =
+        (width * height / (input_width as f32 * input_height as f32)).clamp(0.0, 1.0);
+    Ok(Some(YoloDetection {
+        class_id: class_id.min(u16::MAX as usize) as u16,
+        confidence_milli: scaled_milli(score.clamp(0.0, 1.0)),
+        center_x_milli: scaled_milli(normalized_x),
+        area_milli: scaled_milli(normalized_area),
+    }))
+}
+
+#[inline]
+fn scaled_milli(value: f32) -> u16 {
+    // `no_std` targets do not expose the floating-point `round` method in the
+    // core-only build; adding 0.5 before truncation gives deterministic
+    // nearest-integer conversion for the already-clamped non-negative range.
+    (value * 1000.0 + 0.5) as u16
+}
+
 /// Convert one normalized YOLO detection into a bounded Task-3 target.
 ///
 /// The x-center maps linearly into the configured target interval.  The
@@ -193,6 +282,41 @@ mod tests {
         assert_eq!(
             yolo_detection_to_target(detection(500), 500, policy),
             PerceptionDecision::Reject(PerceptionRejectReason::InvalidTargetRange)
+        );
+    }
+
+    #[test]
+    fn decodes_highest_yolov8_candidate() {
+        // Two rows, one class: [cx, cy, w, h, score] channel-first.
+        let output = [
+            80.0, 240.0, // cx
+            100.0, 120.0, // cy
+            40.0, 80.0, // width
+            40.0, 80.0, // height
+            0.4, 0.9, // class score
+        ];
+        assert_eq!(
+            top_yolo_detection(&output, 2, 1, 320, 320, 500),
+            Ok(Some(YoloDetection {
+                class_id: 0,
+                confidence_milli: 900,
+                center_x_milli: 750,
+                area_milli: 63,
+            }))
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_or_non_finite_yolov8_output() {
+        assert_eq!(
+            top_yolo_detection(&[0.0; 5], 0, 1, 320, 320, 500),
+            Err(YoloTensorError::InvalidShape)
+        );
+        let mut output = [0.0f32; 5];
+        output[4] = f32::NAN;
+        assert_eq!(
+            top_yolo_detection(&output, 1, 1, 320, 320, 500),
+            Err(YoloTensorError::NonFiniteValue)
         );
     }
 }
