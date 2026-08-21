@@ -149,6 +149,34 @@ The Zephyr guest selects QEMU's `virtio_mmio0` slot via
 `TASK2_ZEPHYR_VIRTIO_SLOT=0`; the default (`app.overlay`, slot 30) serves the
 QEMU socket-pair topology.
 
+The second RTOS endpoint uses RT-Thread commit
+`6ea682795bdbac59d3700b21e159ccaa3f7632cb`, the
+`qemu-virt64-aarch64` BSP, and `aarch64-none-elf-gcc` 10.2.1. It keeps the
+same T2N1 state machine and changes only the socket, clock, and logging APIs.
+Build the three evidence variants with:
+
+```bash
+OUT_DIR=tmp/net-dual-guest/rtthread-task2-starry-normal \
+  scripts/test/net-dual-guest/build-rtthread-task2.sh
+TASK2_FAULT_MODE=drop-ack-once \
+  OUT_DIR=tmp/net-dual-guest/rtthread-task2-starry-drop-ack \
+  scripts/test/net-dual-guest/build-rtthread-task2.sh
+TASK2_FAULT_MODE=drop-ack-always \
+  OUT_DIR=tmp/net-dual-guest/rtthread-task2-starry-retry-exhausted \
+  scripts/test/net-dual-guest/build-rtthread-task2.sh
+```
+
+Run the required virtual scenarios with:
+
+```bash
+scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh normal <output-dir>
+scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh drop-ack <output-dir>
+scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh blackout <output-dir>
+```
+
+These runs cover virtual integration only; physical-board evidence is a
+separate follow-up.
+
 Run one closed-loop experiment (driver-controlled lifecycle: boot, capture,
 fault, pcap streaming, QMP quit):
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Run one real StarryOS + Zephyr Task-2/Task-3 scenario and retain both
+# Run one real StarryOS + RTOS Task-2/Task-3 scenario and retain both
 # Guest pcaps, console evidence, exact commands, manifests, and hashes.
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
@@ -10,16 +10,28 @@ output_dir="${2:?usage: run-starry-task23-scenario.sh SCENARIO OUTPUT_DIR}"
 host_config="${STARRY_TASK23_HOST_CONFIG:-scripts/test/net-dual-guest/axvisor-qemu-debug.toml}"
 qemu_config="${STARRY_TASK23_QEMU_CONFIG:-scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-switch-msix1-capture.toml}"
 starry_vm_config="${STARRY_TASK23_STARRY_VM_CONFIG:-scripts/test/net-dual-guest/vm-aarch64-starry-switch.toml}"
-zephyr_vm_config="${STARRY_TASK23_ZEPHYR_VM_CONFIG:-scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml}"
+rtos_vm_config="${STARRY_TASK23_RTOS_VM_CONFIG:-${STARRY_TASK23_ZEPHYR_VM_CONFIG:-scripts/test/net-dual-guest/vm-aarch64-p2-switch-rtos.toml}}"
+rtos_name="${STARRY_TASK23_RTOS_NAME:-zephyr}"
+rtos_image="${STARRY_TASK23_RTOS_IMAGE:-${rtos_name}-task2.bin}"
+runtime_tag="${STARRY_TASK23_RUNTIME_TAG:-starry-zephyr-msix1-capture}"
 collect_rt_stat="${STARRY_TASK23_COLLECT_RT_STAT:-0}"
 runtime_dir="$repo_root/tmp/net-dual-guest"
-qemu_sock="$runtime_dir/qmp-starry-zephyr-msix1-capture.sock"
-serial_sock="$runtime_dir/serial-starry-zephyr-msix1-capture.sock"
+qemu_sock="$runtime_dir/qmp-${runtime_tag}.sock"
+serial_sock="$runtime_dir/serial-${runtime_tag}.sock"
 capture_prefix="$runtime_dir/starry-task23-current"
 steps="$output_dir/steps.txt"
 run_log="$output_dir/run.log"
 build_log="$output_dir/build.log"
 run_pid=""
+
+case "$rtos_name" in
+    zephyr|rtthread) ;;
+    *) printf 'error: unsupported RTOS name: %s\n' "$rtos_name" >&2; exit 2 ;;
+esac
+if [[ ! "$runtime_tag" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+    printf 'error: invalid runtime tag: %s\n' "$runtime_tag" >&2
+    exit 2
+fi
 
 case "$collect_rt_stat" in
     0|1) ;;
@@ -40,10 +52,10 @@ resolve_config_path() {
 host_config_path="$(resolve_config_path "$host_config")"
 qemu_config_path="$(resolve_config_path "$qemu_config")"
 starry_vm_config_path="$(resolve_config_path "$starry_vm_config")"
-zephyr_vm_config_path="$(resolve_config_path "$zephyr_vm_config")"
+rtos_vm_config_path="$(resolve_config_path "$rtos_vm_config")"
 for config_path in \
     "$host_config_path" "$qemu_config_path" \
-    "$starry_vm_config_path" "$zephyr_vm_config_path"; do
+    "$starry_vm_config_path" "$rtos_vm_config_path"; do
     if [[ ! -f "$config_path" ]]; then
         printf 'error: missing scenario config: %s\n' "$config_path" >&2
         exit 1
@@ -52,16 +64,16 @@ done
 
 case "$scenario" in
     normal|blackout|model-rejected)
-        zephyr_variant="normal"
+        rtos_variant="normal"
         ;;
     drop-ack)
-        zephyr_variant="drop-ack"
+        rtos_variant="drop-ack"
         ;;
     retry-exhausted)
-        zephyr_variant="retry-exhausted"
+        rtos_variant="retry-exhausted"
         ;;
     out-of-order|invalid-parameter)
-        zephyr_variant="normal"
+        rtos_variant="normal"
         ;;
     *)
         printf 'error: unknown scenario %s\n' "$scenario" >&2
@@ -86,31 +98,31 @@ if [[ "${ALLOW_DIRTY:-0}" != 1 ]] &&
     exit 1
 fi
 
-normal_dir="$runtime_dir/zephyr-task2-starry-normal"
-drop_dir="$runtime_dir/zephyr-task2-starry-drop-ack"
-retry_exhausted_dir="$runtime_dir/zephyr-task2-starry-retry-exhausted"
-case "$zephyr_variant" in
+normal_dir="$runtime_dir/${rtos_name}-task2-starry-normal"
+drop_dir="$runtime_dir/${rtos_name}-task2-starry-drop-ack"
+retry_exhausted_dir="$runtime_dir/${rtos_name}-task2-starry-retry-exhausted"
+case "$rtos_variant" in
     normal)
-        selected_zephyr_dir="$normal_dir"
+        selected_rtos_dir="$normal_dir"
         expected_fault_mode="none"
         ;;
     drop-ack)
-        selected_zephyr_dir="$drop_dir"
+        selected_rtos_dir="$drop_dir"
         expected_fault_mode="drop-ack-once"
         ;;
     retry-exhausted)
-        selected_zephyr_dir="$retry_exhausted_dir"
+        selected_rtos_dir="$retry_exhausted_dir"
         expected_fault_mode="drop-ack-always"
         ;;
 esac
-for artifact in "$selected_zephyr_dir/zephyr-task2.bin" "$selected_zephyr_dir/manifest.toml"; do
+for artifact in "$selected_rtos_dir/$rtos_image" "$selected_rtos_dir/manifest.toml"; do
     if [[ ! -s "$artifact" ]]; then
-        printf 'error: missing Zephyr artifact: %s\n' "$artifact" >&2
+        printf 'error: missing %s artifact: %s\n' "$rtos_name" "$artifact" >&2
         exit 1
     fi
 done
-if ! grep -q "^fault_mode = \"$expected_fault_mode\"$" "$selected_zephyr_dir/manifest.toml"; then
-    printf 'error: Zephyr manifest fault mode does not match %s\n' "$scenario" >&2
+if ! grep -q "^fault_mode = \"$expected_fault_mode\"$" "$selected_rtos_dir/manifest.toml"; then
+    printf 'error: %s manifest fault mode does not match %s\n' "$rtos_name" "$scenario" >&2
     exit 1
 fi
 
@@ -212,9 +224,9 @@ for socket_path in "$qemu_sock" "$serial_sock"; do
 done
 rm -f -- "$capture_prefix.vm1.pcap" "$capture_prefix.vm2.pcap"
 
-mkdir -p "$runtime_dir/zephyr-task2"
-cp "$selected_zephyr_dir/zephyr-task2.bin" "$runtime_dir/zephyr-task2/zephyr-task2.bin"
-cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml"
+mkdir -p "$runtime_dir/${rtos_name}-task2"
+cp "$selected_rtos_dir/$rtos_image" "$runtime_dir/${rtos_name}-task2/$rtos_image"
+cp "$selected_rtos_dir/manifest.toml" "$runtime_dir/${rtos_name}-task2/manifest.toml"
 
 {
     if [[ "$collect_rt_stat" == 1 ]]; then
@@ -311,14 +323,15 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
 {
     printf 'scenario=%s\n' "$scenario"
     printf 'git_head=%s\n' "$(git -C "$repo_root" rev-parse HEAD)"
-    printf 'zephyr_variant=%s\n' "$zephyr_variant"
+    printf 'rtos_name=%s\n' "$rtos_name"
+    printf 'rtos_variant=%s\n' "$rtos_variant"
     printf 'host_config=%s\n' "$host_config"
     printf 'qemu_config=%s\n' "$qemu_config"
     printf 'starry_vm_config=%s\n' "$starry_vm_config"
-    printf 'zephyr_vm_config=%s\n' "$zephyr_vm_config"
+    printf 'rtos_vm_config=%s\n' "$rtos_vm_config"
     printf 'collect_rt_stat=%s\n' "$collect_rt_stat"
     printf 'command=cargo xtask axvisor qemu --config %s --qemu-config %s --vmconfigs %s --vmconfigs %s --rootfs tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img\n' \
-        "$host_config" "$qemu_config" "$starry_vm_config" "$zephyr_vm_config"
+        "$host_config" "$qemu_config" "$starry_vm_config" "$rtos_vm_config"
 } > "$output_dir/command.txt"
 
 (
@@ -327,7 +340,7 @@ cp "$selected_zephyr_dir/manifest.toml" "$runtime_dir/zephyr-task2/manifest.toml
         --config "$host_config" \
         --qemu-config "$qemu_config" \
         --vmconfigs "$starry_vm_config" \
-        --vmconfigs "$zephyr_vm_config" \
+        --vmconfigs "$rtos_vm_config" \
         --rootfs tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img
 ) > "$build_log" 2>&1 &
 run_pid=$!
@@ -367,12 +380,12 @@ for pcap in "$capture_prefix.vm1.pcap" "$capture_prefix.vm2.pcap"; do
     fi
 done
 cp "$capture_prefix.vm1.pcap" "$output_dir/starry.pcap"
-cp "$capture_prefix.vm2.pcap" "$output_dir/zephyr.pcap"
-cp "$selected_zephyr_dir/manifest.toml" "$output_dir/zephyr-manifest.toml"
+cp "$capture_prefix.vm2.pcap" "$output_dir/${rtos_name}.pcap"
+cp "$selected_rtos_dir/manifest.toml" "$output_dir/${rtos_name}-manifest.toml"
 cp "$host_config_path" "$output_dir/host-config.toml"
 cp "$qemu_config_path" "$output_dir/qemu.toml"
 cp "$starry_vm_config_path" "$output_dir/vm-starry.toml"
-cp "$zephyr_vm_config_path" "$output_dir/vm-zephyr.toml"
+cp "$rtos_vm_config_path" "$output_dir/vm-${rtos_name}.toml"
 
 if [[ "$scenario" == model-rejected ]]; then
     pcap_requirements=(--tag '' --min-udp 2)
@@ -380,12 +393,12 @@ else
     pcap_requirements=(--tag '' --require-task2)
 fi
 python3 "$repo_root/scripts/test/net-dual-guest/verify_pcap.py" \
-    "${pcap_requirements[@]}" "$output_dir/starry.pcap" "$output_dir/zephyr.pcap" \
+    "${pcap_requirements[@]}" "$output_dir/starry.pcap" "$output_dir/${rtos_name}.pcap" \
     | tee "$output_dir/verify-pcap.log"
 python3 "$repo_root/scripts/test/net-dual-guest/verify_starry_task23.py" \
     --scenario "$scenario" \
     --starry-pcap "$output_dir/starry.pcap" \
-    --zephyr-pcap "$output_dir/zephyr.pcap" \
+    --zephyr-pcap "$output_dir/${rtos_name}.pcap" \
     --run-log "$run_log" | tee "$output_dir/verify-scenario.log"
 
 {
@@ -395,7 +408,7 @@ python3 "$repo_root/scripts/test/net-dual-guest/verify_starry_task23.py" \
     sha256sum "$yolo_model"
     sha256sum "$yolo_input"
     sha256sum "$starry_image"
-    sha256sum "$selected_zephyr_dir/zephyr-task2.bin"
+    sha256sum "$selected_rtos_dir/$rtos_image"
     sha256sum "$axvisor_image"
 } > "$output_dir/artifact-hashes.txt"
 
