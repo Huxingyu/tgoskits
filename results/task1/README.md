@@ -22,6 +22,17 @@ remaining work is submission closure (canonical documents, conflict-free PR,
 one integrated current-HEAD run and demo video), not another unbounded scheduler
 experiment.
 
+## Current score and scope decision
+
+The two previously identified Task1 deductions are no longer open defects in the
+validated QEMU path: the shared-pCPU result-collection race is closed, and the
+IRQ-tail/GIC ordering defect is fixed with a bounded priority-aware policy. The
+remaining deductions are evidence-boundary deductions (literal upstream `dev`
+comparability, physical-board worst-case evidence, and the fact that not every
+IRQ is allowed to trigger an immediate switch). The current submission estimate
+is **26–27/30**, so Task1 is frozen for now while higher-yield delivery work
+continues in Task2, documentation, and StarryOS/STERRORS.
+
 ## Evidence Map
 
 | Item | Purpose | Data / status |
