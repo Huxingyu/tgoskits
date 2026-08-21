@@ -2,7 +2,7 @@
 
 This is the human-readable index for the current delivery branch. Hashes are
 SHA-256 of the files at `openrace/task1-rt-partition` HEAD
-`cf1807211` and are included to prevent an old run being silently substituted
+`8843699ff` and are included to prevent an old run being silently substituted
 for the current evidence.
 
 ## Canonical design and score documents
@@ -12,7 +12,7 @@ for the current evidence.
 | `results/task1/README.md` | `84e13805af4df1ca14f4cafd03b1b2dc61411099b7bc590de20ea7d5f4962a24` |
 | `results/task1/two-gap-closure-20260820.md` | `51f2ee2f057ec5f2708dfe2e6c2528e049373479646052c26b919e32011a0440` |
 | `results/task1/irq-tail-preemption-design.md` | `cac0440a2a4d25c3907a6063991fb4fdc82929b4f2db55ba5f45714322c02195` |
-| `results/final-execution-todo-20260821.md` | `f39830020d74a5a06ddd53fe074fdd8f53ff95ff9c9590ea4be5c74d48984931` |
+| `results/final-execution-todo-20260821.md` | `641041e88c92a6c03940058b1d26ffcc50209a93834d949e6c167f40acbdf5e2` |
 | `results/final-submission-scorecard-20260821.md` | `839ad11a00f5e94dff8ab0357b58b5b94875c0ab61983fc80d43617b15b405ff` |
 | `results/task2-final-run-20260821.md` | `2d8046ab9456c3b21cb2b1c288fe94415b04b87b08829ee10c3f7336e7f96a5a` |
 | `book/design/task2-dual-guest-network-final.md` | `4cd228e46fc1aeb3e8e3cd98b0429cc2ab95e33318c886e8ae71d97c34d489fe` |
