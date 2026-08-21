@@ -7,7 +7,7 @@ set -euo pipefail
 # MIN_ELAPSED_MS, streams the captured frames out as pcap, and quits QEMU
 # over QMP.
 #
-# Usage: run-task3-switch.sh <label> <ai|baseline>
+# Usage: run-task3-switch.sh <label> <baseline|cnn|yolo>
 # Env:    MIN_ELAPSED_MS (default 35000)
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -57,10 +57,19 @@ cleanup() {
 trap cleanup EXIT
 
 case "$mode" in
-    ai)       initramfs="$workdir/linux-task2/task2-linux-initramfs-ai.cpio.gz" ;;
-    baseline) initramfs="$workdir/linux-task2/task2-linux-initramfs-baseline.cpio.gz" ;;
-    *) echo "mode must be ai or baseline" >&2; exit 1 ;;
+    baseline|cnn|yolo)
+        initramfs="$workdir/linux-task2/task2-linux-initramfs-${mode}.cpio.gz"
+        ;;
+    ai)
+        # Backward-compatible alias for the historical CNN artifact.
+        initramfs="$workdir/linux-task2/task2-linux-initramfs-cnn.cpio.gz"
+        ;;
+    *) echo "mode must be baseline, cnn, or yolo" >&2; exit 1 ;;
 esac
+if [ ! -s "$initramfs" ]; then
+    echo "missing or empty initramfs for mode=$mode: $initramfs" >&2
+    exit 1
+fi
 
 cp "$initramfs" "$workdir/linux-task2/task2-linux-initramfs.cpio.gz"
 rm -f "$qemu_sock" "$serial_sock" "$log" \
