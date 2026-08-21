@@ -1,0 +1,4 @@
+arm=fp-rr
+run=1
+git_head=986fcf5ae5198bbc66d9926dbb0b201d3ad7f32c
+command=cargo xtask axvisor qemu --config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-fp-rr.toml --qemu-config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-task1-capture.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-starry-task1-shared.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-zephyr-periodic-task1-shared.toml --rootfs /home/huhu/tgoskits-starry/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img

@@ -1,0 +1,626 @@
+root=/dev/nvme0n1 rw init=/init
+VM Load @PA:0x40200000
+VM Load Offset: 0xffff0000c0200000
+Memory Map:
+  Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+  KImg   0x00000040200000 - 0x00000041400000 (18 MiB)
+  Free   0x00000041400000 - 0x00000240000000 (7.98 GiB)
+Initialize RAM allocator: 0x41400000..0x240000000
+Reserving CPU-local areas
+CPU-local area stride: 0x44000 bytes
+Total CPU-local allocation: 0x88000 bytes (2 CPUs)
+Flushed RAM used range to memory map: 0x41400000..0x41500000, current: 0x41500000
+Flushed RAM used range to memory map: 0x41500000..0x41588000, current: 0x41588000
+CPU-local areas allocated at 0x41500000 - 0x41588000
+EL: 2
+Mapping early memory regions...
+Ram                 : [0x0000000040000000, 0x0000000240000000) -> [0x0000000040000000, 0x0000000240000000) (8 GiB)
+KImage              : [0x0000ffff80000000, 0x0000ffff81200000) -> [0x0000000040200000, 0x0000000041400000) (18 MiB)
+PerCpu              : [0x0000ff0041500000, 0x0000ff0041588000) -> [0x0000000041500000, 0x0000000041588000) (544 KiB)
+Debug serial        : [0x0000000009000000, 0x0000000009001000) -> [0x0000000009000000, 0x0000000009001000) (4 KiB)
+Boot page table at physical address: PA:0x41588000
+Setting up table registers...
+MMU Entry point at physical address: 0x40479fd8
+Trap vector at 0xffff8027e000
+Memory Map:
+  MMIO   0x00000009000000 - 0x00000009001000 (4 KiB)
+  Free   0x00000040000000 - 0x00000040200000 (2 MiB)
+  KImg   0x00000040200000 - 0x00000041400000 (18 MiB)
+  Rsv    0x00000041400000 - 0x00000041500000 (1 MiB)
+  PerCPU 0x00000041500000 - 0x00000041588000 (544 KiB)
+  Rsv    0x00000041588000 - 0x00000041591000 (36 KiB)
+  Free   0x00000041591000 - 0x00000240000000 (7.98 GiB)
+Jumping to main entry point at 0xffff80261d2c with SP 0x0000ff0041544000
+
+       d8888                            .d88888b.   .d8888b.
+      d88888                           d88P" "Y88b d88P  Y88b
+     d88P888                           888     888 Y88b.
+    d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+   d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+  d88P   888 888     888      88888888 888     888       "888
+ d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+
+arch = aarch64
+platform = linux,dummy-virt
+target = aarch64-unknown-none-softfloat
+build_mode = 
+log_level = info
+backtrace = false
+smp = 2
+
+[37m[  0.056399 ax_runtime:220] [32mLogging is enabled.[m
+[m[37m[  0.056794 ax_runtime:221] [32mPrimary CPU 0 started, arg = 0x41400000.[m
+[m[37m[  0.056917 ax_runtime:223] [32mFound physcial memory regions:[m
+[m[37m[  0.058040 ax_runtime:225] [32m  [PA:0x9000000, PA:0x9001000) mmio (READ | WRITE | DEVICE | RESERVED)[m
+[m[37m[  0.058337 ax_runtime:225] [32m  [PA:0x40000000, PA:0x40200000) free memory (READ | WRITE | FREE)[m
+[m[37m[  0.058495 ax_runtime:225] [32m  [PA:0x40200000, PA:0x41400000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.058640 ax_runtime:225] [32m  [PA:0x41400000, PA:0x41500000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.058778 ax_runtime:225] [32m  [PA:0x41500000, PA:0x41588000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.058922 ax_runtime:225] [32m  [PA:0x41588000, PA:0x41591000) reserved (READ | WRITE | EXECUTE | RESERVED)[m
+[m[37m[  0.059064 ax_runtime:225] [32m  [PA:0x41591000, PA:0x240000000) free memory (READ | WRITE | FREE)[m
+[m[37m[  0.059213 ax_runtime:375] [32mInitialize global memory allocator...[m
+[m[37m[  0.059331 ax_runtime:376] [32m  use buddy-slab-allocator allocator.[m
+[m[37m[  0.059543 ax_alloc::buddy_slab:158] [32mInitialize global memory allocator, start_vaddr: 0x41591000, size: 0x1fea6f000[m
+[m[37m[  0.068108 ax_alloc::buddy_slab:424] [32mglobal allocator initialized[m
+[m[37m[  0.068312 ax_alloc::buddy_slab:168] [32mAdd memory region, start_vaddr: 0x40000000, size: 0x200000[m
+[m[37m[  0.068501 buddy_slab_allocator::global:151] [32mGlobalAllocator: skip region 0x40000000+0x200000, no allocator-visible memory after 2097152 alignment[m
+[m[37m[  0.068918 ax_runtime:260] [32mkernel aspace: [VA:0x0, VA:0xffffffffffffffff)[m
+[m[37m[  0.069074 ax_mm:103] [32mInitialize virtual memory management...[m
+[m[37m[  0.675835 ax_runtime:272] [32mInitialize platform devices...[m
+[m[37m[  0.682293 someboot::arch::power:23] [32mPower management method : SMC[m
+[m[37m[  0.682484 somehal::driver:5] [32mInitializing rdrive with FDT at 0x41400000[m
+[m[37m[  0.695214 somehal::arch::gic::v3:274] [32mGICv3 CPU 0 EOI mode: two_step=true[m
+[m[37m[  0.886417 ax_task::api:193] [32mInitialize scheduling...[m
+[m[37m[  0.887918 ax_task::api:201] [32m  use Fixed-priority round-robin scheduler.[m
+[m[37m[  0.888311 ax_runtime:300] [32mInitialize interrupt handlers...[m
+[m[37m[  0.890713 ax_runtime::devices:2] [32mProbe platform devices...[m
+[m[37m[  0.916427 ax_driver::block::nvme:42] [32mNVMe PCI endpoint 0000:00:02.0: BAR0=0x8000004000..0x8000008000, int_pin=1, int_line=0[m
+[m[37m[  0.917513 ax_driver::block::nvme:78] [32mNVMe PCI endpoint 0000:00:02.0 MSI-X unavailable (NVMe MSI-X needs admin and I/O vectors); using legacy INTx[m
+[m[37m[  0.918816 nvme_driver::nvme:161] [32mNVME @0x8000004000 deferred init, version: 1.4.0[m
+[m[37m[  0.921547 ax_driver::block::nvme:105] [32mNVMe block device registered at 0000:00:02.0 with irq=None[m
+[m[37m[  0.928418 ax_fs_ng::block::runtime::lifecycle::device:300] [32mblock device nvme IRQ source 0 (IrqId { domain: IrqDomainId(7), hwirq: HwIrq(37) }) fixed to CPU 0 for queue mask 0x0[m
+[m[37m[  0.935703 ax_fs_ng::block::runtime::hctx:177] [32mblock hctx 0 bound to CPU 0 with hardware depth 63[m
+[m[37m[  0.936218 ax_fs_ng::block::runtime::lifecycle::device:300] [32mblock device nvme IRQ source 0 (IrqId { domain: IrqDomainId(7), hwirq: HwIrq(37) }) fixed to CPU 0 for queue mask 0x1[m
+[m[37m[  0.943917 ax_fs_ng::root:341] [32m    raw device fs=Some(Ext4)[m
+[m[37m[  0.944147 ax_fs_ng::root:372] [32m  block device 0 (nvme) has no usable partition table; treating the whole disk as a candidate[m
+[m[37m[  0.944633 ax_fs_ng::root:481] [32m  matched root by raw device path on disk0 raw device[m
+[m[37m[  0.945126 ax_fs_ng:86] [32mInitialize filesystem subsystem...[m
+[m[37m[  0.945226 ax_fs_ng:87] [32m  selected root device: disk0 raw device[m
+[m[37m[  0.970355 rsext4::ext4::mount:331] [32m/lost+found exists (superblock hint inode=11)[m
+[m[37m[  0.972218 rsext4::ext4::mount:466] [32mExt4 filesystem mounted[m
+[m[37m[  0.972336 rsext4::ext4::mount:467] [32m  - block size: 4096 bytes[m
+[m[37m[  0.972463 rsext4::ext4::mount:468] [32m  - total blocks: 524288[m
+[m[37m[  0.972571 rsext4::ext4::mount:469] [32m  - free blocks: 96966[m
+[m[37m[  0.972675 rsext4::ext4::mount:470] [32m  - total inodes: 131072[m
+[m[37m[  0.972785 rsext4::ext4::mount:471] [32m  - free inodes: 125217[m
+[m[37m[  0.972908 rsext4::ext4::sync:13] [32mSyncing filesystem...[m
+[m[37m[  0.985776 rsext4::ext4::mount:550] [32mExt4 filesystem mounted[m
+[m[37m[  0.986377 ax_fs_ng:99] [32m  filesystem type: "ext4"[m
+[m[37m[  0.990696 somehal::arch::gic::v3:274] [32mGICv3 CPU 1 EOI mode: two_step=true[m
+[m[37m[  0.991231 ax_runtime::mp:79] [32mSecondary CPU 1 started.[m
+[m[37m[  0.991253 ax_runtime:348] [32mPrimary CPU 0 init OK.[m
+[m[37m[  0.992192 ax_runtime::mp:110] [32mSecondary CPU 1 init OK.[m
+[m[37m[  0.992758 0:2 ax_fs_ng::block::runtime::lifecycle::device:369] [32mblock device nvme online with 1 hctxs across 2 CPUs[m
+[m
+
+       d8888            888     888  d8b
+      d88888            888     888  Y8P
+     d88P888            888     888
+    d88P 888  888  888  Y88b   d88P  888  .d8888b    .d88b.   888d888
+   d88P  888  `Y8bd8P'   Y88b d88P   888  88K       d88""88b  888P"
+  d88P   888    X88K      Y88o88P    888  "Y8888b.  888  888  888
+ d8888888888  .d8""8b.     Y888P     888       X88  Y88..88P  888
+d88P     888  888  888      Y8P      888   88888P'   "Y88P"   888
+
+
+by AxVisor Team
+
+[37m[  0.995463 0:2 axvisor:96] [32mStarting virtualization...[m
+[m[37m[  0.995615 0:2 axvm::host::arceos:335] [32mEnabling hardware virtualization support on all cores...[m
+[m[37m[  0.995807 0:2 axvm::host::arceos:341] [32mCore 0 is initializing hardware virtualization support...[m
+[m[37m[  0.995984 0:2 axvm::timer:508] [32mInitializing AxVM timer wheel...[m
+[m[37m[  1.003003 0:2 axvm::host::arceos:343] [32mHardware virtualization support enabled on core 0[m
+[m[37m[  1.003684 0:2 axvm::host::arceos:370] [32mWaiting for all cores to enable hardware virtualization...[m
+[m[37m[  1.004213 1:9 axvm::host::arceos:353] [32mCore 1 is initializing hardware virtualization support...[m
+[m[37m[  1.004392 1:9 axvm::timer:508] [32mInitializing AxVM timer wheel...[m
+[m[37m[  1.004646 1:9 axvm::host::arceos:357] [32mHardware virtualization support enabled on core 1 (2/2)[m
+[m[37m[  1.004658 0:2 axvm::host::arceos:381] [32mAll cores have enabled hardware virtualization support.[m
+[m[37m[  1.010633 0:2 axvisor::manager:145] [32mNOT find dir: /guest/vm_default in filesystem[m
+[m[37m[  1.010907 0:2 axvisor::config:91] [32mUsing static VM configs.[m
+[m[37m[  1.027910 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[1] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32771), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32772), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  1.030410 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[1] architectural timer follows host firmware PPIs[m
+[m[37m[  1.036094 0:2 axvm::arch::aarch64::fdt::core::parser:548] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  1.036315 0:2 axvm::arch::aarch64::fdt::core::parser:548] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[m[37m[  1.036598 0:2 axvm::arch::aarch64::fdt::core::parser:555] [32mFound 2 host CPU nodes[m
+[m[37m[  1.037070 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[1] DTB not found, generating from the VM configuration[m
+[m[37m[  1.052109 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.053260 0:2 axvm::arch::aarch64::fdt::core::parser:57] [32mVM[1] generated-FDT passthrough paths: ["/pcie@10000000"][m
+[m[37m[  1.054293 0:2 axvm::arch::aarch64::fdt::core::parser:85] [32mVM[1] host-FDT PCI node path=/pcie@10000000 name=pcie@10000000 compatible=["pci-host-ecam-generic"] reg=[(275146342400, Some(268435456))] properties=[("compatible", 22), ("reg", 16), ("ranges", 84), ("interrupt-map", 640), ("interrupt-map-mask", 16), ("msi-map", 16), ("bus-range", 8)][m
+[m[37m[  1.062784 0:2 axvm::arch::aarch64::fdt::core::parser:98] [32mVM[1] generated guest-FDT bytes=2172[m
+[m[37m[  1.063680 0:2 axvm::arch::aarch64::fdt::core::parser:109] [32mVM[1] generated guest-FDT PCI paths: ["/pcie@10000000"][m
+[m[37m[  1.064206 0:2 axvm::arch::aarch64::fdt::core::parser:143] [32mVM[1] guest-FDT PCI property-count=7 property-names=["ranges", "interrupt-map", "interrupt-map-mask", "msi-map", "bus-range", "#address-cells", "#size-cells"][m
+[m[37m[  1.064512 0:2 axvm::arch::aarch64::fdt::core::parser:149] [32mVM[1] generated guest-FDT PCI node path=/pcie@10000000 name=pcie@10000000 compatible=["pci-host-ecam-generic"] reg=[(275146342400, Some(268435456))] properties=[("ranges", 84), ("interrupt-map", 640), ("interrupt-map-mask", 16), ("msi-map", 16), ("bus-range", 8), ("#address-cells", 4), ("#size-cells", 4)][m
+[m[37m[  1.070663 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.072756 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.073083 0:2 axvm::arch::aarch64::fdt::core::parser:705] [32mpassthrough address discovery selected paths: {"/pcie@10000000"}[m
+[m[37m[  1.074056 0:2 axvm::arch::aarch64::fdt::core::parser:761] [32mpassthrough address discovery resolved assignments: [HostDeviceAssignment { name: "pcie@10000000-io", base_gpa: 1056899072, base_hpa: 1056899072, length: 65536 }, HostDeviceAssignment { name: "pcie@10000000-mem32-region1", base_gpa: 268435456, base_hpa: 268435456, length: 788463616 }, HostDeviceAssignment { name: "pcie@10000000-mem64-region2", base_gpa: 549755813888, base_hpa: 549755813888, length: 549755813888 }, HostDeviceAssignment { name: "pcie@10000000-ecam", base_gpa: 275146342400, base_hpa: 275146342400, length: 268435456 }][m
+[m[37m[  1.075370 0:2 axvisor::config:258] [32mCreating VM[1] "task1-starry-shared"[m
+[m[37m[  1.095769 0:2 axvm::vm:1133] [32mVM created: id=1[m
+[m[37m[  1.633225 0:2 axvisor::config:270] [32mVM[1] created success, loading images...[m
+[m[37m[  1.670967 0:2 axvm::arch::aarch64::capabilities:133] [32mVM[1] runtime-FDT PCI properties=[("compatible", 22), ("reg", 16), ("ranges", 84), ("interrupt-map", 640), ("interrupt-map-mask", 16), ("msi-map", 16), ("bus-range", 8)] bytes=3036[m
+[m[37m[  1.676959 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  1.677353 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  1.677562 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  1.679337 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  1.681245 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=4[m
+[m[37m[  1.684189 0:2 axvm::vm::prepare::address_space:87] [32mVM[1] stage2 passthrough: GPA 0x0..0x8000000 -> HPA 0x0..0x8000000[m
+[m[37m[  1.684658 0:2 axvm::vm::prepare::address_space:87] [32mVM[1] stage2 passthrough: GPA 0x8010000..0x8080000 -> HPA 0x8010000..0x8080000[m
+[m[37m[  1.685026 0:2 axvm::vm::prepare::address_space:87] [32mVM[1] stage2 passthrough: GPA 0x9001000..0xa000000 -> HPA 0x9001000..0xa000000[m
+[m[37m[  1.685381 0:2 axvm::vm::prepare::address_space:87] [32mVM[1] stage2 passthrough: GPA 0xa001000..0x202e00000 -> HPA 0xa001000..0x202e00000[m
+[m[37m[  1.685869 0:2 axvm::vm::prepare::address_space:87] [32mVM[1] stage2 passthrough: GPA 0x222e00000..0x7ffffffff000 -> HPA 0x222e00000..0x7ffffffff000[m
+[m[37m[  1.710571 0:2 axvm::vm::prepare:82] [32mVM setup: id=1[m
+[m[37m[  1.714014 0:2 axvm::arch::aarch64::fdt::core:79] [32mVM[2] virtual GIC follows host firmware resources: GuestGicProfile { compatible: "arm,gic-v3", node_path: "/intc@8000000", node_phandle: Some(32771), distributor: GuestMmioRegion { base: 134217728, length: 65536 }, cpu_region: Redistributors(GuestGicRedistributorProfile { regions: [GuestMmioRegion { base: 134873088, length: 16121856 }], stride: 131072 }), its: [GuestItsProfile { id: ItsId(0), node_path: "/intc@8000000/its@8080000", node_phandle: Some(32772), registers: GuestMmioRegion { base: 134742016, length: 131072 } }] }[m
+[m[37m[  1.714773 0:2 axvm::arch::aarch64::fdt::core:93] [32mVM[2] architectural timer follows host firmware PPIs[m
+[m[37m[  1.719607 0:2 axvm::arch::aarch64::fdt::core::parser:548] [32mCPU node: /cpus/cpu@0, node_id: 0x0, hardware_cpu_id: 0x0[m
+[m[37m[  1.719809 0:2 axvm::arch::aarch64::fdt::core::parser:548] [32mCPU node: /cpus/cpu@1, node_id: 0x1, hardware_cpu_id: 0x1[m
+[m[37m[  1.720033 0:2 axvm::arch::aarch64::fdt::core::parser:555] [32mFound 2 host CPU nodes[m
+[m[37m[  1.720164 0:2 axvm::arch::aarch64::fdt::core:144] [32mVM[2] DTB not found, generating from the VM configuration[m
+[m[37m[  1.730702 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.731245 0:2 axvm::arch::aarch64::fdt::core::parser:57] [32mVM[2] generated-FDT passthrough paths: [][m
+[m[37m[  1.732080 0:2 axvm::arch::aarch64::fdt::core::parser:85] [32mVM[2] host-FDT PCI node path=/pcie@10000000 name=pcie@10000000 compatible=["pci-host-ecam-generic"] reg=[(275146342400, Some(268435456))] properties=[("compatible", 22), ("reg", 16), ("ranges", 84), ("interrupt-map", 640), ("interrupt-map-mask", 16), ("msi-map", 16), ("bus-range", 8)][m
+[m[37m[  1.735654 0:2 axvm::arch::aarch64::fdt::core::parser:98] [32mVM[2] generated guest-FDT bytes=1100[m
+[m[37m[  1.736303 0:2 axvm::arch::aarch64::fdt::core::parser:109] [32mVM[2] generated guest-FDT PCI paths: [][m
+[m[37m[  1.741389 0:2 axvm::arch::aarch64::fdt::core::device:96] [32mFound excluded devices: ["/intc@8000000", "/pl011@9000000", "/timer", "/intc@8000000/its@8080000"][m
+[m[37m[  1.742171 0:2 axvisor::config:258] [32mCreating VM[2] "task1-zephyr-periodic-shared"[m
+[m[37m[  1.743686 0:2 axvm::vm:1133] [32mVM created: id=2[m
+[m[37m[  2.388794 0:2 axvisor::config:270] [32mVM[2] created success, loading images...[m
+[m[37m[  2.394404 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=0[m
+[m[37m[  2.394552 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=1[m
+[m[37m[  2.544926 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=2[m
+[m[37m[  2.546270 0:2 axdevice::device:1232] [32mDeviceRuntime: registered device id=3[m
+[m[37m[  2.547565 0:2 axvm::vm::prepare:82] [32mVM setup: id=2[m
+[m[37m[  2.550831 0:2 axvm::runtime:73] [32mInitializing VMM...[m
+[m[37m[  2.551579 0:2 rsext4::ext4::sync:13] [32mSyncing filesystem...[m
+[m[37m[  2.566173 0:2 rsext4::ext4::sync:43] [32mFilesystem unmounted cleanly[m
+[m[37m[  2.574519 0:2 axvm::host::arceos:199] [32mReleased 2 host filesystem block IRQ registration(s) during shutdown[m
+[m[37m[  2.574715 0:2 axvisor::manager:119] [32mHost filesystem cleanly unmounted before guest passthrough devices start[m
+[m[37m[  2.575596 0:2 axvm::runtime:84] [32mVMM starting, booting VMs...[m
+[m[37m[  2.575883 0:2 axvm::vm:1365] [32mStarting VM[1][m
+[m[37m[  2.576097 0:2 axvm::runtime::vcpus:1060] [32mSpawning task for VM[1] VCpu[0][m
+[m[37m[  2.576634 0:2 axvm::runtime::vcpus:1079] [32mVCpu task Task(11, "VM[1]-VCpu[0]") created priority=89 cpumask: [1, ][m
+[m[37m[  2.579494 0:2 axvm::arch::aarch64::gic::physical:61] [32mregistered assigned AArch64 SPI route host_intid=37 guest_intid=37[m
+[m[37m[  2.580976 1:11 axvm::runtime::vcpus:1134] [32mVM[1] VCpu[0] waiting for running[m
+[m[37m[  2.581023 0:2 axvm::runtime:92] [32mVM[1] boot success[m
+[m[37m[  2.581233 0:2 axvm::vm:1365] [32mStarting VM[2][m
+[m[37m[  2.581315 0:2 axvm::runtime::vcpus:1060] [32mSpawning task for VM[2] VCpu[0][m
+[m[37m[  2.581444 1:11 axvm::runtime::vcpus:1172] [32mVM[1] VCpu[0] running...[m
+[m[37m[  2.581459 0:2 axvm::runtime::vcpus:1079] [32mVCpu task Task(13, "VM[2]-VCpu[0]") created priority=90 cpumask: [1, ][m
+[m[37m[  2.581844 0:2 axvm::runtime:92] [32mVM[2] boot success[m
+[m[37m[  2.581874 1:13 axvm::runtime::vcpus:1134] [32mVM[2] VCpu[0] waiting for running[m
+[m[37m[  2.582066 1:13 axvm::runtime::vcpus:1172] [32mVM[2] VCpu[0] running...[m
+[m[37m[  2.583825 0:2 axvisor:115] [32m[OK] Default guest initialized[m
+[m[VM 2] *** Booting Zephyr OS build v4.4.2 ***
+[VM 2] PERIODIC LATENCY READY
+[VM 1] VM Load @PA:0x202e00000
+[VM 1] VM Load Offset: 0x282e00000
+[VM 1] Memory Map:
+[VM 1]   KImg   0x00000202e00000 - 0x00000203c00000 (14 MiB)
+[VM 1]   Free   0x00000203c00000 - 0x00000222e00000 (498 MiB)
+[VM 1] Initialize RAM allocator: 0x203c00000..0x222e00000
+[VM 1] Reserving CPU-local areas
+[VM 1] CPU-local area stride: 0x41000 bytes
+[VM 1] Total CPU-local allocation: 0x41000 bytes (1 CPUs)
+[VM 1] Flushed RAM used range to memory map: 0x203c00000..0x203c01000, current: 0x203c01000
+[VM 1] Flushed RAM used range to memory map: 0x203c01000..0x203c42000, current: 0x203c42000
+[VM 1] CPU-local areas allocated at 0x203c01000 - 0x203c42000
+[VM 1] EL: 1
+[VM 1] Mapping early memory regions...
+[VM 1] Ram                 : [0xffff000202e00000, 0xffff000222e00000) -> [0x0000000202e00000, 0x0000000222e00000) (512 MiB)
+[VM 1] KImage              : [0xffffffff80000000, 0xffffffff80e00000) -> [0x0000000202e00000, 0x0000000203c00000) (14 MiB)
+[VM 1] PerCpu              : [0xffffff0203c01000, 0xffffff0203c42000) -> [0x0000000203c01000, 0x0000000203c42000) (260 KiB)
+[VM 1] Debug serial        : [0xffff000009000000, 0xffff000009001000) -> [0x0000000009000000, 0x0000000009001000) (4 KiB)
+[VM 1] Boot page table at physical address: PA:0x203c42000
+[VM 1] Setting up table registers...
+[VM 1] MMU Entry point at physical address: 0x2031a71bc
+[VM 1] Trap vector at 0xffffffff803a5000
+[VM 1] Memory Map:
+[VM 1]   MMIO   0x00000009000000 - 0x00000009001000 (4 KiB)
+[VM 1]   KImg   0x00000202e00000 - 0x00000203c00000 (14 MiB)
+[VM 1]   Rsv    0x00000203c00000 - 0x00000203c01000 (4 KiB)
+[VM 1]   PerCPU 0x00000203c01000 - 0x00000203c42000 (260 KiB)
+[VM 1]   Rsv    0x00000203c42000 - 0x00000203c4c000 (40 KiB)
+[VM 1]   Free   0x00000203c4c000 - 0x00000222e00000 (497.7 MiB)
+[VM 1] Jumping to main entry point at 0xffffffff8038a0b8 with SP 0xffffff0203c42000
+[VM 1] 
+[VM 1]        d8888                            .d88888b.   .d8888b.
+[VM 1]       d88888                           d88P" "Y88b d88P  Y88b
+[VM 1]      d88P888                           888     888 Y88b.
+[VM 1]     d88P 888 888d888  .d8888b  .d88b.  888     888  "Y888b.
+[VM 1]    d88P  888 888P"   d88P"    d8P  Y8b 888     888     "Y88b.
+[VM 1]   d88P   888 888     888      88888888 888     888       "888
+[VM 1]  d8888888888 888     Y88b.    Y8b.     Y88b. .d88P Y88b  d88P
+[VM 1] d88P     888 888      "Y8888P  "Y8888   "Y88888P"   "Y8888P"
+[VM 1] 
+[VM 1] arch = aarch64
+[VM 1] platform = linux,dummy-virt
+[VM 1] target = aarch64-unknown-none-softfloat
+[VM 1] build_mode = 
+[VM 1] log_level = warn
+[VM 1] backtrace = false
+[VM 1] smp = 1
+[VM 1] 
+[VM 1] Boot at 1970-01-01 00:00:02.404922032 UTC
+[VM 1] 
+[VM 1] [37m[  2.707855 ax_net::service:885] [33meth1: DHCP acquired address 10.0.2.15/24[m
+[VM 1] [m[37m[  2.736590 ax_net::service:887] [33meth1: DHCP router 10.0.2.2[m
+[VM 1] [m[37m[  2.761462 ax_net:450] [33m  No vsock device found![m
+[VM 1] [mInitialized 6 tracepoints
+[VM 1] kmod subsystem initialized
+[VM 1] Welcome to [96m[1mStarry OS[0m!
+[VM 1] USER=root
+[VM 1] HOSTNAME=starry
+[VM 1] SHLVL=1
+[VM 1] HOME=/root
+[VM 1] TERM=xterm-256color
+[VM 1] PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+[VM 1] PWD=/
+[VM 1] 
+[VM 1] Use [1m[3mapk[0m to install packages.
+[VM 1] 
+
+[Axvisor] detached VM[1] console
+Welcome to AxVisor Shell!
+Type 'help' to see available commands
+Use UP/DOWN arrows to navigate command history
+Console shortcuts:
+  Ctrl+X, then h  return to the Axvisor shell
+  Ctrl+X, then [  attach the previous running guest
+  Ctrl+X, then ]  attach the next running guest
+
+[2Kaxvisor:/$ 
+[Axvisor] attached VM[2] console; use Ctrl+X, then h to return to the shell
+
+[Axvisor] attached VM[1] console; use Ctrl+X, then h to return to the shell
+root@starry:/root # (sh /usr/bin/t2n1-run.sh normal) &
+root@starry:/root # STARRY_T2N1_NET_CONFIGURED ip=10.0.42.15/24
+TASK3_MODEL_READY model=yolo11n.ncnn runtime=ncnn ncnn_revision=946fe3fb14a8dff8c06df763f67be522167b2f00 param_sha256=d2c0adf8939dc9ce02964ce8ada104447768ffd8e3bffad8fa11e2e61e709c1f bin_sha256=0ae562447923999779b12b4f91f96b9ef263add8c9902d10e22e6dd6a2932c12 input_sha256=608c8a61ff0bb43e5a8613f1f6f8aa08af74b084363610ed2b526ad925e4cb6f mode=in-guest run_mode=normal
+TASK3_INFER_STARTED model=yolo11n.ncnn request=1 phase=startup
+
+[Axvisor] attached VM[2] console; use Ctrl+X, then h to return to the shell
+PERIODIC LATENCY START
+sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns
+0,10593104,9700007824,9700600928,593104
+1,20561824,9710007824,9710569648,561824
+2,30540512,9720007824,9720548336,540512
+3,40597712,9730007824,9730605536,597712
+4,50549664,9740007824,9740557488,549664
+5,60587920,9750007824,9750595744,587920
+6,70577120,9760007824,9760584944,577120
+7,80551776,9770007824,9770559600,551776
+8,90556544,9780007824,9780564368,556544
+9,100585008,9790007824,9790592832,585008
+10,110556176,9800007824,9800564000,556176
+11,120556736,9810007824,9810564560,556736
+12,130560896,9820007824,9820568720,560896
+13,140563120,9830007824,9830570944,563120
+14,150601488,9840007824,9840609312,601488
+15,160588080,9850007824,9850595904,588080
+16,170545488,9860007824,9860553312,545488
+17,180586176,9870007824,9870594000,586176
+18,190595328,9880007824,9880603152,595328
+19,200567456,9890007824,9890575280,567456
+20,210589248,9900007824,9900597072,589248
+21,220547680,9910007824,9910555504,547680
+22,230581648,9920007824,9920589472,581648
+23,240563440,9930007824,9930571264,563440
+24,250584752,9940007824,9940592576,584752
+25,260580880,9950007824,9950588704,580880
+26,270574320,9960007824,9960582144,574320
+27,280553072,9970007824,9970560896,553072
+28,290546928,9980007824,9980554752,546928
+29,300597264,9990007824,9990605088,597264
+30,310576960,10000007824,10000584784,576960
+31,320590256,10010007824,10010598080,590256
+32,330598528,10020007824,10020606352,598528
+33,340595280,10030007824,10030603104,595280
+34,350557696,10040007824,10040565520,557696
+35,360553632,10050007824,10050561456,553632
+36,370551424,10060007824,10060559248,551424
+37,380551200,10070007824,10070559024,551200
+38,390589984,10080007824,10080597808,589984
+39,400584736,10090007824,10090592560,584736
+40,410597536,10100007824,10100605360,597536
+41,420580368,10110007824,10110588192,580368
+42,430560336,10120007824,10120568160,560336
+43,440549440,10130007824,10130557264,549440
+44,450577536,10140007824,10140585360,577536
+45,460562096,10150007824,10150569920,562096
+46,470541984,10160007824,10160549808,541984
+47,480564288,10170007824,10170572112,564288
+48,490540416,10180007824,10180548240,540416
+49,500561872,10190007824,10190569696,561872
+50,510575264,10200007824,10200583088,575264
+51,520559328,10210007824,10210567152,559328
+52,530670736,10220007824,10220678560,670736
+53,540539456,10230007824,10230547280,539456
+54,550541056,10240007824,10240548880,541056
+55,560528784,10250007824,10250536608,528784
+56,570562752,10260007824,10260570576,562752
+57,580547712,10270007824,10270555536,547712
+58,590567136,10280007824,10280574960,567136
+59,600603712,10290007824,10290611536,603712
+60,610545264,10300007824,10300553088,545264
+61,620554624,10310007824,10310562448,554624
+62,630614048,10320007824,10320621872,614048
+63,640561968,10330007824,10330569792,561968
+64,650599120,10340007824,10340606944,599120
+65,660588480,10350007824,10350596304,588480
+66,670548576,10360007824,10360556400,548576
+67,680577472,10370007824,10370585296,577472
+68,690607984,10380007824,10380615808,607984
+69,700595280,10390007824,10390603104,595280
+70,710571568,10400007824,10400579392,571568
+71,720593120,10410007824,10410600944,593120
+72,730574864,10420007824,10420582688,574864
+73,740569760,10430007824,10430577584,569760
+74,750566896,10440007824,10440574720,566896
+75,760572704,10450007824,10450580528,572704
+76,770543200,10460007824,10460551024,543200
+77,780565696,10470007824,10470573520,565696
+78,790542272,10480007824,10480550096,542272
+79,800544848,10490007824,10490552672,544848
+80,810562560,10500007824,10500570384,562560
+81,820583840,10510007824,10510591664,583840
+82,830565488,10520007824,10520573312,565488
+83,840559056,10530007824,10530566880,559056
+84,850540624,10540007824,10540548448,540624
+85,860549728,10550007824,10550557552,549728
+86,870547920,10560007824,10560555744,547920
+87,880536240,10570007824,10570544064,536240
+88,890534784,10580007824,10580542608,534784
+89,900535776,10590007824,10590543600,535776
+90,910562832,10600007824,10600570656,562832
+91,920560160,10610007824,10610567984,560160
+92,930548256,10620007824,10620556080,548256
+93,940554992,10630007824,10630562816,554992
+94,950547152,10640007824,10640554976,547152
+95,960595840,10650007824,10650603664,595840
+96,970541440,10660007824,10660549264,541440
+97,980539088,10670007824,10670546912,539088
+98,990536336,10680007824,10680544160,536336
+99,1000533824,10690007824,10690541648,533824
+100,1010586736,10700007824,10700594560,586736
+101,1020555248,10710007824,10710563072,555248
+102,1030566672,10720007824,10720574496,566672
+103,1040578048,10730007824,10730585872,578048
+104,1050530032,10740007824,10740537856,530032
+105,1060536656,10750007824,10750544480,536656
+106,1070565408,10760007824,10760573232,565408
+107,1080553712,10770007824,10770561536,553712
+108,1090546432,10780007824,10780554256,546432
+109,1100537888,10790007824,10790545712,537888
+110,1110566496,10800007824,10800574320,566496
+111,1120543408,10810007824,10810551232,543408
+112,1130537232,10820007824,10820545056,537232
+113,1140536368,10830007824,10830544192,536368
+114,1150567456,10840007824,10840575280,567456
+115,1160559824,10850007824,10850567648,559824
+116,1170538704,10860007824,10860546528,538704
+117,1180528640,10870007824,10870536464,528640
+118,1190535456,10880007824,10880543280,535456
+119,1200587216,10890007824,10890595040,587216
+120,1210603984,10900007824,10900611808,603984
+121,1220547632,10910007824,10910555456,547632
+122,1230557648,10920007824,10920565472,557648
+123,1240587040,10930007824,10930594864,587040
+124,1250538432,10940007824,10940546256,538432
+125,1260542800,10950007824,10950550624,542800
+126,1270547024,10960007824,10960554848,547024
+127,1280562736,10970007824,10970570560,562736
+128,1290552496,10980007824,10980560320,552496
+129,1300593120,10990007824,10990600944,593120
+130,1310575392,11000007824,11000583216,575392
+131,1320549088,11010007824,11010556912,549088
+132,1330586688,11020007824,11020594512,586688
+133,1340545616,11030007824,11030553440,545616
+134,1350571904,11040007824,11040579728,571904
+135,1360583840,11050007824,11050591664,583840
+136,1370539504,11060007824,11060547328,539504
+137,1380538016,11070007824,11070545840,538016
+138,1390573024,11080007824,11080580848,573024
+139,1400586400,11090007824,11090594224,586400
+140,1410591152,11100007824,11100598976,591152
+141,1420572208,11110007824,11110580032,572208
+142,1430574336,11120007824,11120582160,574336
+143,1440580144,11130007824,11130587968,580144
+144,1450602608,11140007824,11140610432,602608
+145,1460571616,11150007824,11150579440,571616
+146,1470587664,11160007824,11160595488,587664
+147,1480555232,11170007824,11170563056,555232
+148,1490572832,11180007824,11180580656,572832
+149,1500579856,11190007824,11190587680,579856
+150,1510535808,11200007824,11200543632,535808
+151,1520550720,11210007824,11210558544,550720
+152,1530585200,11220007824,11220593024,585200
+153,1540577216,11230007824,11230585040,577216
+154,1550541392,11240007824,11240549216,541392
+155,1560581056,11250007824,11250588880,581056
+156,1570585600,11260007824,11260593424,585600
+157,1580548288,11270007824,11270556112,548288
+158,1590549936,11280007824,11280557760,549936
+159,1600547920,11290007824,11290555744,547920
+160,1610578080,11300007824,11300585904,578080
+161,1620581680,11310007824,11310589504,581680
+162,1630547760,11320007824,11320555584,547760
+163,1640552336,11330007824,11330560160,552336
+164,1650548032,11340007824,11340555856,548032
+165,1660547520,11350007824,11350555344,547520
+166,1670574192,11360007824,11360582016,574192
+167,1680542560,11370007824,11370550384,542560
+168,1690556208,11380007824,11380564032,556208
+169,1700567008,11390007824,11390574832,567008
+170,1710572960,11400007824,11400580784,572960
+171,1720574640,11410007824,11410582464,574640
+172,1730575712,11420007824,11420583536,575712
+173,1740567184,11430007824,11430575008,567184
+174,1750565232,11440007824,11440573056,565232
+175,1760544160,11450007824,11450551984,544160
+176,1770575824,11460007824,11460583648,575824
+177,1780569296,11470007824,11470577120,569296
+178,1790565200,11480007824,11480573024,565200
+179,1800549904,11490007824,11490557728,549904
+180,1810590016,11500007824,11500597840,590016
+181,1820574032,11510007824,11510581856,574032
+182,1830566176,11520007824,11520574000,566176
+183,1840582480,11530007824,11530590304,582480
+184,1850560608,11540007824,11540568432,560608
+185,1860550800,11550007824,11550558624,550800
+186,1870570464,11560007824,11560578288,570464
+187,1880608448,11570007824,11570616272,608448
+188,1890542000,11580007824,11580549824,542000
+189,1900581808,11590007824,11590589632,581808
+190,1910569088,11600007824,11600576912,569088
+191,1920581952,11610007824,11610589776,581952
+192,1930569824,11620007824,11620577648,569824
+193,1940569504,11630007824,11630577328,569504
+194,1950598080,11640007824,11640605904,598080
+195,1960541520,11650007824,11650549344,541520
+196,1970555088,11660007824,11660562912,555088
+197,1980572016,11670007824,11670579840,572016
+198,1990555888,11680007824,11680563712,555888
+199,2000550496,11690007824,11690558320,550496
+200,2010548096,11700007824,11700555920,548096
+201,2020589552,11710007824,11710597376,589552
+202,2030539744,11720007824,11720547568,539744
+203,2040548192,11730007824,11730556016,548192
+204,2050563056,11740007824,11740570880,563056
+205,2060583312,11750007824,11750591136,583312
+206,2070555600,11760007824,11760563424,555600
+207,2080547280,11770007824,11770555104,547280
+208,2090559056,11780007824,11780566880,559056
+209,2100544448,11790007824,11790552272,544448
+210,2110572688,11800007824,11800580512,572688
+211,2120617648,11810007824,11810625472,617648
+212,2130579504,11820007824,11820587328,579504
+213,2140552992,11830007824,11830560816,552992
+214,2150566496,11840007824,11840574320,566496
+215,2160531824,11850007824,11850539648,531824
+216,2170547424,11860007824,11860555248,547424
+217,2180539456,11870007824,11870547280,539456
+218,2190536848,11880007824,11880544672,536848
+219,2200538384,11890007824,11890546208,538384
+220,2210543952,11900007824,11900551776,543952
+221,2220580560,11910007824,11910588384,580560
+222,2230589136,11920007824,11920596960,589136
+223,2240561504,11930007824,11930569328,561504
+224,2250548064,11940007824,11940555888,548064
+225,2260566432,11950007824,11950574256,566432
+226,2270550064,11960007824,11960557888,550064
+227,2280567648,11970007824,11970575472,567648
+228,2290547504,11980007824,11980555328,547504
+229,2300538816,11990007824,11990546640,538816
+230,2310534384,12000007824,12000542208,534384
+231,2320558000,12010007824,12010565824,558000
+232,2330530160,12020007824,12020537984,530160
+233,2340528016,12030007824,12030535840,528016
+234,2350530880,12040007824,12040538704,530880
+235,2360529824,12050007824,12050537648,529824
+236,2370554704,12060007824,12060562528,554704
+237,2380555056,12070007824,12070562880,555056
+238,2390567808,12080007824,12080575632,567808
+239,2400574512,12090007824,12090582336,574512
+240,2410535776,12100007824,12100543600,535776
+241,2420560816,12110007824,12110568640,560816
+242,2430536896,12120007824,12120544720,536896
+243,2440572768,12130007824,12130580592,572768
+244,2450614288,12140007824,12140622112,614288
+245,2460575424,12150007824,12150583248,575424
+246,2470574480,12160007824,12160582304,574480
+247,2480538144,12170007824,12170545968,538144
+248,2490602848,12180007824,12180610672,602848
+249,2500599712,12190007824,12190607536,599712
+250,2510607136,12200007824,12200614960,607136
+251,2520552400,12210007824,12210560224,552400
+252,2530578928,12220007824,12220586752,578928
+253,2540620944,12230007824,12230628768,620944
+254,2550558320,12240007824,12240566144,558320
+255,2560549904,12250007824,12250557728,549904
+256,2570577024,12260007824,12260584848,577024
+257,2580594800,12270007824,12270602624,594800
+258,2590558192,12280007824,12280566016,558192
+259,2600586544,12290007824,12290594368,586544
+260,2610591968,12300007824,12300599792,591968
+261,2620577824,12310007824,12310585648,577824
+262,2630587632,12320007824,12320595456,587632
+263,2640598352,12330007824,12330606176,598352
+264,2650556144,12340007824,12340563968,556144
+265,2660544704,12350007824,12350552528,544704
+266,2670578320,12360007824,12360586144,578320
+267,2680564704,12370007824,12370572528,564704
+268,2690554960,12380007824,12380562784,554960
+269,2700558768,12390007824,12390566592,558768
+270,2710562896,12400007824,12400570720,562896
+271,2720561008,12410007824,12410568832,561008
+272,2730594112,12420007824,12420601936,594112
+273,2740538816,12430007824,12430546640,538816
+274,2750539024,12440007824,12440546848,539024
+275,2760634336,12450007824,12450642160,634336
+276,2770553328,12460007824,12460561152,553328
+277,2780555920,12470007824,12470563744,555920
+278,2790607008,12480007824,12480614832,607008
+279,2800579296,12490007824,12490587120,579296
+280,2810569968,12500007824,12500577792,569968
+281,2820586624,12510007824,12510594448,586624
+282,2830585488,12520007824,12520593312,585488
+283,2840556080,12530007824,12530563904,556080
+284,2850575984,12540007824,12540583808,575984
+285,2860553952,12550007824,12550561776,553952
+286,2870579056,12560007824,12560586880,579056
+287,2880587680,12570007824,12570595504,587680
+288,2890575728,12580007824,12580583552,575728
+289,2900599376,12590007824,12590607200,599376
+290,2910588240,12600007824,12600596064,588240
+291,2920601776,12610007824,12610609600,601776
+292,2930550304,12620007824,12620558128,550304
+293,2940575680,12630007824,12630583504,575680
+294,2950546544,12640007824,12640554368,546544
+295,2960563984,12650007824,12650571808,563984
+296,2970543424,12660007824,12660551248,543424
+297,2980577536,12670007824,12670585360,577536
+298,2990546064,12680007824,12680553888,546064
+299,3000582752,12690007824,12690590576,582752
+PERIODIC LATENCY COMPLETE samples=300
+
+[Axvisor] attached VM[1] console; use Ctrl+X, then h to return to the shell
+STARRY_T2N1_READY local=0.0.0.0:4242 peer=10.0.42.2:4242 session=0x54525432 mode=normal
+TASK3_INFER model=yolo11n.ncnn infer_us=16761034 request=1 elapsed_ms=0
+TASK3_DETECTION model=yolo11n.ncnn class=75 confidence_milli=843 center_x_milli=421 area_milli=63 target=421 request=1
+STARRY_T2N1_CONTROL_SENT seq=1 value=421 request=1 elapsed_ms=0
+STARRY_T2N1_RETRANSMIT seq=1 attempt=1
+STARRY_T2N1_RETRANSMIT seq=1 attempt=2
+STARRY_T2N1_RETRANSMIT seq=1 attempt=3
+STARRY_T2N1_RETRANSMIT seq=1 attempt=4
+STARRY_T2N1_RETRANSMIT seq=1 attempt=5
+STARRY_T2N1_RETRY_EXHAUSTED seq=1 elapsed_ms=4172
+STARRY_T2N1_SAFE source=protocol reason=RetryExhausted elapsed_ms=4172
+
+[Axvisor] detached VM[1] console
+[2Kaxvisor:/$ [2Kaxvisor:/$ r[2Kaxvisor:/$ rt[2Kaxvisor:/$ rt [2Kaxvisor:/$ rt s[2Kaxvisor:/$ rt st[2Kaxvisor:/$ rt sta[2Kaxvisor:/$ rt stat
+FP-RR scheduler counters:
+  quantum_ticks=5 quantum_expiries=15 same_priority_rotations=15 slice_preserving_preemptions=20592 voluntary_requeues=1331656 idle_quantum_skips=4020 lower_priority_services=49
+RT vCPU wait counters:
+  vcpu=0 post_vmexit_yields=30457 parks=9343 wakes=8540 notify_woke=8518 vtimer_arms=18084 vtimer_immediate=68 vtimer_no_deadline=0 vtimer_registered=18016 vtimer_callbacks=4888 vtimer_stale_callbacks=3 vtimer_notifications=4885 vtimer_invalidations=174492 callback_to_wake_samples=0 callback_to_wake_overflow=0 callback_to_wake_p50_ns=0 callback_to_wake_p99_ns=0 callback_to_wake_p99_9_ns=0 callback_to_wake_max_ns=0 callback_to_run_dispatch_samples=0 callback_to_run_dispatch_overflow=0 callback_to_run_dispatch_p50_ns=0 callback_to_run_dispatch_p99_ns=0 callback_to_run_dispatch_p99_9_ns=0 callback_to_run_dispatch_max_ns=0 callback_to_guest_entry_samples=0 callback_to_guest_entry_overflow=0 callback_to_guest_entry_p50_ns=0 callback_to_guest_entry_p99_ns=0 callback_to_guest_entry_p99_9_ns=0 callback_to_guest_entry_max_ns=0 direct_acks=8359 direct_overlaps=0 direct_to_run_dispatch_samples=0 direct_to_run_dispatch_overflow=0 direct_to_run_dispatch_p50_ns=0 direct_to_run_dispatch_p99_ns=0 direct_to_run_dispatch_p99_9_ns=0 direct_to_run_dispatch_max_ns=0 direct_to_guest_entry_samples=0 direct_to_guest_entry_overflow=0 direct_to_guest_entry_p50_ns=0 direct_to_guest_entry_p99_ns=0 direct_to_guest_entry_p99_9_ns=0 direct_to_guest_entry_max_ns=0 activation_hold_samples=0 activation_hold_overflow=0 activation_hold_p50_ns=0 activation_hold_p99_ns=0 activation_hold_p99_9_ns=0 activation_hold_max_ns=0
+  lr_skips=0
+RT device-poll counters:
+  vm=1 published=35 kicked=35 consumed=2 pending=false
+  vm=2 published=1 kicked=1 consumed=1 pending=false
+RT AxVM timer counters:
+  cpu=1 now_ns=35313275088 wheel_next_ns=35317390768 published_ns=35317390768 registered=18016 cancelled=13126 expired=4888 worker_wakes=4726 expiry_batches=4860 expiry_late_samples=0 expiry_late_overflow=0 expiry_late_p50_ns=0 expiry_late_p99_ns=0 expiry_late_p99_9_ns=0 expiry_late_max_ns=0 lock_acquisitions=65643 lock_wait_total_ns=37914512 lock_wait_max_ns=106848 lock_hold_total_ns=140398048 lock_hold_max_ns=195776
+RT host hardware timer IRQ counters:
+  cpu=0 irqs=3454
+  cpu=1 irqs=6643
+RT console counters: attached=None flush_calls=1278395 host_write_bytes=18040
+  vm=1 active=true input_enqueued=35 input_drained=35 input_dropped=0 input_pending=0 output_enqueued=4107 output_drained=4107 output_dropped=0 output_pending=0
+  vm=2 active=true input_enqueued=1 input_drained=1 input_dropped=0 input_pending=0 output_enqueued=14004 output_drained=14004 output_dropped=0 output_pending=0
+axvisor:/$ 

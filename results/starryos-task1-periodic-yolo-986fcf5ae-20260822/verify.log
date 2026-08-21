@@ -1,0 +1,2 @@
+PASS: verified 3 RR and 3 FP-RR periodic runs
+comparison=results/starryos-task1-periodic-yolo-986fcf5ae-20260822/comparison.md

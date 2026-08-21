@@ -1,0 +1,11 @@
+experiment=starryos-yolo-zephyr-periodic-scheduler-ab
+single_variable=axvisor-scheduler-feature
+arms=rr,fp-rr
+repeats_per_arm=3
+run_order=rr,fp-rr,repeated
+topology=starry-vcpu0->pcpu1,zephyr-vcpu0->pcpu1
+starry_host_priority=89
+zephyr_host_priority=90
+zephyr_period_ms=10
+zephyr_samples=300
+interference=starry-in-guest-ncnn-yolo-startup-inference

@@ -1,0 +1,4 @@
+efbdfa51d03b28fac2ac7a7524056f05fe036100d11577cd55a6fd0931b50c28  /home/huhu/tgoskits-starry/tmp/starry-task1-periodic/zephyr-periodic.bin
+a2c1320ba0812c7445c3fb65fe6a981692926ac37f5d69f73cbb18b0ca3b5476  /home/huhu/tgoskits-starry/tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img
+db2d8f199073acc3f15cc241862cb3a9ac2198ad471bad7ebf095c8fb8999269  /home/huhu/tgoskits-starry/target/aarch64-unknown-none-softfloat/release/starryos.bin
+3c8e6723d6c5e9506e94101041dab27c062afb92a21a7b15fe8b4fd198437980  /home/huhu/tgoskits-starry/target/aarch64-unknown-linux-musl/release/axvisor.bin
