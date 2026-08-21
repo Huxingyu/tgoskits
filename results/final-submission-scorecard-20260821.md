@@ -27,9 +27,9 @@ Task 1：在完整系统上改造 AxVisor 调度、IRQ、定时器和关键锁�
 | 任务一：实时 RTOS 化 | 30 | 26–27 | 27–28 | `results/task1/task1-final-closure-20260820/`、`two-gap-closure-20260820.md` |
 | 任务二：客户机间网络通信 | 25 | 24 | 25 | `book/design/task2-dual-guest-network-final.md`、Task 3 双侧 pcap |
 | 任务三：AI 控制闭环 | 25 | 25 | 25 | `book/design/task3-ai-design.md`、`results/task3/` |
-| 工程完整性与文档 | 15 | 9 | 14–15 | 当前缺统一索引、Task2 canonical 文档和无冲突 PR |
+| 工程完整性与文档 | 15 | 11–12 | 14–15 | 已有统一 evidence manifest、演示 runbook、Task2 canonical 文档和当前 HEAD 故障证据；仍缺无冲突 PR/远程重放审计 |
 | 系统创新与扩展性 | 5 | 4 | 4–5 | FP-RR、内部 L2 switch、可插拔协议/模型 |
-| **主评分合计** | **100** | **88–89** | **96–98** | Task1 按 26–27 计；不含加分项 |
+| **主评分合计** | **100** | **90–92** | **96–98** | Task1 按 26–27 计；工程项因统一索引和可定位证据上调；不含加分项 |
 
 ### Task 1 细分
 
@@ -89,6 +89,8 @@ StarryOS 必须用它完成可观察的任务闭环，单纯启动不能拿满 4
 5. 解决 Task2/Task3 与 `dev` 的 PR 冲突，并创建 Task1 PR。
 6. 录制官网要求的约 5 分钟演示视频。
 
-在这些事项完成前，不再继续扩大 Task1 调度机制范围。优先顺序为：最终文档与
-交付包 → Task2 缺口 → StarryOS/STERRORS 可观察闭环 → 第二 RTOS/板卡；Task1
+StarryOS/STERRORS 与第二 RTOS/板卡的当前审计和外部阻塞见
+`results/bonus-path-audit-20260821.md`；没有对应的可观察闭环就不计入加分。
+当前仍不再扩大 Task1 调度机制范围。优先顺序为：远程重放/PR 收口 →
+StarryOS/STERRORS 可观察闭环（若外部资产可用）→ 第二 RTOS/板卡；Task1
 补充实验只在低成本、能直接补分时执行。

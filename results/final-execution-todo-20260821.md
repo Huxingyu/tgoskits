@@ -4,7 +4,7 @@
 > 补齐 Task2/Task3 的可交付证据，并为 Task3 增加可复现的 YOLO 感知模式。
 >
 > 当前基线：Task1 提交保守自评 26–27/30（28/30 为乐观上限），Task2
-> 24/25，Task3 25/25，工程完整性 9/15。分数是内部估计，不是官方最终评分。
+> 24/25，Task3 25/25，工程完整性 11–12/15。分数是内部估计，不是官方最终评分。
 
 ## 执行原则
 
@@ -49,9 +49,11 @@
 - [x] 在当前 HEAD 重跑协议/模型 contract gate、YOLO fixture，并重建 YOLO
       Linux endpoint、initramfs 和 Zephyr managed Guest；完整命令、hash 和
       pcap 见 `results/task3/yolo/current-head-validation-20260821.md`。
-- [ ] 统一构建、启动、验证命令及 SHA256 manifest。
+- [x] 统一构建、启动、验证命令及 SHA256 manifest；索引见
+      `results/final-evidence-manifest-20260821.md`。
 - [ ] 检查 Task2/Task3 与 `dev` 的冲突，创建可审查的 Task1/Task2/Task3 PR。
-- [ ] 准备官网要求的约 5 分钟演示流程和日志 marker 清单。
+- [x] 准备官网要求的约 5 分钟演示流程和日志 marker 清单；见
+      `results/demo-runbook-20260821.md`。
 
 验收：新环境按文档能构建并运行；结果目录能由命令唯一定位；没有引用
 已经被新提交淘汰的旧统计。
@@ -131,6 +133,9 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 
 ## 阶段 6：StarryOS、多 RTOS 与补充实验（按收益裁剪）
 
+- [x] 审计 StarryOS/STERRORS、K230/SG2002 和第二 RTOS/板卡路径；审计结论与
+      外部阻塞见 `results/bonus-path-audit-20260821.md`。审计不把配置、README
+      或启动能力当作当前 Task3 闭环证据。
 - [ ] 如果 StarryOS 能完成同一个可观察 Task3 闭环，再争取官网 StarryOS 替代
       Linux 的加分；单纯启动不计入完成。
 - [ ] 将已有 K230 YOLOv8n/NNCase 路径作为 StarryOS/NPU 扩展证据，保持与
@@ -142,8 +147,11 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 
 ## 阶段 7：最终审计与远程交付
 
-- [ ] 按评分表逐项填写“证据路径、命令、结果、限制”。
+- [x] 按评分表逐项填写“证据路径、命令、结果、限制”；评分映射见
+      `results/final-submission-scorecard-20260821.md`，统一 manifest 见
+      `results/final-evidence-manifest-20260821.md`。
 - [ ] 检查所有新提交均可从远程分支重放；检查 PR head 与结果 hash 一致。
 - [ ] 每个阶段的 commit message 使用 `type(scope): subject`，并推送到相应
       `origin/openrace/*` 分支。
-- [ ] 最终报告明确区分：已证明、部分证明、未验证和外部阻塞项。
+- [x] 最终报告明确区分：已证明、部分证明、未验证和外部阻塞项；见
+      `results/bonus-path-audit-20260821.md` 和各 Task README。
