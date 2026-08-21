@@ -71,12 +71,32 @@ STATUS marker；pcap 必须通过 `verify_pcap.py --require-task2` 才可引用�
 `serial_console.py dump-pcap` 现在会实际发送 `virtnet capture dump` 并写出
 两侧 classic pcap，而不是只清空内存缓存。
 
+最终 HEAD 的独立重放证据位于
+`results/task3/switch/final-head-yolo-replay-v2/`。该运行使用 slot-0
+Zephyr 镜像（`zephyr_binary_sha256 =
+49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433`），双端
+各导出 320 帧，其中 315 帧是可验证的 T2N1 UDP 帧；两侧 pcap 均通过
+`verify_pcap.py --require-task2`。日志中的 `TASK3_MODEL_READY` 明确标注
+`embedded:fixture-replay`，因此这条证据证明的是 YOLO 感知契约接入和双
+Guest 控制闭环，不是 Guest 内 ONNX runtime 性能。
+
 YOLO 故障恢复证据位于
 `results/task3/switch/fault-current-head-yolo-fault-validated/`：黑障期间进入
 `TASK2_SAFE`，恢复后出现 `TASK2_RECOVERED state=Active`，并继续产生
 `TASK3_CONTROL_SENT`/`TASK3_STATUS_RECEIVED`。fault runner 在归档前强制检查
 marker 顺序、恢复后的续跑、双端非空 pcap、T2N1 ledger 和 SHA256 manifest。
 该证据同样是 QEMU SIL，不能解读为物理板硬实时或真实 ONNX 推理耗时。
+
+最终 HEAD 的 YOLO blackout 重放位于
+`results/task3/switch/fault-final-head-yolo-blackout-v2/`。它使用显式的
+`yolo` initramfs，验证顺序为 `blackout ON → TASK2_SAFE → blackout OFF →
+TASK2_RECOVERED`，恢复后继续运行至 `elapsed_ms >= 45000`；双端各有 727
+帧、720 个 T2N1 帧，pcap verifier PASS。现在 fault runner 支持
+`baseline|cnn|yolo` 参数且默认 `yolo`，避免旧的 `ai` 别名掩盖实际模型：
+
+```bash
+bash scripts/task3/run-task3-switch-fault.sh <label> yolo
+```
 
 当前 HEAD 的协议故障注入也已形成专门证据：
 

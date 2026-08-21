@@ -49,6 +49,10 @@
 - [x] 在当前 HEAD 重跑协议/模型 contract gate、YOLO fixture，并重建 YOLO
       Linux endpoint、initramfs 和 Zephyr managed Guest；完整命令、hash 和
       pcap 见 `results/task3/yolo/current-head-validation-20260821.md`。
+- [x] 在最终 HEAD 重新执行正常 YOLO switch 和 blackout/recovery；证据分别见
+      `results/task3/switch/final-head-yolo-replay-v2/` 与
+      `results/task3/switch/fault-final-head-yolo-blackout-v2/`，两条运行均有
+      双端 pcap、marker 顺序和 Task2 verifier 结果。
 - [x] 统一构建、启动、验证命令及 SHA256 manifest；索引见
       `results/final-evidence-manifest-20260821.md`。
 - [x] 完成 Task2/Task3 与 `dev` 的只读冲突审计；`git merge-tree --write-tree`
@@ -128,6 +132,8 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
       网络 RTT、RTOS 控制延迟分开。
 - [x] 在一次 link-blackout/恢复运行中验证 YOLO 模式的 Safe→Active 行为；
       `fault-current-head-yolo-fault-validated` 已通过 runner 门禁。
+- [x] 将 switch fault runner 改为显式选择 `baseline|cnn|yolo`，默认使用
+      `yolo`，并在最终 HEAD 重跑 blackout→Safe→recovery。
 - [x] 更新 Task3 README、量化 summary、pcap/log/hash 清单；设计文档仍需将
       量化结果纳入最终章节。
 
@@ -153,11 +159,10 @@ QEMU/AArch64 Task3 不直接依赖 K230 专用 `.kmodel`，而使用可校验的
 - [x] 按评分表逐项填写“证据路径、命令、结果、限制”；评分映射见
       `results/final-submission-scorecard-20260821.md`，统一 manifest 见
       `results/final-evidence-manifest-20260821.md`。
-- [ ] 在最终 review/PR head 上重新跑一条完整 QEMU 闭环，并检查 PR head 与
-      结果 hash 一致；当前已归档运行记录的 runtime head 是
-      `5bb5c7957`，后续提交只涉及证据归档、verifier 和文档，边界见
-      `results/final-evidence-manifest-20260821.md`。
-- [ ] 每个阶段的 commit message 使用 `type(scope): subject`，并推送到相应
-      `origin/openrace/*` 分支。
+- [x] 在当前 review head 的代码状态上重新跑正常 YOLO 和 blackout/recovery
+      闭环，并检查镜像、pcap、日志 manifest 的 hash；证据运行的代码 head
+      记录在归档 manifest 中，之后提交仅增加证据和文档。
+- [x] 每个完整阶段使用 `type(scope): subject` 的 commit message，并推送到
+      `origin/openrace/task1-rt-partition`。
 - [x] 最终报告明确区分：已证明、部分证明、未验证和外部阻塞项；见
       `results/bonus-path-audit-20260821.md` 和各 Task README。

@@ -292,6 +292,20 @@ latency and a higher RMSE (see the latency characteristics in §9).
 Evidence: `results/task3/switch/fault-switch-fault-run1/` (guest log + both
 pcaps) and `results/task3/fault/` (guest/proxy logs + both pcaps + SHA-256).
 
+The final-head YOLO replays are archived separately so that the model choice and
+the runtime head are unambiguous:
+
+- `results/task3/switch/final-head-yolo-replay-v2/` is the normal switch loop;
+  both 320-frame pcaps pass the Task2 ledger verifier.
+- `results/task3/switch/fault-final-head-yolo-blackout-v2/` is the same YOLO
+  controller under a 25--35 s switch blackout. It records Safe entry, link
+  restoration, resynchronization, and resumed control through 45 s; both
+  727-frame pcaps pass the verifier.
+
+The Zephyr slot-0 image used by these replays is recorded in each manifest. Its
+`embedded:fixture-replay` model marker is intentionally treated as a contract
+and safety-path proof, not as a claim of real ONNX inference inside the Guest.
+
 ### 7.3 Protocol fault injection on the real Guest wire
 
 The P3 proxy can inject one syntactically valid but semantically invalid CONTROL
@@ -350,7 +364,7 @@ TASK2_ZEPHYR_VIRTIO_SLOT=0 bash scripts/test/net-dual-guest/build-zephyr-task2.s
 bash scripts/task3/run-task3-switch.sh cnn-runX cnn
 bash scripts/task3/run-task3-switch.sh baseline-runX baseline
 bash scripts/task3/run-task3-switch.sh yolo-runX yolo
-bash scripts/task3/run-task3-switch-fault.sh yolo-fault-runX
+bash scripts/task3/run-task3-switch-fault.sh yolo-fault-runX yolo
 
 # Earlier experiment flow on the QEMU socket direct-connect environment
 # (data under results/task3/)
