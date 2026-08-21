@@ -1,0 +1,7 @@
+ncnn_source = "/tmp/ncnn-source.iKfMGY"
+ncnn_git_revision = "946fe3fb14a8dff8c06df763f67be522167b2f00"
+target = "aarch64-linux-musl"
+shared = false
+vulkan = false
+openmp = false
+runtime_cpu = true

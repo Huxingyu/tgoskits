@@ -1,0 +1,5 @@
+    Finished `release` profile [optimized] target(s) in 0.11s
+    Finished `release` profile [optimized] target(s) in 0.11s
+controller=/home/huhu/tgoskits-starry/tmp/net-dual-guest/linux-task2/controller/task2-net sha256=dc0827cadb2a052297bdcca8c157ff875e3c952a7709f49689ccbf05090073d1
+managed=/home/huhu/tgoskits-starry/tmp/net-dual-guest/linux-task2/managed/task2-net sha256=80f38696c119c526dc9fd4970c36009d0ca5e4d86d7e3750fe81179fb2cc4abc
+manifest=/home/huhu/tgoskits-starry/tmp/net-dual-guest/linux-task2/manifest.toml

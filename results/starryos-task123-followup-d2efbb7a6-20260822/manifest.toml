@@ -1,0 +1,7 @@
+label = "d2efbb7a6-linux-yolo-async"
+mode = "yolo"
+min_elapsed_ms = 35000
+linux_pcap_sha256 = "e072707e5c53996d4586120fe355b32e5013185c5816a0ff96a13b05ee09e14d"
+rtos_pcap_sha256 = "11d21b3878becdb184dc5624e9483d8edc41b423dd6c4a093ad4b8200a9ba4bc"
+zephyr_manifest = "/home/huhu/tgoskits-starry/tmp/net-dual-guest/zephyr-task2/manifest.toml"
+zephyr_binary_sha256 = "49ca61bc847835e61a03f94fb619fca01b49f02157d347b0fc0a9806f7fcb433"

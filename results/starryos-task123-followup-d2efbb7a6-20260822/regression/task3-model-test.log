@@ -1,0 +1,26 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.33s
+     Running unittests src/lib.rs (target/debug/deps/task3_model-c3f9021e119c0a90)
+
+running 11 tests
+test perception::tests::fixture_replay_targets_match_manifest_contract_anchor ... ok
+test perception::tests::fixture_replay_matches_archived_detection_sequence ... ok
+test perception::tests::rejects_low_confidence_and_small_area ... ok
+test perception::tests::rejects_out_of_range_normalized_fields ... ok
+test perception::tests::rejects_invalid_policy_range ... ok
+test perception::tests::decodes_highest_yolov8_candidate ... ok
+test golden_vectors::window_build_matches_reference ... ok
+test perception::tests::rejects_malformed_or_non_finite_yolov8_output ... ok
+test perception::tests::clamps_single_frame_target_step ... ok
+test perception::tests::maps_center_and_preserves_detection_metadata ... ok
+test golden_vectors::golden_vectors_match_reference ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+   Doc-tests task3_model
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

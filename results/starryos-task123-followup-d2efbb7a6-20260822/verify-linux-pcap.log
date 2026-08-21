@@ -1,0 +1,2 @@
+results/starryos-task123-followup-d2efbb7a6-20260822/linux.pcap: packets=33 arp=2 udp=24 tagged=0 task2=24 kinds={5: 16, 1: 2, 4: 4, 2: 2}
+PASS

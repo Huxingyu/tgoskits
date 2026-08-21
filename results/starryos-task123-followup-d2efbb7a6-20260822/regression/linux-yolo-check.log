@@ -1,0 +1,6 @@
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+warning: task3-ncnn@0.1.0: task3-ncnn disabled: NCNN_PREFIX is not set
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.32s
