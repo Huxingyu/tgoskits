@@ -171,6 +171,7 @@ Run the required virtual scenarios with:
 ```bash
 scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh normal <output-dir>
 scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh drop-ack <output-dir>
+scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh retry-exhausted <output-dir>
 scripts/test/net-dual-guest/run-starry-rtthread-task23-scenario.sh blackout <output-dir>
 ```
 

@@ -232,10 +232,9 @@ cp "$selected_rtos_dir/manifest.toml" "$runtime_dir/${rtos_name}-task2/manifest.
     if [[ "$collect_rt_stat" == 1 ]]; then
         printf 'expect 120 use (Round-robin|Fixed-priority round-robin) scheduler\\.\n'
         printf 'expect 120 \\[VM 1\\] Use .*apk\n'
-        printf 'detach\n'
-        printf 'expect 20 Welcome to AxVisor Shell!\n'
+        printf 'send-until 30 1 \\x18h axvisor:/\\$\n'
     else
-        printf 'detach\n'
+        printf 'send-until 30 1 \\x18h axvisor:/\\$\n'
     fi
     printf 'cmd virtnet capture on\n'
     printf 'expect 20 virtnet: capture ON\n'
@@ -286,7 +285,7 @@ cp "$selected_rtos_dir/manifest.toml" "$runtime_dir/${rtos_name}-task2/manifest.
         blackout)
             printf 'attach 1\n'
             printf 'expect 30 STARRY_T2N1_PASS\n'
-            printf 'detach\n'
+            printf 'send-until 10 1 \\x18h axvisor:/\\$\n'
             printf 'cmd virtnet drop on\n'
             printf 'expect 20 virtnet: blackout ON\n'
             printf 'attach 1\n'
@@ -295,7 +294,7 @@ cp "$selected_rtos_dir/manifest.toml" "$runtime_dir/${rtos_name}-task2/manifest.
             printf 'clear-tail\n'
             printf 'attach 2\n'
             printf 'expect 30 TASK2_SAFE state=Safe event=HeartbeatTimeout\n'
-            printf 'detach\n'
+            printf 'send-until 10 1 \\x18h axvisor:/\\$\n'
             printf 'cmd virtnet drop off\n'
             printf 'expect 20 virtnet: blackout OFF\n'
             printf 'attach 1\n'
@@ -311,7 +310,7 @@ cp "$selected_rtos_dir/manifest.toml" "$runtime_dir/${rtos_name}-task2/manifest.
             printf 'hold 3\n'
             ;;
     esac
-    printf 'detach\n'
+    printf 'send-until 10 1 \\x18h axvisor:/\\$\n'
     if [[ "$collect_rt_stat" == 1 ]]; then
         printf 'cmd rt stat\n'
         printf 'expect 30 RT vCPU wait counters:\n'
@@ -345,14 +344,14 @@ cp "$selected_rtos_dir/manifest.toml" "$runtime_dir/${rtos_name}-task2/manifest.
 ) > "$build_log" 2>&1 &
 run_pid=$!
 
-for _ in $(seq 1 120); do
+for _ in $(seq 1 1200); do
     [[ -S "$serial_sock" ]] && break
     if ! kill -0 "$run_pid" 2>/dev/null; then
         printf 'error: AxVisor exited before serial socket creation\n' >&2
         tail -40 "$build_log" >&2
         exit 1
     fi
-    sleep 1
+    sleep 0.05
 done
 if [[ ! -S "$serial_sock" ]]; then
     printf 'error: serial socket did not appear\n' >&2
