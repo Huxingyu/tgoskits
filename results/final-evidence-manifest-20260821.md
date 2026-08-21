@@ -34,6 +34,10 @@ for the current evidence.
 All five directories contain the run/build or guest/proxy logs, pcaps where
 applicable, and a manifest with input/output hashes. The two protocol-injection
 runs were executed on the QEMU wire and passed their dedicated verifier.
+The ACK-drop capture intentionally does not pass the normal equal-ledger
+verifier because it contains the one expected missing ACK; it passes
+`verify_fault_pcap.py`, which checks the exact one-frame delta plus retransmit and
+duplicate markers.
 
 ## Reproduction gates
 
@@ -54,6 +58,7 @@ WCET claims, and `embedded:fixture-replay` is not an ONNX-runtime benchmark.
 - StarryOS/STERRORS and a second RTOS/board remain separately audited in
   `results/bonus-path-audit-20260821.md`; no bonus is claimed without a matching
   observable protocol/control loop.
-- `origin/dev` has conflicts with this long-lived evidence branch; integration
-  must be performed in a review branch, not by silently rewriting this evidence
-  branch.
+- `origin/dev` has conflicts with this long-lived evidence branch. A read-only
+  `git merge-tree --write-tree HEAD origin/dev` audit reports conflicts in the
+  realtime test helpers and AxVM AArch64/FDT/vCPU files; integration must be
+  performed in a review branch, not by silently rewriting this evidence branch.

@@ -51,7 +51,10 @@
       pcap 见 `results/task3/yolo/current-head-validation-20260821.md`。
 - [x] 统一构建、启动、验证命令及 SHA256 manifest；索引见
       `results/final-evidence-manifest-20260821.md`。
-- [ ] 检查 Task2/Task3 与 `dev` 的冲突，创建可审查的 Task1/Task2/Task3 PR。
+- [x] 完成 Task2/Task3 与 `dev` 的只读冲突审计；`git merge-tree --write-tree`
+      报告 realtime helper 与 AxVM AArch64/FDT/vCPU 冲突。实际合并和 PR 创建
+      保留为独立 review 分支工作，不能在证据分支上静默覆盖；详见
+      `results/final-evidence-manifest-20260821.md`。
 - [x] 准备官网要求的约 5 分钟演示流程和日志 marker 清单；见
       `results/demo-runbook-20260821.md`。
 
