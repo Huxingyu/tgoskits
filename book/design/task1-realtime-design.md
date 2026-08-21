@@ -6,6 +6,32 @@
 > results demonstrate reproducibility and relative behavior, not a physical
 > hardware worst-case latency guarantee.
 
+## Current delivery status (2026-08-21)
+
+> **CURRENT STATUS / HISTORICAL BODY:** Sections below retain the original
+> design narrative for traceability. Where they describe an earlier scheduler
+> state, the current closure report and scorecard take precedence.
+
+This document began as the Phase-2 design baseline. The current implementation
+and acceptance status supersede the early “cooperative FIFO / preemption not
+complete” wording below:
+
+- the final shared-core scheduler is bounded-service FP-RR: strict higher
+  priority wakeups may preempt, equal-priority work rotates fairly, and a
+  lower-priority runnable Guest receives bounded service;
+- acknowledged host IRQs now complete GIC deactivate/EOI before IRQ-context and
+  preemption guards are released;
+- fixed-priority IRQ-tail scheduling is priority-aware. Unconditional scheduling
+  on every IRQ was rejected because it caused same-priority churn and Linux
+  liveness failure;
+- the direct Linux/Zephyr same-pCPU closure and the IRQ-tail closure are recorded
+  in `results/task1/two-gap-closure-20260820.md` and
+  `results/task1/irq-tail-preemption-design.md`.
+
+The remainder of this document is retained for path-level design history. For
+the final score and claim boundary, use the current closure report and the
+submission scorecard rather than the historical caveats in Sections 1 and 3.
+
 ## 1. Goal and Claim Boundary
 
 Task1 adds an opt-in real-time partition profile to AxVisor. A Zephyr vCPU is

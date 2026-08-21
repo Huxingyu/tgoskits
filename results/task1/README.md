@@ -5,6 +5,23 @@
 > Scope: QEMU AArch64 TCG unless explicitly stated. QEMU results are relative
 > software-in-the-loop evidence, not physical-board hard-real-time bounds.
 
+> **Status note:** Files explicitly marked `HISTORICAL` or `historical` are
+> retained for archaeology and must not override the current closure report.
+
+## Final submission entry points
+
+- Overall score mapping: `results/final-submission-scorecard-20260821.md`
+- Current Task1 closure: `two-gap-closure-20260820.md`
+- IRQ-tail design and negative evidence: `irq-tail-preemption-design.md`
+- Task2 final network summary: `../task2-final-run-20260821.md`
+- Task3 AI loop design/results: `../../book/design/task3-ai-design.md` and
+  `../task3/README.md`
+
+The current branch has completed the QEMU software-in-the-loop mechanisms. The
+remaining work is submission closure (canonical documents, conflict-free PR,
+one integrated current-HEAD run and demo video), not another unbounded scheduler
+experiment.
+
 ## Evidence Map
 
 | Item | Purpose | Data / status |

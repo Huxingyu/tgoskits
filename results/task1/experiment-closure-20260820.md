@@ -1,5 +1,12 @@
 # 两个缺口实验复核（2026-08-20）
 
+> **历史记录说明（2026-08-21）**：本文记录的是无条件 IRQ-tail 和旧收尾
+> race 的失败复核，不能作为当前实现状态。当前优先级感知 IRQ-tail、GIC
+> completion 顺序和 Linux hold/release 收尾已经完成，正式结论见
+> `results/task1/two-gap-closure-20260820.md` 与
+> `results/task1/irq-tail-preemption-design.md`。本文保留为负面证据，避免把
+> 旧失败结论误读为当前代码仍未接入。
+
 ## 1. IRQ 返回尾部抢占
 
 本轮没有把“每个已确认 GIC IRQ 都在返回尾部统一调度”重新接回默认路径。此前两版实现已经完成了机制验证但均未通过稳定性门禁：第一版使 Linux P99 撞到 20 ms 直方图上限；第二版虽然先完成 GIC deactivate 再释放 IRQ/preempt guard，但 Linux 约 258 个 cyclictest 样本后停滞，统计出现约 78,906 次 slice-preserving preemption 和约 6.1M 次 voluntary requeue。
