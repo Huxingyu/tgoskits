@@ -1,15 +1,27 @@
 diff --git a/components/drivers/pic/pic-gicv3.c b/components/drivers/pic/pic-gicv3.c
-index 7a11f35de..03c5cb50e 100644
+index 7a11f35de..81d327bd4 100644
 --- a/components/drivers/pic/pic-gicv3.c
 +++ b/components/drivers/pic/pic-gicv3.c
-@@ -992,6 +992,11 @@ static void gicv3_init(void)
+@@ -541,6 +541,11 @@ static rt_err_t gicv3_irq_set_affinity(struct rt_pic_irq *pirq, rt_bitmap_t *aff
+     return ret;
+ }
+ 
++rt_ubase_t rt_pic_arch_timer_virtual_irq(void)
++{
++    return _gic.parent.irq_start + (27 - GIC_SGI_NR);
++}
++
+ static rt_err_t gicv3_irq_set_triger_mode(struct rt_pic_irq *pirq, rt_uint32_t mode)
+ {
+     void *base;
+@@ -992,6 +997,11 @@ static void gicv3_init(void)
      _gic.parent.ops = &gicv3_ops;
  
      rt_pic_linear_irq(&_gic.parent, _gic.irq_nr - GIC_SGI_NR);
 +    /* Expose the virtual timer PPI (INTID 27) so guests can use CNTV.
-+     * Configure both the irq-hash slot used by rt_hw_interrupt_install()
-+     * and the slot the GIC handler derives from the IAR. */
-+    rt_pic_config_irq(&_gic.parent, 27 - _gic.parent.irq_start, 27);
++     * The GIC handler derives the irq slot from the IAR as
++     * irq_start + (hwirq - GIC_SGI_NR), so the probe must install its ISR
++     * on that derived slot rather than on the raw INTID. */
 +    rt_pic_config_irq(&_gic.parent, 27 - GIC_SGI_NR, 27);
      gic_common_sgi_config(_gic.dist_base, &_gic.parent, 0);
  

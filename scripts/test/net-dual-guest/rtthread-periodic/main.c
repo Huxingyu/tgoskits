@@ -7,10 +7,13 @@
  * - prints CSV rows (sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns),
  * - prints "PERIODIC LATENCY COMPLETE samples=300" when done.
  *
- * Time is measured with the AArch64 physical counter (CNTPCT_EL0) so that
- * sub-tick jitter is visible even though the OS tick is 1 ms. Deadlines are
- * anchored to the CNTPCT real-time domain and only use the tick clock as a
- * sleep aid, so tick-rate skew cannot accumulate into the measurement.
+ * Time and wake-ups use the AArch64 virtual timer (CNTVCT_EL0 /
+ * CNTV_CVAL_EL0). AxVisor passes the virtual timer through in hardware, so
+ * the measured jitter is not quantized by RT-Thread's software tick (which
+ * is backed by the emulated physical timer and only advances at the host
+ * timer-wheel granularity). The periodic build exposes the virtual timer
+ * PPI (INTID 27) in the GIC driver and returns the IRQ slot the GIC handler
+ * actually dispatches through.
  */
 
 #include <stdint.h>
@@ -18,6 +21,7 @@
 
 #include <ioremap.h>
 #include <rtdevice.h>
+#include <rthw.h>
 #include <rtthread.h>
 
 #define PERIOD_MS 10
@@ -26,6 +30,8 @@
 #define PL011_DR 0x000
 #define PL011_FR 0x018
 #define PL011_FR_RXFE (1u << 4)
+
+extern rt_ubase_t rt_pic_arch_timer_virtual_irq(void);
 
 struct latency_sample {
 	int64_t timestamp_ns;
@@ -36,11 +42,11 @@ struct latency_sample {
 
 static struct latency_sample samples[SAMPLE_COUNT];
 
-static uint64_t read_cntpct(void)
+static uint64_t read_cntvct(void)
 {
 	uint64_t cycles;
 
-	__asm__ volatile("mrs %0, cntpct_el0" : "=r"(cycles));
+	__asm__ volatile("mrs %0, cntvct_el0" : "=r"(cycles));
 	return cycles;
 }
 
@@ -58,6 +64,36 @@ static int64_t cycles_to_ns(uint64_t cycles, uint64_t freq)
 		return 0;
 	}
 	return (int64_t)((cycles * UINT64_C(1000000000)) / freq);
+}
+
+static volatile int vtimer_fired;
+
+static void vtimer_isr(int vector, void *parameter)
+{
+	(void)vector;
+	(void)parameter;
+	/* Disable the virtual timer; the level IRQ deasserts with it. */
+	__asm__ volatile("msr cntv_ctl_el0, xzr");
+	vtimer_fired = 1;
+}
+
+static void vtimer_init(void)
+{
+	rt_ubase_t irq = rt_pic_arch_timer_virtual_irq();
+
+	rt_hw_interrupt_install((int)irq, vtimer_isr, RT_NULL, "periodic-vtimer");
+	rt_hw_interrupt_umask((int)irq);
+}
+
+static void sleep_until_cycles(uint64_t deadline_cycles)
+{
+	vtimer_fired = 0;
+	__asm__ volatile("msr cntv_cval_el0, %0" ::"r"(deadline_cycles));
+	__asm__ volatile("msr cntv_ctl_el0, %0" ::"r"((uint64_t)1));
+	__asm__ volatile("isb");
+	while (!vtimer_fired) {
+		__asm__ volatile("wfi");
+	}
 }
 
 static volatile uint32_t *uart_base;
@@ -131,12 +167,13 @@ int main(void)
 	}
 
 	wait_for_start();
+	vtimer_init();
 
 	base_ticks = rt_tick_get();
 	while (rt_tick_get() == base_ticks) {
 	}
 	base_ticks = rt_tick_get();
-	base_cycles = read_cntpct();
+	base_cycles = read_cntvct();
 
 	for (sequence = 0; sequence < SAMPLE_COUNT; sequence++) {
 		uint64_t deadline_cycles;
@@ -144,23 +181,8 @@ int main(void)
 
 		deadline_cycles =
 			base_cycles + (uint64_t)((sequence + 1) * period_cycles);
-		for (;;) {
-			uint64_t now_cycles = read_cntpct();
-			uint64_t remaining_cycles;
-			rt_tick_t remaining_ms;
-
-			if (now_cycles >= deadline_cycles) {
-				break;
-			}
-			remaining_cycles = deadline_cycles - now_cycles;
-			remaining_ms =
-				(rt_tick_t)(remaining_cycles / (freq / 1000));
-			if (remaining_ms == 0) {
-				break;
-			}
-			rt_thread_mdelay(remaining_ms);
-		}
-		actual_cycles = read_cntpct();
+		sleep_until_cycles(deadline_cycles);
+		actual_cycles = read_cntvct();
 		samples[sequence].timestamp_ns =
 			cycles_to_ns(actual_cycles - base_cycles, freq);
 		samples[sequence].deadline_ns =
