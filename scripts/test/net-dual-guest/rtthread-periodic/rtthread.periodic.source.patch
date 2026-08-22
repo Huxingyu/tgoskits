@@ -1,0 +1,43 @@
+diff --git a/components/drivers/pic/pic-gicv3.c b/components/drivers/pic/pic-gicv3.c
+index 7a11f35de..03c5cb50e 100644
+--- a/components/drivers/pic/pic-gicv3.c
++++ b/components/drivers/pic/pic-gicv3.c
+@@ -992,6 +992,11 @@ static void gicv3_init(void)
+     _gic.parent.ops = &gicv3_ops;
+ 
+     rt_pic_linear_irq(&_gic.parent, _gic.irq_nr - GIC_SGI_NR);
++    /* Expose the virtual timer PPI (INTID 27) so guests can use CNTV.
++     * Configure both the irq-hash slot used by rt_hw_interrupt_install()
++     * and the slot the GIC handler derives from the IAR. */
++    rt_pic_config_irq(&_gic.parent, 27 - _gic.parent.irq_start, 27);
++    rt_pic_config_irq(&_gic.parent, 27 - GIC_SGI_NR, 27);
+     gic_common_sgi_config(_gic.dist_base, &_gic.parent, 0);
+ 
+     rt_pic_add_traps(gicv3_handler, &_gic);
+diff --git a/components/drivers/serial/dev_serial.c b/components/drivers/serial/dev_serial.c
+index 45bf97c32..d41e8b387 100644
+--- a/components/drivers/serial/dev_serial.c
++++ b/components/drivers/serial/dev_serial.c
+@@ -1253,6 +1253,7 @@ static rt_err_t rt_serial_control(struct rt_device *dev,
+                     p_winsize->ws_col = 80;
+                     p_winsize->ws_row = 24;
+                 }
++#ifdef RT_USING_FINSH
+                 else
+                 {
+                     #include <shell.h>
+@@ -1320,6 +1321,14 @@ static rt_err_t rt_serial_control(struct rt_device *dev,
+                     p_winsize->ws_row = atoi(row_s);
+                 #undef _TIO_BUFLEN
+                 }
++#else
++                else
++                {
++                    /* FINSH is disabled; report the default window size. */
++                    p_winsize->ws_col = 80;
++                    p_winsize->ws_row = 24;
++                }
++#endif
+ 
+                 p_winsize->ws_xpixel = 0;/* unused */
+                 p_winsize->ws_ypixel = 0;/* unused */

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify and compare repeated StarryOS/Zephyr periodic-latency A/B runs."""
+"""Verify and compare repeated StarryOS periodic-latency A/B runs."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ def percentile(values: list[int], fraction: float) -> int:
     return ordered[min(len(ordered) - 1, math.ceil(fraction * len(ordered)) - 1)]
 
 
-def read_run(path: Path, arm: str) -> Metrics:
+def read_run(path: Path, arm: str, rtos_name: str) -> Metrics:
     log_path = path / "run.log"
     log = log_path.read_text(errors="replace")
     samples = [(int(sequence), int(jitter)) for sequence, _, _, _, jitter in SAMPLE_RE.findall(log)]
@@ -59,7 +59,7 @@ def read_run(path: Path, arm: str) -> Metrics:
     if arm == "fp-rr" and counters is None:
         raise ValueError(f"{log_path}: missing bounded FP-RR service counter")
 
-    csv_path = path / "zephyr-periodic.csv"
+    csv_path = path / f"{rtos_name}-periodic.csv"
     csv_path.write_text(
         "sequence,jitter_ns\n"
         + "".join(f"{sequence},{value}\n" for sequence, value in samples)
@@ -74,7 +74,7 @@ def read_run(path: Path, arm: str) -> Metrics:
         infer_us=int(inference.group(1)),
         lower_priority_services=int(counters.group(1)) if counters else None,
     )
-    (path / "zephyr-stats.txt").write_text(
+    (path / f"{rtos_name}-stats.txt").write_text(
         f"samples=300\nmean_jitter_ns={metrics.mean_ns:.2f}\n"
         f"p99_jitter_ns={metrics.p99_ns}\np99_9_jitter_ns={metrics.p99_9_ns}\n"
         f"max_jitter_ns={metrics.max_ns}\ndeadline_tolerance_ns=1000000\n"
@@ -97,7 +97,8 @@ def reduction(before: float, after: float) -> float:
     return (before - after) / before * 100 if before else 0.0
 
 
-def build_report(rr: list[Metrics], fp: list[Metrics]) -> str:
+def build_report(rr: list[Metrics], fp: list[Metrics], rtos_name: str) -> str:
+    probe_label = "RT-Thread" if rtos_name == "rtthread" else "Zephyr"
     rr_p99 = median_int([run.p99_ns for run in rr])
     fp_p99 = median_int([run.p99_ns for run in fp])
     rr_p999 = median_int([run.p99_9_ns for run in rr])
@@ -110,8 +111,8 @@ def build_report(rr: list[Metrics], fp: list[Metrics]) -> str:
     lines = [
         "# StarryOS Task 1 periodic-latency A/B",
         "",
-        "Both arms run the same in-Guest ncnn/YOLO workload on StarryOS (priority 89) "
-        "while a 300-sample, 10 ms Zephyr periodic probe (priority 90) shares pCPU1. "
+        f"Both arms run the same in-Guest ncnn/YOLO workload on StarryOS (priority 89) "
+        f"while a 300-sample, 10 ms {probe_label} periodic probe (priority 90) shares pCPU1. "
         "Only the AxVisor scheduler feature changes.",
         "",
         "| Metric (median across runs) | RR | bounded FP-RR | Change |",
@@ -149,16 +150,22 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--rr", nargs="+", required=True, type=Path)
     parser.add_argument("--fp-rr", nargs="+", required=True, type=Path)
+    parser.add_argument(
+        "--rtos-name",
+        choices=("zephyr", "rtthread"),
+        default="zephyr",
+        help="probe RTOS used for CSV/stat naming and the report label",
+    )
     parser.add_argument("--output", required=True, type=Path)
     args = parser.parse_args()
     if len(args.rr) != len(args.fp_rr):
         parser.error("RR and FP-RR must have the same number of repetitions")
     try:
-        rr = [read_run(path, "rr") for path in args.rr]
-        fp = [read_run(path, "fp-rr") for path in args.fp_rr]
+        rr = [read_run(path, "rr", args.rtos_name) for path in args.rr]
+        fp = [read_run(path, "fp-rr", args.rtos_name) for path in args.fp_rr]
     except (OSError, ValueError) as error:
         parser.error(str(error))
-    args.output.write_text(build_report(rr, fp))
+    args.output.write_text(build_report(rr, fp, args.rtos_name))
     print(f"PASS: verified {len(rr)} RR and {len(fp)} FP-RR periodic runs")
     print(f"comparison={args.output}")
     return 0

@@ -36,6 +36,7 @@ const MODEL_INPUT_PATH: &CStr = c"/usr/share/task3-yolo/input.ppm";
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum RunMode {
     Normal,
+    ModelOnly,
     OutOfOrder,
     InvalidParameter,
     ModelRejected,
@@ -45,11 +46,12 @@ impl RunMode {
     fn parse(value: Option<&str>) -> Result<Self, &'static str> {
         match value {
             None | Some("normal") => Ok(Self::Normal),
+            Some("model-only") => Ok(Self::ModelOnly),
             Some("out-of-order") => Ok(Self::OutOfOrder),
             Some("invalid-parameter") => Ok(Self::InvalidParameter),
             Some("model-rejected") => Ok(Self::ModelRejected),
             Some(_) => {
-                Err("mode must be normal, out-of-order, invalid-parameter, or model-rejected")
+                Err("mode must be normal, model-only, out-of-order, invalid-parameter, or model-rejected")
             }
         }
     }
@@ -57,6 +59,7 @@ impl RunMode {
     const fn name(self) -> &'static str {
         match self {
             Self::Normal => "normal",
+            Self::ModelOnly => "model-only",
             Self::OutOfOrder => "out-of-order",
             Self::InvalidParameter => "invalid-parameter",
             Self::ModelRejected => "model-rejected",
@@ -129,6 +132,34 @@ fn run() -> Result<(), String> {
     );
     println!("TASK3_INFER_STARTED model=yolo11n.ncnn request=1 phase=startup");
     let initial_inference = run_inference(mode, CONTROL_TARGET);
+
+    if mode == RunMode::ModelOnly {
+        return match initial_inference {
+            Ok(inference) => {
+                println!(
+                    "TASK3_INFER model=yolo11n.ncnn infer_us={} request=1 elapsed_ms=0",
+                    inference.infer_us
+                );
+                println!(
+                    "TASK3_DETECTION model=yolo11n.ncnn class={} confidence_milli={} \
+                     center_x_milli={} area_milli={} target={} request=1",
+                    inference.detection.class_id,
+                    inference.detection.confidence_milli,
+                    inference.detection.center_x_milli,
+                    inference.detection.area_milli,
+                    inference.control_value
+                );
+                Ok(())
+            }
+            Err(reason) => {
+                println!(
+                    "TASK3_MODEL_REJECTED model=yolo11n.ncnn reason={reason:?} action=safe \
+                     elapsed_ms=0"
+                );
+                Err(format!("model inference rejected: {reason:?}"))
+            }
+        };
+    }
 
     let socket = UdpSocket::bind("0.0.0.0:4242").map_err(|error| format!("bind error={error}"))?;
     socket
@@ -612,15 +643,18 @@ fn run_inference(
         center_x_milli: raw_detection.center_x_milli,
         area_milli: raw_detection.area_milli,
     };
-    validate_detection(detection, infer_us, current_target)
+    validate_detection(detection, infer_us, current_target, mode)
 }
 
 fn validate_detection(
     detection: YoloDetection,
     infer_us: u64,
     current_target: i32,
+    mode: RunMode,
 ) -> Result<InferenceOutput, InferenceRejection> {
-    if infer_us > MAX_INFERENCE_US {
+    /* model-only is a latency-probe driver: it must report the inference
+     * result even when the shared hypervisor scheduler makes it slow. */
+    if infer_us > MAX_INFERENCE_US && mode != RunMode::ModelOnly {
         return Err(InferenceRejection::DeadlineExceeded);
     }
     match yolo_detection_to_target(detection, current_target, YoloPolicy::task3_default()) {
@@ -641,7 +675,7 @@ fn encode_fault_frame(
     let sequence = match mode {
         RunMode::OutOfOrder => SequenceNumber::from_wire(2),
         RunMode::InvalidParameter => SequenceNumber::FIRST,
-        RunMode::Normal | RunMode::ModelRejected => return Ok(None),
+        RunMode::Normal | RunMode::ModelOnly | RunMode::ModelRejected => return Ok(None),
     };
     let mut payload = [0u8; 12];
     match mode {
@@ -656,7 +690,7 @@ fn encode_fault_frame(
             payload[4..8].copy_from_slice(&(ControlMessage::MAX_OUTPUT_VALUE + 1).to_be_bytes());
             payload[8..12].copy_from_slice(&request_id.to_be_bytes());
         }
-        RunMode::Normal | RunMode::ModelRejected => unreachable!(),
+        RunMode::Normal | RunMode::ModelOnly | RunMode::ModelRejected => unreachable!(),
     }
     let frame = Frame::reliable(MessageKind::Control, SESSION, sequence, &payload)
         .map_err(|error| format!("fault frame construction error={error}"))?;
