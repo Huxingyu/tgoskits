@@ -130,7 +130,9 @@ rejection. The normal capture contains 20 verified T2N1 frames: 3 CONTROL,
 6 ACK, 3 STATUS and 8 HEARTBEAT. Retry exhaustion contains the initial CONTROL
 plus five retries and demonstrates Safe entry and recovery.
 
-Evidence: `results/starryos-task123-final-db42f6168-20260822/task23/`.
+The same seven scenarios pass with the RT-Thread companion endpoint
+(`results/starryos-rtthread-task23-20260822/`); the Zephyr evidence is in
+`results/starryos-task123-final-db42f6168-20260822/task23/`.
 
 ## 3. Task 3: StarryOS ncnn + YOLO application
 

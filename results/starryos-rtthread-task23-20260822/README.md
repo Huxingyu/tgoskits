@@ -7,8 +7,9 @@ RT-Thread endpoint commit:
 machine mirror the Zephyr endpoint; only the socket/clock/logging APIs are
 RT-Thread-specific.
 
-All four scenarios passed the pcap and scenario verifiers (`PASS` in each
-`verify-pcap.log` / `verify-scenario.log`):
+All seven scenarios passed the pcap and scenario verifiers (`PASS` in each
+`verify-pcap.log` / `verify-scenario.log`), matching the Zephyr endpoint
+coverage:
 
 | Scenario | Result |
 | --- | --- |
@@ -16,6 +17,9 @@ All four scenarios passed the pcap and scenario verifiers (`PASS` in each
 | drop-ack | seq=1 ACK dropped once, retransmit attempt=1, duplicate ACK recovered |
 | retry-exhausted | ACK always dropped, attempts 1..5, `RetryExhausted` Safe, recovered |
 | blackout | switch blackout, both sides Safe, recovery after `virtnet drop off` |
+| out-of-order | controller sends seq=2 first, peer reports `OutOfOrder`, Safe, recovered |
+| invalid-parameter | controller sends an invalid CONTROL, peer reports `InvalidParameter`, Safe, recovered |
+| model-rejected | injected invalid YOLO output, `ModelRejected` Safe, heartbeats only |
 
 Key timestamps from the guest logs:
 
