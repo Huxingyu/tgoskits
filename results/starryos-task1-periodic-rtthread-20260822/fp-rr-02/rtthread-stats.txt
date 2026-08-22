@@ -1,9 +1,9 @@
 samples=300
-mean_jitter_ns=4199500.11
-p99_jitter_ns=9417504
-p99_9_jitter_ns=9905920
-max_jitter_ns=9905920
+mean_jitter_ns=961376.96
+p99_jitter_ns=1594528
+p99_9_jitter_ns=1792544
+max_jitter_ns=1792544
 deadline_tolerance_ns=1000000
-deadline_misses_tolerance=238
-yolo_infer_us=21810359
-lower_priority_services=64
+deadline_misses_tolerance=37
+yolo_infer_us=23000870
+lower_priority_services=92

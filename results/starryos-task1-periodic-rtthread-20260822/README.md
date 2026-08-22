@@ -5,44 +5,49 @@ the real in-Guest ncnn/YOLO workload while a 300-sample, 10 ms RT-Thread
 probe (priority 90) shares pCPU1. Only the AxVisor scheduler feature changes.
 Three RR/FP-RR pairs run in the order `RR, FP-RR` repeated three times.
 
-The probe image keeps RT-Thread's kernel tick at the BSP default 100 Hz. The
-emulated physical timer (`CNTP_*`) is delivered at host timer-wheel
-granularity (~10 ms); a 1 kHz tick caused a timer-churn storm that starved
-the lower-priority StarryOS inference under FP-RR (~90 s), so the 100 Hz tick
-is required for a non-degrading measurement.
+The probe uses the AArch64 **virtual timer** (`CNTVCT_EL0`/`CNTV_CVAL_EL0`)
+so wake-ups are not quantized by RT-Thread's emulated physical timer. This
+required exposing the virtual timer PPI to the RT-Thread guest: the periodic
+build registers the GIC descriptor for the IRQ slot that the GIC handler
+derives from the IAR (`irq_start + (hwirq - 16)`) and installs the probe ISR
+on that slot. AxVisor already delivers the CNTV PPI level through its VGIC
+(the same path Zephyr uses), so no hypervisor routing change was needed once
+the RT-Thread GIC slot was correct.
 
 ## Results (median of three runs)
 
 | Metric | RR | bounded FP-RR | Change |
 |---|---:|---:|---:|
-| Mean wake-up jitter | 23.146 ms | 4.286 ms | 81.48% lower |
-| P99 wake-up jitter | 46.700 ms | 9.633 ms | **4.85x / 79.37% lower** |
-| P99.9 / maximum | 48.642 ms | 9.816 ms | 79.82% lower |
-| Samples later than 1 ms | 298/300 | 238/300 | 20.13% fewer |
-| YOLO inference | 22.198 s | 22.414 s | +0.97% (no degradation) |
-| FP-RR lower-priority services | n/a | 87 | exercised |
+| Mean wake-up jitter | 1135.365 ms | 0.961 ms | ~1181x lower |
+| P99 wake-up jitter | 2247.128 ms | 1.595 ms | **1409x / 99.93% lower** |
+| P99.9 / maximum | 2259.947 ms | 1.793 ms | 99.92% lower |
+| Samples later than 1 ms | 300/300 | 37/300 | 87.67% fewer |
+| YOLO inference (median) | 22.452 s | 23.001 s | +2.4% (no degradation) |
+| FP-RR lower-priority services | n/a | 90 | exercised |
 
 ## Per-run evidence
 
 | Arm | Run | Mean | P99 | P99.9 / max | >1 ms | YOLO inference | lower-priority services |
 |---|---|---:|---:|---:|---:|---:|---:|
-| RR | rr-01 | 23.146 ms | 46.700 ms | 48.642 / 48.642 ms | 299/300 | 22.198 s | n/a |
-| RR | rr-02 | 13.096 ms | 31.305 ms | 31.355 / 31.355 ms | 291/300 | 22.011 s | n/a |
-| RR | rr-03 | 33.699 ms | 78.731 ms | 87.929 / 87.929 ms | 298/300 | 22.425 s | n/a |
-| FP-RR | fp-rr-01 | 4.286 ms | 9.633 ms | 9.722 / 9.722 ms | 237/300 | 22.414 s | 87 |
-| FP-RR | fp-rr-02 | 4.200 ms | 9.418 ms | 9.906 / 9.906 ms | 238/300 | 21.810 s | 64 |
-| FP-RR | fp-rr-03 | 4.364 ms | 9.634 ms | 9.816 / 9.816 ms | 246/300 | 23.231 s | 91 |
+| RR | rr-01 | 1135.365 ms | 2295.381 ms | 2312.165 / 2312.165 ms | 300/300 | 22.197 s | n/a |
+| RR | rr-02 | 1136.717 ms | 2247.128 ms | 2259.947 / 2259.947 ms | 300/300 | 22.452 s | n/a |
+| RR | rr-03 | 1061.209 ms | 2214.693 ms | 2250.601 / 2250.601 ms | 300/300 | 23.073 s | n/a |
+| FP-RR | fp-rr-01 | 0.957 ms | 1.553 ms | 1.616 / 1.616 ms | 36/300 | 22.437 s | 90 |
+| FP-RR | fp-rr-02 | 0.961 ms | 1.595 ms | 1.793 / 1.793 ms | 37/300 | 23.001 s | 92 |
+| FP-RR | fp-rr-03 | 1.020 ms | 1.608 ms | 6.238 / 6.238 ms | 50/300 | 23.366 s | 83 |
 
 ## Interpretation and caveats
 
-- The bounded FP-RR scheduler improves RT-Thread probe wake-up latency ~4.9x
-  at P99 while keeping the lower-priority StarryOS YOLO inference essentially
-  unchanged (median 22.2 s RR vs 22.4 s FP-RR).
-- RT-Thread's kernel tick is backed by the emulated physical timer, which is
-  delivered at ~10 ms granularity. FP-RR P99 ~9.6 ms is therefore close to
-  the emulated-timer floor, and ~238/300 samples are still later than 1 ms in
-  both arms because of that quantization. The Zephyr probe (virtual timer,
-  hardware path) has a finer floor and shows a larger 19x improvement.
+- FP-RR brings RT-Thread probe wake-ups to ~1.6 ms P99, close to Zephyr's
+  ~0.65 ms virtual-timer floor, while YOLO inference stays essentially
+  unchanged (median +2.4%).
+- Under RR, RT-Thread's thread resume accumulates latency (~20 ms per wake)
+  because the shared vCPU is only serviced in RR slices while StarryOS runs
+  YOLO; the CNTV deadlines are absolute, so jitter grows to ~2.2 s by the end
+  of the 300-sample window. FP-RR eliminates this accumulation.
+- The probe image keeps the BSP-default 100 Hz kernel tick. The probe itself
+  no longer depends on the tick for timing or sleeping; the 100 Hz tick only
+  avoids churning the emulated physical timer.
 - The `model-only` endpoint mode runs the YOLO inference without the T2N1
   network control loop so the probe experiment is not flooded by
   retransmissions to an absent peer. The 30 s inference deadline is skipped
