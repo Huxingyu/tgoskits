@@ -35,14 +35,30 @@ Each scenario directory contains `run.log`, `steps.txt`, both pcaps, the
 RT-Thread manifest, and the verifier output. Physical-board validation is a
 separate follow-up and is not claimed by this virtual evidence.
 
-## Task 1 with RT-Thread companion (status: not passing)
+## Task 1 with RT-Thread companion (status: passing, FPU/SIMD fix)
 
 The shared-pCPU1 Task 1 scheduler A/B with RT-Thread as the companion Guest
-is **not** claimed. Under the RR arm, StarryOS's ncnn inference either returns
-`RuntimeError code -7` or completes with `NoDetection`; a log-reduced
-RT-Thread image did not resolve it. This is a real integration issue that
-remains open.
+passes under the RR arm after fixing AxVisor's guest FPU/SIMD context
+switching. Root cause: `Aarch64ContextFrame` did not save/restore the AArch64
+FPU/SIMD registers on guest exit/entry, so on a shared physical CPU the
+RT-Thread Guest's floating-point state polluted StarryOS's ncnn inference,
+producing `RuntimeError code -7` or `NoDetection` (NaN confidence).
 
-After the shared test-harness changes, the Zephyr Task 1 A/B was re-run and
-passes (RR and FP-RR; FP-RR `lower_priority_services=194`). Evidence is in
+Fix: the trap frame now saves `Q0-Q31`/`FPSR`/`FPCR` on lower-EL guest exits
+and restores them in the final assembly window before the guest `ERET`.
+
+Verified with the shared-core RR scenario (`normal`):
+
+- 3/3 ncnn/YOLO inferences completed; detections were
+  `confidence_milli=843`, `center_x_milli=421`, `area_milli=63` for all three
+  requests (no NaN / `NoDetection`).
+- All three control/status rounds produced `ACK` and
+  `STARRY_T2N1_STATUS_DELIVERED`; `STARRY_T2N1_PASS` observed.
+- Dual-end pcaps contain 38 frames / 20 `T2N1` records; pcap and scenario
+  verifiers both report `PASS`.
+
+Evidence: `results/rtthread-task1-fpu-fix-normal-20260822/`.
+
+The Zephyr Task 1 A/B continues to pass (RR and FP-RR; FP-RR
+`lower_priority_services=194`). Evidence is in
 `results/starryos-task1-zephyr-regression-20260822/`.

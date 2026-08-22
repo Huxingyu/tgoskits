@@ -147,12 +147,12 @@ This is an internal estimate, not an official score.
 | Main score | 100 | **94** | **97** | 3-point range |
 | StarryOS replaces Linux bonus | 4 | **4** | **4** | Requires evaluator acceptance of the demonstrated replacement loop |
 | StarryOS syscall work merged to `dev` | 4 | **0** | **0** | No qualifying merged syscall contribution evidence |
-| Multiple RTOSes or boards | 2 | **0** | **0** | Only Zephyr on QEMU is formally evidenced |
-| Total | 110 | **98** | **101** | Expected range `98-101/110` |
+| Multiple RTOSes or boards | 2 | **2** | **2** | Zephyr and RT-Thread both evidenced on QEMU; physical board remains follow-up |
+| Total | 110 | **100** | **103** | Expected range `100-103/110` |
 
 Points that cannot currently be claimed are the 4-point merged StarryOS
-syscall bonus and the 2-point multi-RTOS/board bonus. Main-score deductions are
-also likely for missing physical-board hard-real-time proof, literal official
-`dev` runtime comparison, and unfinished submission packaging such as video or
-PR replay. Full MSI-X passthrough is not part of the stable final setup; the
-current NVMe path intentionally uses `msix_qsize=1` and legacy INTx.
+syscall bonus. Main-score deductions are also likely for missing physical-board
+hard-real-time proof, literal official `dev` runtime comparison, and unfinished
+submission packaging such as video or PR replay. Full MSI-X passthrough is not
+part of the stable final setup; the current NVMe path intentionally uses
+`msix_qsize=1` and legacy INTx.
