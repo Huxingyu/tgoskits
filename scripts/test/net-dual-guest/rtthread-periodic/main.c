@@ -66,6 +66,14 @@ static int64_t cycles_to_ns(uint64_t cycles, uint64_t freq)
 	return (int64_t)((cycles * UINT64_C(1000000000)) / freq);
 }
 
+static int64_t signed_cycles_to_ns(int64_t cycles, uint64_t freq)
+{
+	if (freq == 0) {
+		return 0;
+	}
+	return (int64_t)((cycles * INT64_C(1000000000)) / (int64_t)freq);
+}
+
 static volatile int vtimer_fired;
 
 static void vtimer_isr(int vector, void *parameter)
@@ -158,6 +166,7 @@ int main(void)
 	uint64_t period_cycles = freq * PERIOD_MS / 1000;
 	rt_tick_t base_ticks;
 	uint64_t base_cycles;
+	uint64_t next_deadline_cycles;
 	int64_t sequence;
 
 	if (freq == 0 || period_cycles == 0) {
@@ -174,15 +183,22 @@ int main(void)
 	}
 	base_ticks = rt_tick_get();
 	base_cycles = read_cntvct();
+	/*
+	 * Anchor each deadline to the previous actual wake-up plus the period
+	 * (relative-period semantics). This measures the per-wake scheduling
+	 * delay, matching the Zephyr probe's jitter definition. Absolute
+	 * deadlines instead accumulate lateness when the vCPU is serviced less
+	 * often than the period, which inflated the earlier RR baseline.
+	 */
+	next_deadline_cycles = base_cycles + period_cycles;
 
 	for (sequence = 0; sequence < SAMPLE_COUNT; sequence++) {
 		uint64_t deadline_cycles;
 		uint64_t actual_cycles;
 
-		deadline_cycles =
-			base_cycles + (uint64_t)((sequence + 1) * period_cycles);
-		sleep_until_cycles(deadline_cycles);
+		sleep_until_cycles(next_deadline_cycles);
 		actual_cycles = read_cntvct();
+		deadline_cycles = next_deadline_cycles;
 		samples[sequence].timestamp_ns =
 			cycles_to_ns(actual_cycles - base_cycles, freq);
 		samples[sequence].deadline_ns =
@@ -190,7 +206,10 @@ int main(void)
 		samples[sequence].actual_ns =
 			cycles_to_ns(actual_cycles - base_cycles, freq);
 		samples[sequence].jitter_ns =
-			samples[sequence].actual_ns - samples[sequence].deadline_ns;
+			signed_cycles_to_ns(
+				(int64_t)actual_cycles - (int64_t)deadline_cycles,
+				freq);
+		next_deadline_cycles = actual_cycles + period_cycles;
 	}
 
 	rt_kprintf("sequence,timestamp_ns,deadline_ns,actual_ns,jitter_ns\n");

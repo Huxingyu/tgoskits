@@ -1,9 +1,9 @@
-    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.31s
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.30s
      Running `target/debug/tg-xtask axvisor qemu --config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-fp-rr.toml --qemu-config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-rtthread-task1-periodic-capture.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-starry-task1-shared.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-rtthread-periodic-task1-shared.toml --rootfs /home/huhu/tgoskits-starry/tmp/axbuild/rootfs/rootfs-aarch64-alpine-modelonly.img/rootfs-aarch64-alpine-modelonly.img`
-[2026-08-22T09:38:55Z INFO  axbuild::context] Workspace root: /home/huhu/tgoskits-starry
-[2026-08-22T09:38:55Z INFO  axbuild::context] Workspace member dir for axvisor: /home/huhu/tgoskits-starry/os/axvisor
+[2026-08-22T11:10:11Z INFO  axbuild::context] Workspace root: /home/huhu/tgoskits-starry
+[2026-08-22T11:10:11Z INFO  axbuild::context] Workspace member dir for axvisor: /home/huhu/tgoskits-starry/os/axvisor
 Using build config: /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-fp-rr.toml
-[2026-08-22T09:38:55Z INFO  ostool::run::qemu] Using QEMU config file: /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-rtthread-task1-periodic-capture.toml
+[2026-08-22T11:10:11Z INFO  ostool::run::qemu] Using QEMU config file: /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-rtthread-task1-periodic-capture.toml
 [axbuild] qemu build+run package=axvisor target=scripts/targets/std/pie/aarch64-unknown-linux-musl.json config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-fp-rr.toml ...
 sh -c /home/huhu/tgoskits-starry/tmp/axbuild/std/prebuild/prebuild-aarch64-unknown-linux-musl-9265c4d76e3ae598.sh
 AR_aarch64_unknown_linux_musl=aarch64-linux-musl-ar
@@ -159,7 +159,7 @@ warning: associated function `new` is never used
    |                         ^^^
 
 warning: `axvm` (lib) generated 18 warnings (run `cargo fix --lib -p axvm` to apply 6 suggestions)
-    Finished `release` profile [optimized] target(s) in 0.75s
+    Finished `release` profile [optimized] target(s) in 0.38s
 warning: the following packages contain code that will be rejected by a future version of Rust: core v0.0.0 (/home/huhu/.rustup/toolchains/nightly-2026-07-15-x86_64-unknown-linux-gnu/lib/rustlib/src/rust/library/core), memchr v2.8.3
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
 Converting ELF to BIN format...
@@ -168,7 +168,7 @@ Converting ELF to BIN format...
 /home/huhu/.rustup/toolchains/nightly-2026-07-15-x86_64-unknown-linux-gnu/lib/rustlib/x86_64-unknown-linux-gnu/bin/llvm-objcopy --strip-all -O binary /media/huhu/TOSHIBA_EXT/tgoskits-starry-target/aarch64-unknown-linux-musl/release/axvisor /media/huhu/TOSHIBA_EXT/tgoskits-starry-target/aarch64-unknown-linux-musl/release/axvisor.bin
 qemu-system-aarch64 -display none -monitor none -serial unix:/home/huhu/tgoskits-starry/tmp/net-dual-guest/serial-starry-rtthread-task1-periodic-capture.sock,server -cpu cortex-a72 -machine virt,virtualization=on,gic-version=3 -smp 2 -m 8g -device nvme,drive=disk0,serial=tgoskits,max_ioqpairs=64,msix_qsize=1 -drive id=disk0,if=none,format=raw,file=/home/huhu/tgoskits-starry/tmp/axbuild/rootfs/rootfs-aarch64-alpine-modelonly.img/rootfs-aarch64-alpine-modelonly.img -append root=/dev/nvme0n1 rw init=/init -snapshot -qmp unix:/home/huhu/tgoskits-starry/tmp/net-dual-guest/qmp-starry-rtthread-task1-periodic-capture.sock,server,nowait -kernel /media/huhu/TOSHIBA_EXT/tgoskits-starry-target/aarch64-unknown-linux-musl/release/axvisor.bin
 qemu-system-aarch64: -serial unix:/home/huhu/tgoskits-starry/tmp/net-dual-guest/serial-starry-rtthread-task1-periodic-capture.sock,server: info: QEMU waiting for connection on: disconnected:unix:/home/huhu/tgoskits-starry/tmp/net-dual-guest/serial-starry-rtthread-task1-periodic-capture.sock,server=on
-[axbuild] qemu build+run package=axvisor target=scripts/targets/std/pie/aarch64-unknown-linux-musl.json config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-fp-rr.toml ... done (37.16s)
+[axbuild] qemu build+run package=axvisor target=scripts/targets/std/pie/aarch64-unknown-linux-musl.json config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-fp-rr.toml ... done (37.21s)
 step: 'attach 1'
 [driver] step: 'expect 120 root@starry:/root #'
 [driver] step: 'cmd (sh /usr/bin/t2n1-run.sh model-only) &'

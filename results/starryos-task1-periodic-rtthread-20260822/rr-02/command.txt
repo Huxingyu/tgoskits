@@ -1,4 +1,4 @@
 arm=rr
 run=2
-git_head=fdd173be68918486c6da10271cafe1debe85d862
+git_head=6a313b683125382df0a8a4bfb314a8ccaa860a0d
 command=cargo xtask axvisor qemu --config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-rr.toml --qemu-config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-rtthread-task1-periodic-capture.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-starry-task1-shared.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-rtthread-periodic-task1-shared.toml --rootfs /home/huhu/tgoskits-starry/tmp/axbuild/rootfs/rootfs-aarch64-alpine-modelonly.img/rootfs-aarch64-alpine-modelonly.img

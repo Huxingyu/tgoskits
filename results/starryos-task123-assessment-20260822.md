@@ -35,27 +35,28 @@ The same A/B with the RT-Thread companion probe (three pairs) also passes:
 
 | Metric (median of three runs) | RR | bounded FP-RR | Result |
 |---|---:|---:|---:|
-| Mean wake-up jitter | 1135.365 ms | 0.961 ms | ~1181x lower |
-| P99 wake-up jitter | 2247.128 ms | 1.595 ms | **1409x / 99.93% lower** |
-| P99.9 / maximum | 2259.947 ms | 1.793 ms | 99.92% lower |
-| Samples later than 1 ms | 300/300 | 37/300 | 87.67% fewer |
-| YOLO inference (median) | 22.452 s | 23.001 s | +2.4% |
+| Mean wake-up jitter | 23.465 ms | 0.980 ms | 95.82% lower |
+| P99 wake-up jitter | 39.737 ms | 1.662 ms | **23.9x / 95.82% lower** |
+| P99.9 / maximum | 43.051 ms | 1.803 ms | 95.81% lower |
+| Samples later than 1 ms | 300/300 | 62/300 | 79.33% fewer |
+| YOLO inference (median) | 22.266 s | 22.872 s | +2.7% |
 
 The RT-Thread probe uses the AArch64 virtual timer (`CNTVCT_EL0`/
 `CNTV_CVAL_EL0`), exposed to the RT-Thread guest through its GIC handler slot
 in the periodic build; AxVisor already delivers the CNTV PPI through its VGIC
-(the same path Zephyr uses). This brings RT-Thread's FP-RR floor to ~1.6 ms,
-close to Zephyr's ~0.65 ms. Under RR, RT-Thread's thread resume accumulates
-latency (~20 ms per wake) because the shared vCPU is serviced only in RR
-slices while StarryOS runs YOLO, so jitter grows to ~2.2 s; FP-RR eliminates
-that accumulation. The bounded lower-priority service path is still exercised
-(83-92 services) and YOLO inference is essentially unchanged.
+(the same path Zephyr uses). Deadlines are relative-period anchored so the
+metric is per-wake scheduling delay, matching the Zephyr probe's jitter
+definition. This brings RT-Thread's FP-RR floor to ~1.7 ms, close to
+Zephyr's ~0.65 ms. Under RR, RT-Thread's per-wake delay is ~20-40 ms P99
+because the shared vCPU is serviced in RR slices while StarryOS runs YOLO;
+FP-RR reduces it to ~1-2 ms. The bounded lower-priority service path is
+still exercised (87-93 services) and YOLO inference is essentially unchanged.
 
 The supported claim is that bounded FP-RR retains and exceeds the earlier
 near-10x P99 improvement under the final StarryOS + YOLO workload. It remains
 a QEMU software-in-the-loop result, not a physical-board WCET bound. The same
-direction holds for the RT-Thread companion probe (1409x P99 reduction with
-no inference regression, FP-RR floor ~1.6 ms).
+direction holds for the RT-Thread companion probe (23.9x P99 reduction with
+no inference regression, FP-RR floor ~1.7 ms).
 
 Evidence: `results/starryos-task1-periodic-yolo-986fcf5ae-20260822/` at
 revision `986fcf5ae5198bbc66d9926dbb0b201d3ad7f32c`, and

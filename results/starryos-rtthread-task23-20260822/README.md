@@ -70,10 +70,11 @@ archived evidence.)
 
 A 300-sample, 10 ms periodic wake-up probe was also run for the RT-Thread
 companion (RR vs bounded FP-RR, 3 pairs). The probe uses the AArch64 virtual
-timer (CNTV), exposed to the RT-Thread guest through its GIC handler slot.
-FP-RR reduces P99 wake-up jitter from ~2247 ms to ~1.6 ms (1409x) while the
-StarryOS YOLO inference stays essentially unchanged (median 22.5 s RR vs
-23.0 s FP-RR). Evidence and caveats:
+timer (CNTV), exposed to the RT-Thread guest through its GIC handler slot,
+with relative-period deadlines (per-wake jitter, same definition as the
+Zephyr probe). FP-RR reduces P99 wake-up jitter from ~39.7 ms to ~1.7 ms
+(23.9x) while the StarryOS YOLO inference stays essentially unchanged
+(median 22.3 s RR vs 22.9 s FP-RR). Evidence and caveats:
 `results/starryos-task1-periodic-rtthread-20260822/`.
 
 ## Probe comparison: Zephyr versus RT-Thread
@@ -84,20 +85,20 @@ the same direction for both; the multiple differs because of the timer path.
 
 | Metric (3-run median) | Zephyr RR → FP-RR | RT-Thread RR → FP-RR |
 |---|---:|---:|
-| P99 wake-up jitter | 12.498 → 0.646 ms (19.35x) | 2247.128 → 1.595 ms (1409x) |
-| P99.9 / maximum | 12.883 → 0.671 ms | 2259.947 → 1.793 ms |
-| Mean wake-up jitter | 9.505 → 0.566 ms | 1135.365 → 0.961 ms |
-| Samples later than 1 ms | 300/300 → 0/300 | 300/300 → 37/300 |
-| YOLO inference (median) | 20.8 → 21.2 s | 22.5 → 23.0 s |
-| FP-RR lower-priority services | 70 (49-97) | 90 (83-92) |
+| P99 wake-up jitter | 12.498 → 0.646 ms (19.35x) | 39.737 → 1.662 ms (23.9x) |
+| P99.9 / maximum | 12.883 → 0.671 ms | 43.051 → 1.803 ms |
+| Mean wake-up jitter | 9.505 → 0.566 ms | 23.465 → 0.980 ms |
+| Samples later than 1 ms | 300/300 → 0/300 | 300/300 → 62/300 |
+| YOLO inference (median) | 20.8 → 21.2 s | 22.3 → 22.9 s |
+| FP-RR lower-priority services | 70 (49-97) | 92 (87-93) |
 
 Zephyr's probe uses the virtual timer (`CNTVCT_EL0`/`CNTV_CVAL_EL0`), which
 AxVisor passes through in hardware, giving it a sub-millisecond FP-RR floor.
 RT-Thread's periodic probe now uses the same virtual-timer path (its GIC
 handler slot for INTID 27 is exposed in the periodic build), so its FP-RR
-floor is ~1.6 ms, close to Zephyr. RT-Thread's RR baseline is much worse
-(~2.2 s) because its thread resume under RR accumulates latency; FP-RR
-eliminates that accumulation.
+floor is ~1.7 ms, close to Zephyr. RT-Thread's RR baseline (~39.7 ms P99) is
+about 3x Zephyr's because its thread resume under RR waits for a shared-vCPU
+slice; FP-RR eliminates that wait.
 
 The Zephyr Task 1 A/B continues to pass after the FPU/SIMD fix (RR and
 FP-RR; FP-RR `lower_priority_services=196`), confirming no regression on the
