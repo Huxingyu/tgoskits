@@ -1,0 +1,4 @@
+debf5e7b55d3c8adf2d95f0dabfdcb69ab54f8a146a7218860247973acb7e6c4  /home/huhu/tgoskits-starry/tmp/starry-task1-periodic-rtthread/rtthread-periodic.bin
+a00afa197f5601e81f2497dbc98039f21bcee27a51579da93257b7959c38eb3d  /home/huhu/tgoskits-starry/tmp/axbuild/rootfs/rootfs-aarch64-alpine-modelonly.img/rootfs-aarch64-alpine-modelonly.img
+db2d8f199073acc3f15cc241862cb3a9ac2198ad471bad7ebf095c8fb8999269  /home/huhu/tgoskits-starry/target/aarch64-unknown-none-softfloat/release/starryos.bin
+e7db87b67502e5b3a64369b090b3ff682efb962b1b7efaae8ff406e02f581f0e  /home/huhu/tgoskits-starry/target/aarch64-unknown-linux-musl/release/axvisor.bin

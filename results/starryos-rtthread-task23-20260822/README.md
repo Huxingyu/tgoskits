@@ -68,6 +68,13 @@ a one-off teardown-phase guest breakpoint during pcap dump after all
 functional steps had passed; the arm was re-run cleanly and the rerun is the
 archived evidence.)
 
+A 300-sample, 10 ms periodic wake-up probe was also run for the RT-Thread
+companion (RR vs bounded FP-RR). It shows a very large jitter improvement
+(P99 ~5.5 s under RR versus ~2.2 ms under FP-RR), with the caveat that
+RT-Thread's emulated physical timer quantizes wake-ups to roughly 10 ms and
+that the FP-RR probing arm slows the StarryOS inference to ~90 s. Evidence
+and full caveats: `results/starryos-task1-periodic-rtthread-20260822/`.
+
 The Zephyr Task 1 A/B continues to pass after the FPU/SIMD fix (RR and
 FP-RR; FP-RR `lower_priority_services=196`), confirming no regression on the
 first RTOS path. Evidence is in

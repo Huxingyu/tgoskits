@@ -1,0 +1,2 @@
+PASS: verified 1 RR and 1 FP-RR periodic runs
+comparison=results/rtthread-periodic-smoke11-20260822/comparison.md
