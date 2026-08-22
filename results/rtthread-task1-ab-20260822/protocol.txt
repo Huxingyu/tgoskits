@@ -1,0 +1,10 @@
+experiment=starryos-rtthread-task1-scheduler-ab
+variable=axvisor-scheduler-feature
+arms=rr,fp-rr
+topology=starry-vcpu0->pcpu1,rtthread-vcpu0->pcpu1
+starry_host_priority=89
+rtthread_host_priority=90
+workload=starry-in-guest-ncnn-yolo,t2n1-control-status,persistent-normal-loop
+qemu=software-in-the-loop
+nvme_irq=legacy-intx-msix-qsize-1
+run_order=rr,fp-rr

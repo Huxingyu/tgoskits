@@ -1,0 +1,2 @@
+scenario=normal frames=22 kinds={5: 8, 1: 4, 4: 7, 2: 3}
+PASS: StarryOS/Zephyr scenario normal

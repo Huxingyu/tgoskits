@@ -59,6 +59,15 @@ Verified with the shared-core RR scenario (`normal`):
 
 Evidence: `results/rtthread-task1-fpu-fix-normal-20260822/`.
 
+The full shared-core Task 1 scheduler A/B (RR and FP-RR) also passes; both
+arms complete the same T2N1/ncnn/YOLO workload with 3/3 inferences at
+`confidence_milli=843`. The bounded FP-RR service path is exercised
+(`lower_priority_services=217`), and the A/B verifier reports `PASS`.
+Evidence: `results/rtthread-task1-ab-20260822/`. (The first FP-RR attempt hit
+a one-off teardown-phase guest breakpoint during pcap dump after all
+functional steps had passed; the arm was re-run cleanly and the rerun is the
+archived evidence.)
+
 The Zephyr Task 1 A/B continues to pass (RR and FP-RR; FP-RR
 `lower_priority_services=194`). Evidence is in
 `results/starryos-task1-zephyr-regression-20260822/`.
