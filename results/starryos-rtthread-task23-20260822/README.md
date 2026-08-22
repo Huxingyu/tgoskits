@@ -69,11 +69,13 @@ functional steps had passed; the arm was re-run cleanly and the rerun is the
 archived evidence.)
 
 A 300-sample, 10 ms periodic wake-up probe was also run for the RT-Thread
-companion (RR vs bounded FP-RR). It shows a very large jitter improvement
-(P99 ~5.5 s under RR versus ~2.2 ms under FP-RR), with the caveat that
-RT-Thread's emulated physical timer quantizes wake-ups to roughly 10 ms and
-that the FP-RR probing arm slows the StarryOS inference to ~90 s. Evidence
-and full caveats: `results/starryos-task1-periodic-rtthread-20260822/`.
+companion (RR vs bounded FP-RR, 3 pairs). FP-RR reduces P99 wake-up jitter
+from ~46.7 ms to ~9.6 ms (4.85x) while the StarryOS YOLO inference stays
+essentially unchanged (median 22.2 s RR vs 22.4 s FP-RR). The probe image
+uses the BSP-default 100 Hz RT-Thread tick because a 1 kHz tick churns the
+emulated physical timer and starves the lower-priority inference under
+FP-RR. Evidence and caveats:
+`results/starryos-task1-periodic-rtthread-20260822/`.
 
 The Zephyr Task 1 A/B continues to pass after the FPU/SIMD fix (RR and
 FP-RR; FP-RR `lower_priority_services=196`), confirming no regression on the

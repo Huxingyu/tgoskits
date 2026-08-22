@@ -1,0 +1,20 @@
+expect 120 use (Round-robin|Fixed-priority round-robin) scheduler\.
+expect 120 \[VM 1\] Use .*apk
+detach
+expect 20 Welcome to AxVisor Shell!
+attach 1
+expect 120 root@starry:/root #
+cmd (sh /usr/bin/t2n1-run.sh model-only) &
+expect 30 TASK3_MODEL_READY model=yolo11n.ncnn runtime=ncnn
+expect 30 TASK3_INFER_STARTED model=yolo11n.ncnn request=1 phase=startup
+attach 2
+expect 120 PERIODIC LATENCY READY
+raw g
+expect 10 PERIODIC LATENCY START
+expect 60 PERIODIC LATENCY COMPLETE samples=300
+attach 1
+expect 180 TASK3_INFER model=yolo11n.ncnn infer_us=.*request=1
+detach
+cmd rt stat
+expect 30 RT vCPU wait counters:
+qmp-quit /home/huhu/tgoskits-starry/tmp/net-dual-guest/qmp-starry-rtthread-task1-periodic-capture.sock

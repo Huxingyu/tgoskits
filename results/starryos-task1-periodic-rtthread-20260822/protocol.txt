@@ -1,7 +1,7 @@
 experiment=starryos-yolo-rtthread-periodic-scheduler-ab
 single_variable=axvisor-scheduler-feature
 arms=rr,fp-rr
-repeats_per_arm=1
+repeats_per_arm=3
 run_order=rr,fp-rr,repeated
 topology=starry-vcpu0->pcpu1,rtthread-vcpu0->pcpu1
 starry_host_priority=89
