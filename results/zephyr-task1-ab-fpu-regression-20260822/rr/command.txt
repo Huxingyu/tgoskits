@@ -1,0 +1,10 @@
+scenario=normal
+git_head=8171bc5e44cbf9974a373542ea07d4ac5a614133
+rtos_name=zephyr
+rtos_variant=normal
+host_config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-rr.toml
+qemu_config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-task1-capture.toml
+starry_vm_config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-starry-task1-shared.toml
+rtos_vm_config=/home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-zephyr-task1-shared.toml
+collect_rt_stat=1
+command=cargo xtask axvisor qemu --config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/axvisor-qemu-starry-task1-rr.toml --qemu-config /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/qemu-aarch64-starry-zephyr-task1-capture.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-starry-task1-shared.toml --vmconfigs /home/huhu/tgoskits-starry/scripts/test/net-dual-guest/vm-aarch64-zephyr-task1-shared.toml --rootfs tmp/axbuild/rootfs/rootfs-aarch64-alpine.img/rootfs-aarch64-alpine.img

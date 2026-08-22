@@ -68,6 +68,8 @@ a one-off teardown-phase guest breakpoint during pcap dump after all
 functional steps had passed; the arm was re-run cleanly and the rerun is the
 archived evidence.)
 
-The Zephyr Task 1 A/B continues to pass (RR and FP-RR; FP-RR
-`lower_priority_services=194`). Evidence is in
-`results/starryos-task1-zephyr-regression-20260822/`.
+The Zephyr Task 1 A/B continues to pass after the FPU/SIMD fix (RR and
+FP-RR; FP-RR `lower_priority_services=196`), confirming no regression on the
+first RTOS path. Evidence is in
+`results/zephyr-task1-ab-fpu-regression-20260822/` (and the earlier
+`results/starryos-task1-zephyr-regression-20260822/`).

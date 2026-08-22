@@ -1,0 +1,2 @@
+rr controls=3 statuses=3 rtt=RttSummary(count=3, minimum=152, median=487, p95=644, maximum=644) fp-rr controls=3 statuses=3 rtt=RttSummary(count=3, minimum=153, median=516, p95=630, maximum=630) lower_priority_services=196
+PASS: StarryOS Task 1 scheduler A/B; summary=results/zephyr-task1-ab-fpu-regression-20260822/comparison.md
