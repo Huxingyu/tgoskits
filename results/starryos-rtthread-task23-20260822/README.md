@@ -77,6 +77,30 @@ emulated physical timer and starves the lower-priority inference under
 FP-RR. Evidence and caveats:
 `results/starryos-task1-periodic-rtthread-20260822/`.
 
+## Probe comparison: Zephyr versus RT-Thread
+
+Both RTOS probes run the identical experiment (300 samples, 10 ms period,
+three RR/FP-RR pairs, StarryOS YOLO on pCPU1). The scheduler improvement is
+the same direction for both; the multiple differs because of the timer path.
+
+| Metric (3-run median) | Zephyr RR → FP-RR | RT-Thread RR → FP-RR |
+|---|---:|---:|
+| P99 wake-up jitter | 12.498 → 0.646 ms (19.35x) | 46.700 → 9.633 ms (4.85x) |
+| P99.9 / maximum | 12.883 → 0.671 ms | 48.642 → 9.816 ms |
+| Mean wake-up jitter | 9.505 → 0.566 ms | 23.146 → 4.286 ms |
+| Samples later than 1 ms | 300/300 → 0/300 | 298/300 → 238/300 |
+| YOLO inference (median) | 20.8 → 21.2 s | 22.2 → 22.4 s |
+| FP-RR lower-priority services | 70 (49-97) | 87 (64-91) |
+
+Zephyr's probe uses the virtual timer (`CNTVCT_EL0`/`CNTV_CVAL_EL0`), which
+AxVisor passes through in hardware, giving it a sub-millisecond FP-RR floor.
+RT-Thread's kernel tick uses the emulated physical timer (`CNTP_*`) at about
+10 ms host-timer-wheel granularity, so its FP-RR floor is ~9.6 ms. The
+~9.6 ms result is therefore the realistic RT-Thread bound with the current
+hypervisor timer emulation, not a scheduler shortfall. Making RT-Thread
+approach Zephyr's sub-millisecond numbers would require routing the virtual
+timer to RT-Thread guests in the hypervisor.
+
 The Zephyr Task 1 A/B continues to pass after the FPU/SIMD fix (RR and
 FP-RR; FP-RR `lower_priority_services=196`), confirming no regression on the
 first RTOS path. Evidence is in

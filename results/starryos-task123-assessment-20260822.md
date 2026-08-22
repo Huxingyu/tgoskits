@@ -15,6 +15,8 @@ evidence only; StarryOS is not required to reproduce every Linux number.
 - The only A/B variable is AxVisor `rr-scheduler` versus bounded
   `fp-rr-scheduler`.
 - Three RR/FP-RR pairs run in the order `RR, FP-RR` repeated three times.
+- The same A/B also runs with an RT-Thread companion probe (300 samples,
+  10 ms period, three pairs), sharing the same pCPU1 topology.
 
 | Metric (median of three runs) | RR | bounded FP-RR | Result |
 |---|---:|---:|---:|
@@ -29,12 +31,33 @@ All six runs completed a real YOLO inference. FP-RR inference times were
 49, 70 and 97 times. The improvement therefore does not come from starving
 the lower-priority StarryOS Guest.
 
+The same A/B with the RT-Thread companion probe (three pairs) also passes:
+
+| Metric (median of three runs) | RR | bounded FP-RR | Result |
+|---|---:|---:|---:|
+| Mean wake-up jitter | 23.146 ms | 4.286 ms | 81.48% lower |
+| P99 wake-up jitter | 46.700 ms | 9.633 ms | 4.85x / 79.37% lower |
+| P99.9 / maximum | 48.642 ms | 9.816 ms | 79.82% lower |
+| Samples later than 1 ms | 298/300 | 238/300 | 20.13% fewer |
+| YOLO inference (median) | 22.198 s | 22.414 s | +0.97% |
+
+RT-Thread's kernel tick is backed by the hypervisor-emulated physical timer
+(`CNTP_*`), delivered at roughly 10 ms granularity, so its FP-RR P99 floor is
+about 9.6 ms rather than Zephyr's ~0.65 ms virtual-timer floor. The probe
+image uses the BSP-default 100 Hz tick to avoid a timer-churn storm that
+otherwise starves the lower-priority inference under FP-RR. The bounded
+lower-priority service path is still exercised (64-91 services) and YOLO
+inference is essentially unchanged.
+
 The supported claim is that bounded FP-RR retains and exceeds the earlier
 near-10x P99 improvement under the final StarryOS + YOLO workload. It remains
-a QEMU software-in-the-loop result, not a physical-board WCET bound.
+a QEMU software-in-the-loop result, not a physical-board WCET bound. The same
+direction holds for the RT-Thread companion probe (4.85x P99 reduction with
+no inference regression).
 
 Evidence: `results/starryos-task1-periodic-yolo-986fcf5ae-20260822/` at
-revision `986fcf5ae5198bbc66d9926dbb0b201d3ad7f32c`.
+revision `986fcf5ae5198bbc66d9926dbb0b201d3ad7f32c`, and
+`results/starryos-task1-periodic-rtthread-20260822/`.
 
 ## 2. Task 2: T2N1 wire format and runtime proof
 
