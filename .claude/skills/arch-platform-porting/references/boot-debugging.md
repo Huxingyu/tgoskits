@@ -370,6 +370,35 @@ are issued one at a time.
   sits directly on the path a periodic-latency A/B measures, and a formatted
   `warn!` from inside the exit handler stalls the vCPU being sampled.
 
+### Native Zephyr BL33 on ATK-DLRK3588
+
+The accepted native Zephyr path is separate from the FIT/U-Boot Axvisor path:
+
+```text
+Maskrom -> pinned RAMBOOT loader -> Zephyr BL33 at 0x50000000
+         -> upstream TF-A BL31 at 0x00040000 -> ExecuteSDRAM 0xaa
+```
+
+- Use `scripts/board/atk-dlrk3588-native-zephyr-ram-boot.sh`; do not reuse the
+  FIT runner or hand-write storage commands. Its `0x2000` and `0x4000` writes
+  are volatile slots implemented by the pinned RAMBOOT loader. Never add
+  upgrade-loader, erase, flash, GPT, partition-table, or partition writes.
+- Build Zephyr commit `dccb09599635bdff17633fa7e9dab014b91dce90` for
+  `roc_rk3588_pc/rk3588`. Map UART2 at `0xfeb50000` in the RK3588 MMU regions;
+  otherwise output disappears when EL1 enables the MMU.
+- Use upstream TF-A BL31 commit
+  `6a164dda7208d3f2c0a5c4a1681db5ec37532bf5` without BL32/OP-TEE. The vendor
+  U-Boot/firmware chain left generic-timer PPIs 27/30 and RK timer SPI 321 in
+  Secure Group 0, so Zephyr could reach timer setup without receiving ticks.
+- Require a scheduler/timer completion marker such as
+  `PERIODIC LATENCY COMPLETE samples=300` or `ATK_TIMER_ACCEPT_PASS`. An early
+  UART marker only proves entry and console access.
+- Keep one `/dev/ttyACM0` reader at 1,500,000 baud and remove all GIC/timer and
+  VM-exit probes before collecting latency evidence.
+
+The complete reasoning and artifact identities are documented in
+`docs/docs/debug/rk3588-native-zephyr-bringup.md`.
+
 ## LoongArch Lessons
 
 - On LS2K1000, repeated `failed to lock LS2K1000 LIOINTC when claiming LIOINTC IRQ` messages immediately after block hctx activation identify a hard-IRQ/controller-lock inversion, not a harmless spurious interrupt. Follow the AArch64 GIC pattern: keep the `rdif_intc` controller and its configuration registers task-owned, and publish a separate LIOINTC CPU interface containing only the ISR/domain/parent/atomic-enable state used by claim/complete. Looking up or locking the controller from hard IRQ lets a level interrupt continuously re-enter before the interrupted task releases its device guard.
