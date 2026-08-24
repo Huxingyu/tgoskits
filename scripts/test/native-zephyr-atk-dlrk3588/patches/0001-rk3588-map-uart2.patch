@@ -1,0 +1,25 @@
+From dccb09599635bdff17633fa7e9dab014b91dce90 Mon Sep 17 00:00:00 2001
+Subject: [PATCH] soc: rockchip: rk3588: map UART2 for the native console
+
+The roc_rk3588_pc board selects UART2, but the RK3588 MMU table only maps the
+GIC. Map the selected UART before the MMU is enabled so the early and Zephyr
+console paths remain usable after the EL1 transition.
+---
+ soc/rockchip/rk35/rk3588/mmu_regions.c | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/soc/rockchip/rk35/rk3588/mmu_regions.c b/soc/rockchip/rk35/rk3588/mmu_regions.c
+index 7e73e4cc..5816f49b 100644
+--- a/soc/rockchip/rk35/rk3588/mmu_regions.c
++++ b/soc/rockchip/rk35/rk3588/mmu_regions.c
+@@ -9,4 +9,8 @@
+ #include <zephyr/sys/util.h>
+ 
+ static const struct arm_mmu_region mmu_regions[] = {
++	MMU_REGION_FLAT_ENTRY("UART2", DT_REG_ADDR(DT_NODELABEL(uart2)),
++			      DT_REG_SIZE(DT_NODELABEL(uart2)),
++			      MT_DEVICE_nGnRnE | MT_P_RW_U_NA |
++			      MT_DEFAULT_SECURE_STATE),
+ 
+-- 
+2.43.0
