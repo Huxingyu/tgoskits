@@ -704,10 +704,9 @@ pub(crate) fn notify_primary_vcpu(vm_id: usize) {
         warn!("VM[{vm_id}] not found while notifying primary vCPU");
         return;
     };
-    if let Err(err) = vm.runtime_snapshot().map(|runtime| {
-        runtime.notify_vcpu_startup(0);
-    }) {
-        warn!("VM[{vm_id}] vCPU runtime not found: {err:?}");
+    match vm.runtime_handle() {
+        Ok(runtime) => runtime.notify_vcpu_startup(0),
+        Err(err) => warn!("VM[{vm_id}] vCPU runtime not found: {err:?}"),
     }
 }
 
@@ -718,10 +717,10 @@ pub(crate) fn notify_primary_vcpu(vm_id: usize) {
 ///
 /// * `vm_id` - The ID of the VM whose VCpus should be notified.
 pub(crate) fn notify_all_vcpus(vm_id: usize) {
-    if let Some(vm) = crate::get_vm_by_id(vm_id) {
-        let _ = vm.runtime_snapshot().map(|runtime| {
-            runtime.notify_all();
-        });
+    if let Some(vm) = crate::get_vm_by_id(vm_id)
+        && let Ok(runtime) = vm.runtime_handle()
+    {
+        runtime.notify_all();
     }
 }
 
@@ -740,7 +739,7 @@ pub(crate) fn queue_interrupt(vm_id: usize, vcpu_id: usize, vector: usize) -> Ax
     // queue lock and takes the machine lock inside `vm.running()`/`stopping()`,
     // so notifying under the machine lock is an ABBA deadlock (observed once
     // vCPUs actually park via PSCI CPU_SUSPEND standby).
-    let runtime = vm.with_runtime(|runtime| Ok(runtime.clone()))?;
+    let runtime = vm.runtime_handle()?;
     runtime.dispatch_vcpu_interrupt(
         vcpu_id,
         PendingVcpuInterrupt {
@@ -771,8 +770,9 @@ pub(crate) fn queue_pending_interrupt(
         ));
     }
 
-    let cpu_id = vm.with_runtime(|runtime| runtime.queue_pending_interrupt(vcpu_id, interrupt))?;
-    vm.runtime_snapshot()?.notify_all();
+    let runtime = vm.runtime_handle()?;
+    let cpu_id = runtime.queue_pending_interrupt(vcpu_id, interrupt)?;
+    runtime.notify_all();
     crate::host::task::send_ipi(cpu_id);
     Ok(())
 }
@@ -789,7 +789,7 @@ pub(crate) fn notify_vcpu(vm_id: usize, vcpu_id: usize) -> AxVmResult {
         ));
     }
 
-    let runtime = vm.with_runtime(|runtime| Ok(runtime.clone()))?;
+    let runtime = vm.runtime_handle()?;
     let cpu_id = runtime.vcpu_cpu_id(vcpu_id)?;
     // Architecture controllers already own the pending interrupt state. Wake
     // only its target vCPU; waking every guest CPU adds cross-CPU scheduler
@@ -808,11 +808,11 @@ pub(crate) fn inject_pending_interrupts<A: Architecture>(
         warn!("VM[{vm_id}] not found, cannot drain VCpu[{vcpu_id}] interrupts");
         return;
     };
-    let Ok(interrupts) = vm.with_runtime(|runtime| Ok(runtime.drain_pending_interrupts(vcpu_id)))
-    else {
+    let Ok(runtime) = vm.runtime_handle() else {
         warn!("VM[{vm_id}] vCPU runtime not found, cannot drain VCpu[{vcpu_id}] interrupts");
         return;
     };
+    let interrupts = runtime.drain_pending_interrupts(vcpu_id);
 
     for interrupt in interrupts {
         A::inject_pending_interrupt(&vm, vcpu, interrupt);
@@ -832,7 +832,9 @@ pub(crate) fn inject_pending_interrupts<A: Architecture>(
 /// It will join all VCpu tasks to ensure they are fully cleaned up.
 pub(crate) fn cleanup_vm_vcpus(vm_id: usize) {
     if let Some(vm) = crate::get_vm_by_id(vm_id)
-        && let Err(err) = vm.with_runtime(|runtime| runtime.join_all_vcpu_tasks(vm_id))
+        && let Err(err) = vm
+            .runtime_handle()
+            .and_then(|runtime| runtime.join_all_vcpu_tasks(vm_id))
     {
         warn!("VM[{vm_id}] vCPU runtime cleanup skipped: {err:?}");
     }
@@ -840,10 +842,9 @@ pub(crate) fn cleanup_vm_vcpus(vm_id: usize) {
 
 /// Marks the VCpu of the specified VM as running.
 fn mark_vcpu_running(vm: &VMRef) {
-    let _ = vm.with_runtime(|runtime| {
+    if let Ok(runtime) = vm.runtime_handle() {
         runtime.mark_vcpu_running();
-        Ok(())
-    });
+    }
 }
 
 type CpuOnStartAckLock<T> = std::sync::Mutex<T>;
@@ -954,9 +955,7 @@ pub(crate) fn vcpu_on(
         .map_err(|_| VcpuOnError::OnPending)?;
 
     let start_result = (|| {
-        let runtime = vm
-            .with_runtime(|runtime| Ok(runtime.clone()))
-            .map_err(|_| VcpuOnError::StartFailed)?;
+        let runtime = vm.runtime_handle().map_err(|_| VcpuOnError::StartFailed)?;
         if runtime.has_vcpu_task(vcpu_id) {
             return Err(VcpuOnError::StartFailed);
         }
@@ -1113,7 +1112,7 @@ fn vcpu_run() {
     let vcpu = curr.as_vcpu_task().vcpu.clone();
     let vm_id = vm.id();
     let vcpu_id = vcpu.id();
-    let Ok(runtime) = vm.with_runtime(|runtime| Ok(runtime.clone())) else {
+    let Ok(runtime) = vm.runtime_handle() else {
         warn!("VM[{vm_id}] vCPU runtime not found, VCpu[{vcpu_id}] exiting");
         return;
     };

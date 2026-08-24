@@ -145,7 +145,12 @@ pub fn start_vm(vm_id: usize) -> AxVmResult {
 /// vCPU0, the sole device-poll owner.
 pub fn notify_vm(vm_id: usize) -> AxVmResult {
     let vm = vm_by_id(vm_id)?;
-    let runtime = vm.runtime_snapshot()?;
+    // `WaitQueue::wait_until` evaluates the vCPU wake predicate while it
+    // holds both the wait-queue and run-queue locks. That predicate may read
+    // the VM lifecycle state and therefore lock `vm.machine`. Never retain
+    // `vm.machine` while notifying the same wait queue, or the notifier and a
+    // vCPU entering WFI can deadlock in opposite lock order.
+    let runtime = vm.runtime_handle()?;
     notify_runtime_for_device_poll(&runtime);
     Ok(())
 }
