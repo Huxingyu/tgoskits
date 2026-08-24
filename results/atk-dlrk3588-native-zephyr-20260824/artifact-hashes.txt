@@ -1,0 +1,19 @@
+# Original accepted artifacts; binaries are intentionally not committed.
+
+5a22dec9b3b8f92f8b2ea9c5228c571236b2ae37b38300513d472622f212be4c  build-native-periodic/zephyr/zephyr.bin
+59ef4dd3ffab6a0d767755cc3822d67a5047cfa227c338e2312fa062ff01fd1d  artifacts/native-bl31-legacy/zephyr-native-periodic-bl33.img
+754383b8bfb15f6e7ab7616a03bad8054cae7ca9701519bc7349b9cc9fb0c73d  artifacts/native-bl31-legacy/trust-native-bl31.img
+77946243210318fea16ba4e04a22e7d18a5348cfd1328ef4accb3bb4bb5a7787  artifacts/native-bl31-legacy/rk3588_ramboot_loader_v1.21.106.bin
+
+# Original console and extracted CSV identities before repository LF normalization.
+
+aecc928fafd74ca625406deba47520a320c5ad16c4124af5250f5e2f0df4bd81  logs/native-periodic-console.log
+c06f4210f2f492b632b4682834a474a43815db35638b07e9e03d5b1db05cab2f  analysis/native-periodic.csv
+
+# Tool and source identities used by the accepted build.
+
+dccb09599635bdff17633fa7e9dab014b91dce90  Zephyr git commit
+6a164dda7208d3f2c0a5c4a1681db5ec37532bf5  upstream TF-A git commit
+e26a311d449c6254d0d89ecaf8cd1870438205e07a66b27265d68830b8977439  rkbin/tools/loaderimage
+47048ad3caf253945def1ac11641c30a49d8160abb26c0618d06f6727be26836  rkdeveloptool 1.0.0
+e285dffbca73d032da13c8ed58536189e090a6adc5868f06973c7563850a31dc  rkdeveloptool 1.3 with ExecuteSDRAM

@@ -1,0 +1,6 @@
+mode,environment,runs,samples_per_run,load,mean_ns,p50_ns,p95_ns,p99_ns,p99_9_ns,max_ns,over_1ms,over_10ms
+native,Zephyr BL33 via official BL31,1,300,unloaded,2048,2041,2041,2041,4000,4000,0,0
+single-guest-fp-rr,unified Zephyr dccb guest on AxVisor FP-RR,1,300,no second Guest; idle network endpoint,63465,63312,64336,69120,69600,69600,0,0
+unified-dual-guest-fp-rr,unified Zephyr dccb guest on AxVisor FP-RR,1,300,StarryOS plus one real YOLO inference,188660,198272,238400,506976,2490048,2490048,1,0
+historical-guest-fp-rr,old Zephyr build 36940db guest on AxVisor FP-RR,2,300,concurrent sustained real YOLO median,94569,88224,104536,117200,1746608,1746608,1,0
+historical-guest-rr,old Zephyr build 36940db guest on AxVisor RR,2,300,concurrent sustained real YOLO median,2485303,1997840,5121984,5291696,6498808,6498808,229,0

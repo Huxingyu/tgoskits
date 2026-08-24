@@ -1,0 +1,18 @@
+USBParse: cmd:0x19, sub_code:0xaa, len:0
+LoadTrust Addr:0x4000
+No find bl30.bin
+No find bl32.bin
+Load uboot, ReadLba = 2000
+Load OK, addr=0x50000000, size=0xa060
+USB Boot OK!
+RunBL31 0x40000 @ 7842484 us
+NOTICE:  BL31: v2.15.0(release):6a164dd
+NOTICE:  BL31: Built : 12:59:08, Aug 24 2026
+
+ATK_ZEPHYR_PREP
+ATK_ZEPHYR_POST_KERNEL
+ATK_TIMER_ACCEPT_START uptime=0
+ATK_SLEEP_1 before=0 after=1010 delta=1010
+ATK_SLEEP_2 before=1010 after=2020 delta=1010
+ATK_SLEEP_3 before=2020 after=3030 delta=1010
+ATK_TIMER_ACCEPT_PASS
