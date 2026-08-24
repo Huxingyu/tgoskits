@@ -1,5 +1,10 @@
 # ATK-DLRK3588 Zephyr Guest 快速物理板验证
 
+> **原生基线状态更新（2026-08-24）：**本文件仍只描述 AxVisor Guest，正文中
+> “不能替代原生基线”的边界仍成立；但“尚无 RK3588 原生 Zephyr”的项目状态已经
+> 过期。物理原生结果见
+> [`../atk-dlrk3588-native-zephyr-20260824/README.md`](../atk-dlrk3588-native-zephyr-20260824/README.md)。
+
 > **历史证据，已被统一 Zephyr 4.4.2 主链取代。**本文件保留早期 Zephyr 3.7.0
 > 周期实验的来源和哈希，不能再用作当前 Task 1/2/3 完成度结论。当前对比见同目录
 > `MULTI_RTOS_COMPARISON.md`；正式统一报告见

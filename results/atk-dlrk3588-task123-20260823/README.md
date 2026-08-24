@@ -1,5 +1,10 @@
 # Task 1-3 final verification, 2026-08-23
 
+> **Superseded native-baseline status (2026-08-24):** the `BLOCKED` native
+> RTOS statement below is historical. Physical RK3588 native Zephyr now passes;
+> see [`../atk-dlrk3588-native-zephyr-20260824/README.md`](../atk-dlrk3588-native-zephyr-20260824/README.md).
+> The 2026-08-23 Task 1-3 measurements remain unchanged.
+
 ## Final status
 
 | Task | Status | Physical evidence |

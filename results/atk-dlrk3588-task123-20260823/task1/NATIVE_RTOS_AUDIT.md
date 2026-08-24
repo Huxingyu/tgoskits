@@ -1,5 +1,12 @@
 # Native bare-metal RTOS feasibility audit
 
+> **Superseded (2026-08-24):** this audit correctly rejected the Guest images
+> available at the time, but its board-level blocker has since been removed by
+> the physical native Zephyr BL33 path. See
+> [`../../atk-dlrk3588-native-zephyr-20260824/README.md`](../../atk-dlrk3588-native-zephyr-20260824/README.md).
+> The material below is retained as the historical reason those earlier images
+> could not be called a native baseline.
+
 Status: BLOCKED for this exact ATK-DLRK3588 board. This status is not counted as
 a physical native-baseline pass.
 
@@ -38,4 +45,3 @@ measurement.
 The blocker can be removed only by adding or obtaining a reviewed RK3588 BSP
 for this board, proving UART/GIC/timer/PSCI and memory initialization, defining
 a RAM-only U-Boot load/entry contract, and then porting the same periodic probe.
-

@@ -1,5 +1,10 @@
 # OpenRace 2026 三任务最终评分映射
 
+> **原生基线结论已被取代（2026-08-24）：**本文按当时“RK3588 原生 RTOS
+> BLOCKED”给出的分数和缺口仅作为历史快照保留。物理原生 Zephyr 已完成，当前证据
+> 见 [`atk-dlrk3588-native-zephyr-20260824/README.md`](atk-dlrk3588-native-zephyr-20260824/README.md)；
+> 不应再引用正文中的 `4/5` 或“无原生 BSP”作为当前结论。
+
 官网评分标准：<https://opencamp.cn/qcl/camp/OpenRace2026/stage/1>
 
 本表区分“当前代码/证据技术完成度”和“当前提交包可直接交付度”。评分是内部

@@ -1,5 +1,10 @@
 # Task 1 final closure report
 
+> **Physical-baseline update (2026-08-24):** this 2026-08-20 QEMU closure
+> predates the successful RK3588 native Zephyr run. Its QEMU scheduler results
+> remain historical evidence, while the current native baseline is documented
+> in [`../../atk-dlrk3588-native-zephyr-20260824/README.md`](../../atk-dlrk3588-native-zephyr-20260824/README.md).
+
 ## Executive conclusion
 
 Task 1 is functionally complete for the QEMU AArch64 evaluation platform. The

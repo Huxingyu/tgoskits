@@ -1,5 +1,10 @@
 # ATK-DLRK3588 同板多 RTOS 对比（统一证据更新）
 
+> **原生基线状态更新（2026-08-24）：**本文的 RT-Thread/Zephyr 表格比较的是
+> AxVisor Guest；其 Guest 身份没有改变。文末“不是原生 Zephyr”的表述不再代表
+> 项目缺少原生对照，新的物理原生 Zephyr 结果见
+> [`../atk-dlrk3588-native-zephyr-20260824/README.md`](../atk-dlrk3588-native-zephyr-20260824/README.md)。
+
 > 2026-08-24 更新：旧版只包含 Zephyr 3.7.0 周期实验，并把 Task 2/3 标作未测。
 > 该状态已经被同一个 Zephyr 4.4.2 Guest 的统一物理板实验取代。旧数字不再作为
 > Zephyr 正式主链引用。
