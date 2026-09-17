@@ -1,119 +1,91 @@
 #include <stdint.h>
-
 #include <zephyr/arch/arm64/arm-smccc.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
-#include <zephyr/sys/time_units.h>
+#include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 #define SOFTWARE_VIRQ 48
 #define SAMPLE_COUNT 300
-#define WAIT_TIMEOUT_MS 30000
-
-/*
- * The vCPU idles by executing PSCI CPU_SUSPEND(standby) through HVC. The
- * hypervisor parks the vCPU on its wait queue, which makes the notify path
- * load-bearing: A's notify_all also wakes the idle vCPU, while B's targeted
- * notify only wakes the IRQ consumer.
- */
-#define PSCI_CPU_SUSPEND_64 0xC4000001UL
-#define PSCI_POWER_STATE_STANDBY 0UL
+#define TIMER_IRQ 27
+#define PSCI_CPU_SUSPEND_64 0xc4000001UL
 #define PSCI_SYSTEM_OFF_32 0x84000008UL
 
-static volatile uint32_t virq_count;
-static volatile uint64_t virq_cycles[SAMPLE_COUNT];
+/* Test-only mailbox in normal coherent guest RAM. Each word has one writer:
+ * CPU0 owns ready0/parks0, CPU1 owns ready1/received, host owns complete.
+ * The build tool obtains its GPA from the ELF symbol, never a guessed address.
+ */
+struct virq_mailbox {
+	uint32_t ready0;
+	uint32_t ready1;
+	uint32_t received;
+	uint32_t parks0;
+	uint32_t complete;
+};
+struct virq_mailbox virq_mailbox;
 
 static void suspend_cpu(void)
 {
 	struct arm_smccc_res res;
-
-	arm_smccc_hvc(PSCI_CPU_SUSPEND_64, PSCI_POWER_STATE_STANDBY, 0,
-		      0, 0, 0, 0, 0, &res);
-}
-
-static void psci_system_off(void)
-{
-	struct arm_smccc_res res;
-
-	arm_smccc_hvc(PSCI_SYSTEM_OFF_32, 0, 0, 0, 0, 0, 0, 0, &res);
+	arm_smccc_hvc(PSCI_CPU_SUSPEND_64, 0, 0, 0, 0, 0, 0, 0, &res);
+	if (res.a0 != 0) {
+		printk("SOFTWARE VIRQ FAIL suspend=%ld\n", res.a0);
+		k_panic();
+	}
 }
 
 static void software_virq_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
-
-	const uint32_t sequence = virq_count;
-	if (sequence < SAMPLE_COUNT) {
-		virq_cycles[sequence] = k_cycle_get_64();
-		virq_count = sequence + 1;
-		if (sequence % 100 == 0) {
-			printk("ISR seq=%u on cpu %d\n", sequence,
-			       arch_curr_cpu()->id);
-		}
+	uint32_t count = __atomic_load_n(&virq_mailbox.received, __ATOMIC_RELAXED);
+	if (arch_curr_cpu()->id != 1 || count >= SAMPLE_COUNT) {
+		printk("SOFTWARE VIRQ FAIL cpu=%d count=%u\n", arch_curr_cpu()->id, count);
+		k_panic();
 	}
+	__atomic_store_n(&virq_mailbox.received, count + 1, __ATOMIC_RELEASE);
 }
 
 static K_THREAD_STACK_DEFINE(consumer_stack, 4096);
 static struct k_thread consumer_thread;
 
-static void consumer_entry(void *arg1, void *arg2, void *arg3)
+static void consumer_entry(void *a, void *b, void *c)
 {
-	ARG_UNUSED(arg1);
-	ARG_UNUSED(arg2);
-	ARG_UNUSED(arg3);
-
-	printk("consumer thread on cpu %d\n", arch_curr_cpu()->id);
-	const int64_t start_ticks = k_uptime_ticks();
-	uint32_t loop_count = 0;
-	while (virq_count < SAMPLE_COUNT &&
-	       k_uptime_ticks() - start_ticks <
-		       k_ms_to_ticks_ceil64(WAIT_TIMEOUT_MS)) {
+	ARG_UNUSED(a);
+	ARG_UNUSED(b);
+	ARG_UNUSED(c);
+	/* Enabling the SPI on CPU1 sets its GICv3 routing affinity to CPU1. */
+	irq_enable(SOFTWARE_VIRQ);
+	irq_disable(TIMER_IRQ);
+	__atomic_store_n(&virq_mailbox.ready1, 1, __ATOMIC_RELEASE);
+	while (__atomic_load_n(&virq_mailbox.received, __ATOMIC_ACQUIRE) < SAMPLE_COUNT) {
 		suspend_cpu();
-		if (++loop_count % 50 == 0) {
-			printk("consumer loop=%u irq=%u\n", loop_count, virq_count);
-		}
 	}
-
-	const uint32_t received = virq_count;
-	printk("consumer done irq=%u\n", received);
-	/* Let the host injector finish its last log lines before the CSV hits
-	 * the same serial line, so the two streams do not interleave mid-line.
+	/* The host acknowledges that it checked all deliveries and idle-CPU
+	 * isolation before we power off. No additional interrupt is injected.
 	 */
-	const uint64_t dump_start = k_cycle_get_64();
-	while (k_cyc_to_ns_floor64(k_cycle_get_64() - dump_start) < 10000000ULL) {
+	while (!__atomic_load_n(&virq_mailbox.complete, __ATOMIC_ACQUIRE)) {
+		arch_nop();
 	}
-	printk("vector,sequence,timestamp_ns\n");
-	for (uint32_t sequence = 0; sequence < received; sequence++) {
-		printk("%d,%u,%llu\n", SOFTWARE_VIRQ, sequence,
-		       k_cyc_to_ns_floor64(virq_cycles[sequence]));
-	}
-
-	if (received == SAMPLE_COUNT) {
-		printk("SOFTWARE VIRQ COMPLETE streams=1 samples_each=%d total=%d\n",
-		       SAMPLE_COUNT, SAMPLE_COUNT);
-	} else {
-		printk("SOFTWARE VIRQ FAIL received=%u expected=%d\n", received,
-		       SAMPLE_COUNT);
-	}
-	psci_system_off();
+	printk("SOFTWARE VIRQ COMPLETE streams=1 samples_each=300 total=300\n");
+	struct arm_smccc_res res;
+	arm_smccc_hvc(PSCI_SYSTEM_OFF_32, 0, 0, 0, 0, 0, 0, 0, &res);
+	k_panic();
 }
 
 int main(void)
 {
-	IRQ_CONNECT(SOFTWARE_VIRQ, 1, software_virq_isr, NULL, 0);
-	irq_enable(SOFTWARE_VIRQ);
-
-	printk("SOFTWARE VIRQ READY suspend streams=1 vector=%d samples=%d\n",
-	       SOFTWARE_VIRQ, SAMPLE_COUNT);
-
-	k_thread_create(&consumer_thread, consumer_stack,
-			K_THREAD_STACK_SIZEOF(consumer_stack),
-			consumer_entry, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(0), 0, K_FOREVER);
-	const int pin_rc = k_thread_cpu_pin(&consumer_thread, 1);
-	printk("consumer pinned to cpu 1 rc=%d\n", pin_rc);
+	IRQ_CONNECT(SOFTWARE_VIRQ, 1, software_virq_isr, NULL, IRQ_TYPE_EDGE);
+	k_thread_create(&consumer_thread, consumer_stack, K_THREAD_STACK_SIZEOF(consumer_stack),
+			consumer_entry, NULL, NULL, NULL, K_PRIO_PREEMPT(0), 0, K_FOREVER);
+	if (k_thread_cpu_pin(&consumer_thread, 1) != 0) {
+		printk("SOFTWARE VIRQ FAIL pin\n");
+		return 1;
+	}
 	k_thread_start(&consumer_thread);
-
+	irq_disable(TIMER_IRQ);
+	printk("SOFTWARE VIRQ READY suspend vector=48 samples=300\n");
+	__atomic_store_n(&virq_mailbox.ready0, 1, __ATOMIC_RELEASE);
 	for (;;) {
+		__atomic_fetch_add(&virq_mailbox.parks0, 1, __ATOMIC_RELEASE);
 		suspend_cpu();
 	}
 	return 0;

@@ -1,13 +1,13 @@
 //! AxVM runtime services backed by the default ArceOS host.
 
-use std::{collections::BTreeMap, time::Duration, vec::Vec};
+use std::{collections::BTreeMap, vec::Vec};
 
 use ax_std::os::arceos::sync::IrqSafeMutex as Mutex;
 use axvm_types::VMId;
 
 use crate::{
     AxVmError, AxVmResult,
-    arch::ArchVCpu,
+    arch::current::ArchVCpu,
     ax_err,
     host::{HostPlatform, default_host},
     vcpu::with_current_vcpu,
@@ -22,20 +22,6 @@ pub struct AxvmRuntime {
     _private: (),
 }
 
-/// Fixed-period host software-vIRQ injector used by the realtime experiment.
-///
-/// The injector is deliberately independent of the queue implementation: A
-/// and B receive the same sequence of calls and differ only in how the VM
-/// runtime delivers each call to the guest.
-#[derive(Clone, Copy, Debug)]
-pub struct PeriodicVirqConfig {
-    pub vcpu_id: usize,
-    pub vector: usize,
-    pub period: Duration,
-    pub samples: usize,
-    pub injector_cpu_id: Option<usize>,
-}
-
 static VM_REGISTRY: Mutex<BTreeMap<VMId, AxVMRef>> = Mutex::new(BTreeMap::new());
 
 /// Register an externally initialized VM and return whether it was inserted.
@@ -46,12 +32,15 @@ pub(crate) fn push_existing_vm(vm: AxVMRef) -> bool {
         warn!("VM[{vm_id}] already exists, push VM failed");
         return false;
     }
-    registry.insert(vm_id, vm);
+    registry.insert(vm_id, vm.clone());
+    drop(registry);
+    crate::arch::current::register_vm_platform_resources(&vm);
     true
 }
 
 /// Remove a VM from the process-wide AxVM runtime registry.
 pub(crate) fn remove_existing_vm(vm_id: VMId) -> Option<AxVMRef> {
+    crate::arch::current::unregister_vm_platform_resources(vm_id);
     crate::runtime::vcpus::cleanup_vm_vcpus(vm_id);
     VM_REGISTRY.lock().remove(&vm_id)
 }
@@ -67,6 +56,7 @@ pub fn get_vm_list() -> Vec<AxVMRef> {
 }
 
 /// Run an operation with a VM selected from the process-wide runtime registry.
+#[cfg(target_arch = "x86_64")]
 pub(crate) fn with_vm<F, R>(vm_id: VMId, f: F) -> Option<R>
 where
     F: FnOnce(&AxVMRef) -> R,
@@ -76,6 +66,7 @@ where
 }
 
 /// Return the active-vCPU mask for a VM.
+#[cfg(target_arch = "x86_64")]
 pub(crate) fn active_vcpu_mask(vm_id: VMId) -> Option<usize> {
     with_vm(vm_id, |vm| {
         let vcpu_num = vm.vcpu_num();
@@ -88,14 +79,14 @@ pub(crate) fn active_vcpu_mask(vm_id: VMId) -> Option<usize> {
 }
 
 /// Inject a virtual interrupt into a VM's vCPU.
+#[cfg(target_arch = "x86_64")]
 pub(crate) fn inject_interrupt(vm_id: VMId, vcpu_id: usize, vector: usize) -> AxVmResult {
     crate::runtime::vcpus::queue_interrupt(vm_id, vcpu_id, vector)
 }
 
-/// Wake and kick a target vCPU whose architecture backend already published
-/// pending interrupt state.
-pub fn notify_vm_vcpu(vm_id: VMId, vcpu_id: usize) -> AxVmResult {
-    crate::runtime::vcpus::notify_vcpu(vm_id, vcpu_id)
+/// Kick a target vCPU after the caller has published canonical architecture state.
+pub fn kick_vm_vcpu(vm_id: VMId, vcpu_id: usize) -> AxVmResult {
+    crate::runtime::vcpus::kick_vcpu_from_published_state(vm_id, vcpu_id)
 }
 
 /// Return the current VM ID from the vCPU currently executing on this CPU.
@@ -180,6 +171,11 @@ impl AxvmRuntime {
         crate::runtime::stop_vm(vm_id)
     }
 
+    /// Pause a VM selected from the runtime registry.
+    pub fn pause_vm(vm_id: VMId) -> AxVmResult {
+        crate::runtime::pause_vm(vm_id)
+    }
+
     /// Resume a VM selected from the runtime registry.
     pub fn resume_vm(vm_id: VMId) -> AxVmResult {
         crate::runtime::resume_vm(vm_id)
@@ -193,12 +189,6 @@ impl AxvmRuntime {
     /// Wake the primary vCPU of a VM.
     pub fn notify_vm(vm_id: VMId) -> AxVmResult {
         crate::runtime::notify_vm(vm_id)
-    }
-
-    /// Start a detached, bounded host software-vIRQ injector for one VM.
-    pub fn start_periodic_virq_injector(vm_id: VMId, config: PeriodicVirqConfig) -> AxVmResult {
-        let vm = crate::get_vm_by_id(vm_id).ok_or(AxVmError::VmNotFound { vm_id })?;
-        crate::runtime::vcpus::spawn_periodic_virq_injector(vm, config)
     }
 
     /// Remove a VM selected from the runtime registry.

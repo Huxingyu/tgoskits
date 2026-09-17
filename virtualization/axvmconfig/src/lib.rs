@@ -118,6 +118,40 @@ mod vm_mem_config_vec_serde {
     }
 }
 
+mod guest_type_serde {
+    use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
+
+    use super::*;
+
+    #[derive(serde::Deserialize)]
+    #[serde(untagged)]
+    enum GuestTypeInput {
+        Named(GuestType),
+        LegacyVmType(u8),
+    }
+
+    pub fn serialize<S>(value: &GuestType, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        value.serialize(serializer)
+    }
+
+    pub fn deserialize<'de, D>(deserializer: D) -> Result<GuestType, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        match GuestTypeInput::deserialize(deserializer)? {
+            GuestTypeInput::Named(guest_type) => Ok(guest_type),
+            GuestTypeInput::LegacyVmType(0 | 1) => Ok(GuestType::Passthrough),
+            GuestTypeInput::LegacyVmType(2) => Ok(GuestType::Virtualized),
+            GuestTypeInput::LegacyVmType(value) => Err(de::Error::custom(alloc::format!(
+                "unsupported legacy vm_type {value}"
+            ))),
+        }
+    }
+}
+
 #[cfg_attr(all(feature = "std", any(windows, unix)), derive(schemars::JsonSchema))]
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 enum VMBootProtocolSerde {
@@ -230,6 +264,8 @@ pub struct VMBaseConfig {
     /// VM name.
     pub name: String,
     /// Guest address-space and physical-device assignment model.
+    #[serde(alias = "vm_type", with = "guest_type_serde")]
+    #[cfg_attr(all(feature = "std", any(windows, unix)), schemars(with = "GuestType"))]
     pub guest_type: GuestType,
     // Resources.
     /// The number of virtual CPUs.
@@ -252,21 +288,6 @@ pub struct VMBaseConfig {
     ///
     ///   It will phrase an error if the number of vCpus is not equal to the length of `phys_cpu_sets` array.
     pub phys_cpu_sets: Option<Vec<usize>>,
-    /// Whether the AArch64 trap layer must advance the exception PC past the
-    /// trapping `hvc`/`smc` instruction before resuming the guest.
-    ///
-    /// ARM DDI 0487 defines the preferred exception return address for HVC as
-    /// the following instruction, so QEMU (and spec-conforming emulators)
-    /// report ELR_EL2 already past the trap and must set this to `false`.
-    /// Some physical platforms report the trapping instruction itself and
-    /// need `true`. Defaults to `true` so existing physical-board configs
-    /// keep the legacy behavior.
-    #[serde(default = "default_true")]
-    pub advance_hvc_smc_pc: bool,
-}
-
-fn default_true() -> bool {
-    true
 }
 
 /// The configuration structure for the guest VM kernel.
@@ -547,6 +568,11 @@ impl GuestDevices {
             .map(|device| vec![device.path.clone()])
             .collect()
     }
+
+    /// Returns virtual device requests from the structured model catalog.
+    pub fn virtual_device_requests(&self) -> &[VirtualDeviceRequest] {
+        &self.virtual_devices
+    }
 }
 
 /// Open configuration boundary for one code-registered virtual-device model.
@@ -617,6 +643,8 @@ impl VirtualDeviceRequest {
             "irq_id",
             "base_gpa",
             "base_hpa",
+            "legacy_base_gpa",
+            "legacy_length",
             "mmio_base",
             "pio_base",
             "msi_device_id",
