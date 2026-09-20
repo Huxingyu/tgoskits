@@ -123,6 +123,10 @@ pub fn notify_vm(vm_id: usize) -> AxVmResult {
     // vCPU entering WFI can deadlock in opposite lock order.
     let runtime = vm.runtime_handle()?;
     runtime.publish_device_poll_request();
+    // Device polling is VM-wide state. Advance the shared wait generation so
+    // any vCPU parked on the VM event condition observes this request while
+    // the primary vCPU is kicked to perform the poll.
+    runtime.notify_all();
     runtime.request_vcpu(0)
 }
 
