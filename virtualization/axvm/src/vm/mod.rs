@@ -504,6 +504,19 @@ impl VmRuntimeHandle {
         Ok(())
     }
 
+    /// Publishes VM-wide work before waking the vCPU that owns its poll loop.
+    ///
+    /// The entry request must be visible before advancing the shared wait
+    /// generation. This closes the same predicate-to-park window as the KVM
+    /// request path while keeping ordinary target kicks isolated.
+    pub(crate) fn request_vcpu_for_vm_work(&self, vcpu_id: usize) -> AxVmResult {
+        let kick = self.vcpu_kick_handle(vcpu_id)?;
+        kick.publish_entry_request();
+        self.notify_all();
+        kick.kick_from_task();
+        Ok(())
+    }
+
     fn active_vcpu_kicks(&self) -> Vec<crate::runtime::VcpuKickHandle> {
         self.vcpu_threads
             .lock()
